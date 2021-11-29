@@ -6,8 +6,7 @@ import (
 	"os"
 )
 
-const initialsize = 128
-const gapincrement = 32
+const initialsize = 64
 
 type GapBuffer struct {
 	buf []rune
@@ -21,7 +20,7 @@ func New() *GapBuffer {
 	return &GapBuffer{
 		buf:  make([]rune, initialsize),
 		pre:  0,
-		post: initialsize - gapincrement,
+		post: initialsize,
 	}
 }
 
@@ -76,6 +75,7 @@ func (gb *GapBuffer) Insert(what []rune) {
 
 func (gb *GapBuffer) Get(pos, maxlen int) ([]rune, int) {
 	gaplen := gb.post - gb.pre
+	debug("(Get) pos=%d  maxlen=%d  gaplen=%d", pos, maxlen, gaplen)
 	if pos >= len(gb.buf)-gaplen {
 		// We consider it a misuse of the API and thus a bug
 		// if we're asked for bytes beyond the end.
@@ -109,24 +109,55 @@ func (gb *GapBuffer) Get(pos, maxlen int) ([]rune, int) {
 	if pos+maxlen <= gb.pre {
 		// #1
 		debug("case #1")
-		ret := make([]rune, maxlen)
-		copy(ret, gb.buf[pos:pos+maxlen])
-		return ret, maxlen
+		start := pos
+		n := maxlen
+		end := pos + maxlen
+
+		debug("[%d, %d]=%d", start, end, n)
+
+		ret := make([]rune, n)
+		copy(ret, gb.buf[start:end])
+		return ret, n
 	} else if pos >= gb.pre {
 		// #2
 		debug("case #2")
-		n := min(maxlen, len(gb.buf)-gaplen-pos)
-		ret := make([]rune, n)
 		start := pos + gaplen
-		debug("n=%d, start=%d", n, start)
-		copy(ret, gb.buf[start:start+n])
+		n := maxlen
+		end := start + n
+		overreach := end - len(gb.buf)
+		if overreach > 0 {
+			n -= overreach
+			end -= overreach
+		}
+
+		debug("[%d, %d]=%d", start, end, n)
+
+		ret := make([]rune, n)
+		copy(ret, gb.buf[start:end])
 		return ret, n
 
 	} else {
 		// #3
 		debug("case #3")
-		ret := make([]rune, gb.pre+gb.post)
-		return ret, 0
+		start1 := pos
+		n1 := gb.pre - pos
+		end1 := gb.pre
+
+		start2 := gb.post
+		n2 := maxlen - n1
+		end2 := gb.post + n2
+		overreach := end2 - len(gb.buf)
+		if overreach > 0 {
+			n2 -= overreach
+			end2 -= overreach
+		}
+
+		debug("[%d, %d]=%d  [%d, %d]=%d", start1, end1, n1, start2, end2, n2)
+
+		ret := make([]rune, n1+n2)
+		copy(ret, gb.buf[start1:end1])
+		copy(ret[n2:], gb.buf[start2:end2])
+		return ret, n1 + n2
 	}
 }
 
