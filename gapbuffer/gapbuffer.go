@@ -145,10 +145,3 @@ func (gb *GapBuffer) Get() []rune {
 	copy(ret[gb.pre:], gb.buf[gb.post:])
 	return ret
 }
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
