@@ -37,6 +37,52 @@ func (gb *GapBuffer) Cursor() int {
 	return gb.pre
 }
 
+func (gb *GapBuffer) SetCursor(cursor int) {
+	debug("(SetCursor before) pre=%d  post=%d  {%d <- %d}", gb.pre, gb.post, cursor, gb.pre)
+	if cursor > gb.Length() {
+		panic("cursor > gb.Length")
+	}
+	//
+	// Moving the cursor (gb.pre) of a GapBuffer looks like this:
+	//
+	//
+	//
+	// /--------------1234/    /abcdefghijklmn|
+	//                 pre^     ^post
+	//
+	//
+	// /--------------1234abcde/   /efghijklmn|
+	//                      pre^   ^post
+	//
+	// So there are two cases we may have here:
+	//
+	//   #1  Gap moves left
+	//   #2  Gap moves right
+	//
+	// In both cases, the
+	//
+	newpre := cursor
+	var dir, moves int
+	if newpre < gb.pre {
+		dir = -1
+		moves = gb.pre - newpre
+	} else {
+		dir = 1
+		moves = newpre - gb.pre
+	}
+
+	for i := 0; i < moves; i++ {
+		to := gb.post - 1
+		from := gb.pre - 1
+		debug("{%02d} %d <- %d", i, to, from)
+		gb.buf[to] = gb.buf[from]
+		gb.pre += dir
+		gb.post += dir
+	}
+	debug("(SetCursor afterwards) pre=%d  post=%d", gb.pre, gb.post)
+	hexdump(gb.buf)
+}
+
 func (gb *GapBuffer) Length() int {
 	return len(gb.buf) - (gb.post - gb.pre)
 }

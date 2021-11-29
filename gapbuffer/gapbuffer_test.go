@@ -25,12 +25,12 @@ func TestInsertGet(t *testing.T) {
 
 	got := b.Get()
 	assert(t, reflect.DeepEqual(got, msg), "wrong got: %q", got)
-	/*
-		msg2 := []rune("yes ")
-		msgtotal := []rune("hello yes world")
-		b.SetCursor(7)
-		b.Insert(msg2)
-		got, n = b.Get(0, len(msgtotal))
-		assert(t, reflect.DeepEqual(got, msgtotal), "wrong got: %q", got)
-	*/
+
+	msg2 := []rune("yes ")
+	msgtotal := []rune("hello yes world")
+	b.SetCursor(6)
+	b.Insert(msg2)
+	got = b.Get()
+	assert(t, reflect.DeepEqual(got, msgtotal), "wrong got: %q", got)
+
 }
