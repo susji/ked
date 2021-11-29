@@ -49,7 +49,7 @@ func TestLotsOfInserts(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	b := gapbuffer.New(8)
-	msg := []rune("this is a very long word")
+	msg := []rune("this is a very long phrase")
 	b.Insert(msg)
 
 	b.SetCursor(14)
@@ -58,7 +58,7 @@ func TestDelete(t *testing.T) {
 	}
 
 	got := b.Get()
-	want := []rune("this is a long word")
+	want := []rune("this is a long phrase")
 	assert(t, reflect.DeepEqual(got, want), "wrong got: %q", got)
 
 	b.SetCursor(5)
@@ -66,6 +66,6 @@ func TestDelete(t *testing.T) {
 		b.Delete()
 	}
 	got = b.Get()
-	want = []rune("is a long word")
+	want = []rune("is a long phrase")
 	assert(t, reflect.DeepEqual(got, want), "wrong got: %q", got)
 }
