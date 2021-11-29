@@ -12,7 +12,7 @@ func TestBasic(t *testing.T) {
 	msg := []rune("hello world")
 
 	b.Insert(msg)
-	got, n := b.Get(b.Cursor(), 11)
+	got, n := b.Get(0, 11)
 	if !reflect.DeepEqual(got, msg) {
 		t.Error("wrong: ", got)
 	}
