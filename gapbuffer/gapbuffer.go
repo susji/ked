@@ -41,6 +41,10 @@ func (gb *GapBuffer) Length() int {
 	return len(gb.buf) - (gb.post - gb.pre)
 }
 
+func (gb *GapBuffer) gaplen() int {
+	return gb.post - gb.pre
+}
+
 func (gb *GapBuffer) gapgrow(atleast int) {
 	//
 	// Increasing the length of a GapBuffer looks like this:
@@ -59,7 +63,6 @@ func (gb *GapBuffer) gapgrow(atleast int) {
 }
 
 func (gb *GapBuffer) Insert(what []rune) {
-	gaplen := gb.post - gb.pre
 	//
 	// Inserting into a GapBuffer looks like this:
 	//
@@ -69,7 +72,7 @@ func (gb *GapBuffer) Insert(what []rune) {
 	// /-----------------------/ gapgapgap /----------------|
 	//                        pre
 	//
-	if gaplen <= len(what) {
+	if gb.gaplen() <= len(what) {
 		gb.gapgrow(len(what))
 	}
 	copy(gb.buf[gb.pre:], what)
@@ -77,92 +80,11 @@ func (gb *GapBuffer) Insert(what []rune) {
 	hexdump(gb.buf)
 }
 
-func (gb *GapBuffer) Get(pos, maxlen int) ([]rune, int) {
-	gaplen := gb.post - gb.pre
-	debug("(Get) pos=%d  maxlen=%d  gaplen=%d", pos, maxlen, gaplen)
-	if pos >= len(gb.buf)-gaplen {
-		// We consider it a misuse of the API and thus a bug
-		// if we're asked for bytes beyond the end.
-		panic("Get: pos > len(buf)")
-	}
-	//
-	// Getting a slice out of our GapBuffer contents looks like
-	// this:
-	//
-	//
-	//               pos                         maxlen
-	//
-	//                sliceslice           sliceslice
-	//                .========-           -========.
-	//                |                             |
-	// /--------------+--------/ gapgapgap /--------+-------|
-	//               l1       l2           r1       r2
-	//
-	// 0                     pre         post            len(buf)
-	//
-	//
-	// So, we need to fish out sub-buffers [l1:l2] and [r1:r2], of
-	// which either may be empty.  All in all, we have three
-	// different cases here:
-	//
-	//   #1  Request is completely on the left side of the gap
-	//   #2  Request is completely on the right side of the gap
-	//   #3  Request contains both sides of the gap
-	//
-
-	if pos+maxlen <= gb.pre {
-		// #1
-		debug("case #1")
-		start := pos
-		n := maxlen
-		end := pos + maxlen
-
-		debug("[%d, %d]=%d", start, end, n)
-
-		ret := make([]rune, n)
-		copy(ret, gb.buf[start:end])
-		return ret, n
-	} else if pos >= gb.pre {
-		// #2
-		debug("case #2")
-		start := pos + gaplen
-		n := maxlen
-		end := start + n
-		overreach := end - len(gb.buf)
-		if overreach > 0 {
-			n -= overreach
-			end -= overreach
-		}
-
-		debug("[%d, %d]=%d", start, end, n)
-
-		ret := make([]rune, n)
-		copy(ret, gb.buf[start:end])
-		return ret, n
-
-	} else {
-		// #3
-		debug("case #3")
-		start1 := pos
-		n1 := gb.pre - pos
-		end1 := gb.pre
-
-		start2 := gb.post
-		n2 := maxlen - n1
-		end2 := gb.post + n2
-		overreach := end2 - len(gb.buf)
-		if overreach > 0 {
-			n2 -= overreach
-			end2 -= overreach
-		}
-
-		debug("[%d, %d]=%d  [%d, %d]=%d", start1, end1, n1, start2, end2, n2)
-
-		ret := make([]rune, n1+n2)
-		copy(ret, gb.buf[start1:end1])
-		copy(ret[n2:], gb.buf[start2:end2])
-		return ret, n1 + n2
-	}
+func (gb *GapBuffer) Get() []rune {
+	ret := make([]rune, len(gb.buf)-gb.gaplen())
+	copy(ret, gb.buf[:gb.pre])
+	copy(ret[gb.pre:], gb.buf[gb.post:])
+	return ret
 }
 
 func min(a, b int) int {
