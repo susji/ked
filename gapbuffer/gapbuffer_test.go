@@ -89,3 +89,10 @@ func TestCursorExtremes(t *testing.T) {
 	want := []rune("this is a sentence")
 	assert(t, reflect.DeepEqual(got, want), "wrong got: %q", got)
 }
+
+func TestNewFrom(t *testing.T) {
+	msg := []rune("This GapBuffer has been initialized from a rune slice.")
+	b := gapbuffer.NewFrom([]rune(msg))
+	got := b.Get()
+	assert(t, reflect.DeepEqual(got, msg), "unexpected got: %q", got)
+}

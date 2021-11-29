@@ -24,6 +24,13 @@ func New(sz int) *GapBuffer {
 	}
 }
 
+func NewFrom(runes []rune) *GapBuffer {
+	gb := New(len(runes) + DEFAULTSZ)
+	gb.SetCursor(0)
+	gb.Insert(runes)
+	return gb
+}
+
 func hexdump(what []rune) {
 	d := hex.Dumper(os.Stderr)
 	d.Write([]byte(string(what)))
