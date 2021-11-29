@@ -37,47 +37,46 @@ func (gb *GapBuffer) Cursor() int {
 	return gb.pre
 }
 
+func (gb *GapBuffer) cursorprev() {
+	// |abcdefghijklmnopq/    /rstu|
+	// |abcdefghijklmnop/    /qrstu|
+	if gb.pre == 0 {
+		panic("cursorprev: pre == 0")
+	}
+	gb.pre--
+	gb.post--
+	gb.buf[gb.post] = gb.buf[gb.pre]
+}
+
+func (gb *GapBuffer) cursornext() {
+	// |abcdefghijklmnop/    /qrstu|
+	// |abcdefghijklmnopq/    /rstu|
+	if gb.post+1 >= len(gb.buf) {
+		panic("cursornext: post +1 >= len(buf)")
+	}
+	gb.pre++
+	gb.post++
+	gb.buf[gb.pre] = gb.buf[gb.post]
+}
+
 func (gb *GapBuffer) SetCursor(cursor int) {
 	debug("(SetCursor before) pre=%d  post=%d  {%d <- %d}", gb.pre, gb.post, cursor, gb.pre)
 	if cursor > gb.Length() {
 		panic("cursor > gb.Length")
 	}
-	//
-	// Moving the cursor (gb.pre) of a GapBuffer looks like this:
-	//
-	//
-	//
-	// /--------------1234/    /abcdefghijklmn|
-	//                 pre^     ^post
-	//
-	//
-	// /--------------1234abcde/   /efghijklmn|
-	//                      pre^   ^post
-	//
-	// So there are two cases we may have here:
-	//
-	//   #1  Gap moves left
-	//   #2  Gap moves right
-	//
-	// In both cases, the
-	//
 	newpre := cursor
-	var dir, moves int
+	var moves int
+	var f func()
 	if newpre < gb.pre {
-		dir = -1
+		f = gb.cursorprev
 		moves = gb.pre - newpre
 	} else {
-		dir = 1
+		f = gb.cursornext
 		moves = newpre - gb.pre
 	}
 
 	for i := 0; i < moves; i++ {
-		to := gb.post - 1
-		from := gb.pre - 1
-		debug("{%02d} %d <- %d", i, to, from)
-		gb.buf[to] = gb.buf[from]
-		gb.pre += dir
-		gb.post += dir
+		f()
 	}
 	debug("(SetCursor afterwards) pre=%d  post=%d", gb.pre, gb.post)
 	hexdump(gb.buf)
