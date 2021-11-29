@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-const initialsize = 64
+const DEFAULTSZ = 64
 
 type GapBuffer struct {
 	buf []rune
@@ -16,11 +16,11 @@ type GapBuffer struct {
 	post int
 }
 
-func New() *GapBuffer {
+func New(sz int) *GapBuffer {
 	return &GapBuffer{
-		buf:  make([]rune, initialsize),
+		buf:  make([]rune, sz),
 		pre:  0,
-		post: initialsize,
+		post: sz,
 	}
 }
 
@@ -104,7 +104,12 @@ func (gb *GapBuffer) gapgrow(atleast int) {
 	//
 	n := len(gb.buf) - gb.post
 	gb.buf = append(gb.buf, make([]rune, atleast)...)
-	copy(gb.buf[gb.post+atleast:n], gb.buf[gb.post:n])
+
+	srcstart := gb.post
+	srcend := gb.post + n
+	dststart := gb.post + atleast
+	dstend := gb.post + atleast + n
+	copy(gb.buf[dststart:dstend], gb.buf[srcstart:srcend])
 	gb.post += atleast
 }
 

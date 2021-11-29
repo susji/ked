@@ -14,7 +14,7 @@ func assert(t *testing.T, cond bool, f string, va ...interface{}) {
 }
 
 func TestInsertGet(t *testing.T) {
-	b := gapbuffer.New()
+	b := gapbuffer.New(16)
 	msg := []rune("hello world")
 
 	assert(t, b.Length() == 0, "should be zero length, got %d", b.Length())
@@ -26,11 +26,10 @@ func TestInsertGet(t *testing.T) {
 	got := b.Get()
 	assert(t, reflect.DeepEqual(got, msg), "wrong got: %q", got)
 
-	msg2 := []rune("yes ")
-	msgtotal := []rune("hello yes world")
+	msg2 := []rune("yes hola ")
+	msgtotal := []rune("hello yes hola world")
 	b.SetCursor(6)
 	b.Insert(msg2)
 	got = b.Get()
 	assert(t, reflect.DeepEqual(got, msgtotal), "wrong got: %q", got)
-
 }
