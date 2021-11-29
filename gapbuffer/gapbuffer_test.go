@@ -33,3 +33,16 @@ func TestInsertGet(t *testing.T) {
 	got = b.Get()
 	assert(t, reflect.DeepEqual(got, msgtotal), "wrong got: %q", got)
 }
+
+func TestLotsOfInserts(t *testing.T) {
+	b := gapbuffer.New(8)
+	msg := []rune("abcdefghijklmnopqrstuvwxyz0123456789")
+
+	for _, r := range msg {
+		b.Insert([]rune{r})
+	}
+
+	got := b.Get()
+	assert(t, reflect.DeepEqual(got, msg), "wrong got: %q", got)
+	assert(t, len(got) == len(msg), "wrong len: %d", len(got))
+}
