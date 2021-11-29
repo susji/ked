@@ -60,4 +60,12 @@ func TestDelete(t *testing.T) {
 	got := b.Get()
 	want := []rune("this is a long word")
 	assert(t, reflect.DeepEqual(got, want), "wrong got: %q", got)
+
+	b.SetCursor(5)
+	for i := 0; i < 5; i++ {
+		b.Delete()
+	}
+	got = b.Get()
+	want = []rune("is a long word")
+	assert(t, reflect.DeepEqual(got, want), "wrong got: %q", got)
 }
