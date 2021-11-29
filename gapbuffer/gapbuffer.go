@@ -37,6 +37,10 @@ func (gb *GapBuffer) Cursor() int {
 	return gb.pre
 }
 
+func (gb *GapBuffer) Length() int {
+	return len(gb.buf) - (gb.post - gb.pre)
+}
+
 func (gb *GapBuffer) gapgrow(atleast int) {
 	//
 	// Increasing the length of a GapBuffer looks like this:

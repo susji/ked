@@ -17,7 +17,12 @@ func TestBasic(t *testing.T) {
 	b := gapbuffer.New()
 	msg := []rune("hello world")
 
+	assert(t, b.Length() == 0, "should be zero length, got %d", b.Length())
+
 	b.Insert(msg)
+
+	assert(t, b.Length() == len(msg), "unexpected length: %d", b.Length())
+
 	got, n := b.Get(0, 11)
 	assert(t, reflect.DeepEqual(got, msg), "wrong got: %q", got)
 	assert(t, n == 11, "wrong n: %d", n)
@@ -29,4 +34,5 @@ func TestBasic(t *testing.T) {
 	got, n = b.Get(0, 10000)
 	assert(t, reflect.DeepEqual(got, msg), "wrong got: %q", got)
 	assert(t, n == 11, "wrong n: %d", n)
+
 }
