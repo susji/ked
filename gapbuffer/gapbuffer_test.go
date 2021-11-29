@@ -46,3 +46,18 @@ func TestLotsOfInserts(t *testing.T) {
 	assert(t, reflect.DeepEqual(got, msg), "wrong got: %q", got)
 	assert(t, len(got) == len(msg), "wrong len: %d", len(got))
 }
+
+func TestDelete(t *testing.T) {
+	b := gapbuffer.New(8)
+	msg := []rune("this is a very long word")
+	b.Insert(msg)
+
+	b.SetCursor(14)
+	for i := 0; i < 5; i++ {
+		b.Delete()
+	}
+
+	got := b.Get()
+	want := []rune("this is a long word")
+	assert(t, reflect.DeepEqual(got, want), "wrong got: %q", got)
+}

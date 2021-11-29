@@ -131,7 +131,15 @@ func (gb *GapBuffer) Insert(what []rune) {
 	hexdump(gb.buf)
 }
 
+func (gb *GapBuffer) Delete() {
+	if gb.pre == 0 {
+		panic("Delete: pre == 0")
+	}
+	gb.pre--
+}
+
 func (gb *GapBuffer) Get() []rune {
+	debug("(Get) pre=%d  post=%d", gb.pre, gb.post)
 	ret := make([]rune, len(gb.buf)-gb.gaplen())
 	copy(ret, gb.buf[:gb.pre])
 	copy(ret[gb.pre:], gb.buf[gb.post:])
