@@ -53,7 +53,7 @@ func TestDelete(t *testing.T) {
 	b.Insert(msg)
 
 	b.SetCursor(14)
-	for i := 0; i < 5; i++ {
+	for i := 0; i < len(" very"); i++ {
 		b.Delete()
 	}
 
@@ -62,10 +62,30 @@ func TestDelete(t *testing.T) {
 	assert(t, reflect.DeepEqual(got, want), "wrong got: %q", got)
 
 	b.SetCursor(5)
-	for i := 0; i < 5; i++ {
+	for i := 0; i < len("this "); i++ {
 		b.Delete()
 	}
 	got = b.Get()
 	want = []rune("is a long phrase")
+	assert(t, reflect.DeepEqual(got, want), "wrong got: %q", got)
+}
+
+func TestCursorExtremes(t *testing.T) {
+	b := gapbuffer.New(0)
+
+	msg := []rune("this is a phrase")
+	b.Insert(msg)
+	b.SetCursor(0)
+	b.SetCursor(len(msg))
+	b.SetCursor(0)
+
+	b.SetCursor(len(msg))
+	for i := 0; i < len("phrase"); i++ {
+		b.Delete()
+	}
+	print("ZZZ", b.Get())
+	b.Insert([]rune("sentence"))
+	got := b.Get()
+	want := []rune("this is a sentence")
 	assert(t, reflect.DeepEqual(got, want), "wrong got: %q", got)
 }

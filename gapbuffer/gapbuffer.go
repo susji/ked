@@ -51,17 +51,17 @@ func (gb *GapBuffer) cursorprev() {
 func (gb *GapBuffer) cursornext() {
 	// |abcdefghijklmnop/    /qrstu|
 	// |abcdefghijklmnopq/    /rstu|
-	if gb.post+1 >= len(gb.buf) {
-		panic("cursornext: post +1 >= len(buf)")
+	if gb.post+1 > len(gb.buf) {
+		panic("cursornext: post + 1 > len(buf)")
 	}
+	gb.buf[gb.pre] = gb.buf[gb.post]
 	gb.pre++
 	gb.post++
-	gb.buf[gb.pre] = gb.buf[gb.post]
 }
 
 func (gb *GapBuffer) SetCursor(cursor int) {
 	debug("(SetCursor before) pre=%d  post=%d  {%d <- %d}", gb.pre, gb.post, cursor, gb.pre)
-	if cursor > gb.Length() {
+	if cursor > gb.Length()+1 {
 		panic("cursor > gb.Length")
 	}
 	newpre := cursor
