@@ -84,11 +84,34 @@ func (e *Editor) insertrune(r rune) {
 		return
 	}
 	eb := e.getactivebuf()
-	line := eb.b.Lines()[eb.lineno]
-	col := eb.col
-	line.SetCursor(col)
+	line := eb.b.GetLine(eb.lineno)
+	line.SetCursor(eb.col)
 	line.Insert([]rune{r})
 	eb.col++
+}
+
+func (e *Editor) insertlinefeed() {
+	if len(e.buffers) == 0 {
+		return
+	}
+	eb := e.getactivebuf()
+	line := eb.b.GetLine(eb.lineno).Get()
+	oldline := line[:eb.col]
+	newline := line[eb.col:]
+
+	log.Printf("[insertlinefeed] lineno=%d/%d  oldline=%q  newline=%q\n",
+		eb.lineno, eb.b.Lines(), oldline, newline)
+
+	eb.b.DeleteLine(eb.lineno)
+	eb.b.NewLine(eb.lineno)
+	eb.b.NewLine(eb.lineno)
+
+	eb.b.GetLine(eb.lineno).Insert(oldline).SetCursor(len(oldline))
+	eb.b.GetLine(eb.lineno + 1).Insert(newline).SetCursor(0)
+
+	for lineno := 0; lineno < eb.b.Lines(); lineno++ {
+		log.Printf("[%d] %s\n", lineno, string(eb.b.GetLine(lineno).Get()))
+	}
 }
 
 func (e *Editor) Run() error {
@@ -117,8 +140,10 @@ main:
 			case ev.Key() == tcell.KeyRune:
 				e.insertrune(ev.Rune())
 				redraw = true
+			case ev.Key() == tcell.KeyEnter:
+				e.insertlinefeed()
+				redraw = true
 			}
-
 		}
 		if redraw {
 			e.drawactivebuf()

@@ -11,8 +11,8 @@ import (
 
 func bufferToRunes(buf *buffer.Buffer) [][]rune {
 	ret := [][]rune{}
-	for _, bufline := range buf.Lines() {
-		ret = append(ret, bufline.Get())
+	for lineno := 0; lineno < buf.Lines(); lineno++ {
+		ret = append(ret, buf.GetLine(lineno).Get())
 	}
 	return ret
 }
@@ -33,10 +33,9 @@ laborum.
 		runes = append(runes, []rune(line))
 	}
 	b := buffer.New(runes)
-	gotlines := b.Lines()
-
-	for i, gotline := range gotlines {
-		wantline := lines[i]
+	for lineno := 0; lineno < b.Lines(); lineno++ {
+		gotline := b.GetLine(lineno)
+		wantline := lines[lineno]
 		ta.Assert(t, reflect.DeepEqual(string(gotline.Get()), wantline),
 			"unexpected got=%q, want=%q", string(gotline.Get()), wantline)
 	}
@@ -45,16 +44,15 @@ laborum.
 func TestInsertDelete(t *testing.T) {
 	b := buffer.New(nil)
 
-	ta.Assert(t, len(b.Lines()) == 0, "should have zero lines")
+	ta.Assert(t, b.Lines() == 0, "should have zero lines")
 
 	//
 	// Insert one line and keep it empty.
 	//
 	b.NewLine(0)
-	got := b.Lines()
-	ta.Assert(t, len(got) == 1, "should have one line")
+	ta.Assert(t, b.Lines() == 1, "should have one line")
 	want := []rune{}
-	line := got[0]
+	line := b.GetLine(0)
 	ta.Assert(t, reflect.DeepEqual(line.Get(), want), "should be empty")
 
 	//
@@ -74,7 +72,7 @@ func TestInsertDelete(t *testing.T) {
 	msg2 := []rune("We have some more text incoming!")
 	wantlines2 := [][]rune{msg, msg2}
 	b.NewLine(1)
-	b.Lines()[1].Insert(msg2)
+	b.GetLine(1).Insert(msg2)
 
 	gotlines2 := bufferToRunes(b)
 	ta.Assert(t, reflect.DeepEqual(gotlines2, wantlines2),

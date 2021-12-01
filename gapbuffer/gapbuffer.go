@@ -39,7 +39,7 @@ func hexdump(what []rune) {
 }
 
 func debug(f string, va ...interface{}) {
-	log.Printf(f+"\n", va...)
+	//log.Printf(f+"\n", va...)
 }
 
 func (gb *GapBuffer) Cursor() int {
@@ -68,7 +68,7 @@ func (gb *GapBuffer) cursornext() {
 	gb.post++
 }
 
-func (gb *GapBuffer) SetCursor(cursor int) {
+func (gb *GapBuffer) SetCursor(cursor int) *GapBuffer {
 	debug("(SetCursor before) pre=%d  post=%d  {%d <- %d}", gb.pre, gb.post, cursor, gb.pre)
 	if cursor > gb.Length()+1 {
 		panic("cursor > gb.Length")
@@ -88,7 +88,8 @@ func (gb *GapBuffer) SetCursor(cursor int) {
 		f()
 	}
 	debug("(SetCursor afterwards) pre=%d  post=%d", gb.pre, gb.post)
-	hexdump(gb.buf)
+	//hexdump(gb.buf)
+	return gb
 }
 
 func (gb *GapBuffer) Length() int {
@@ -121,7 +122,7 @@ func (gb *GapBuffer) gapgrow(atleast int) {
 	gb.post += atleast
 }
 
-func (gb *GapBuffer) Insert(what []rune) {
+func (gb *GapBuffer) Insert(what []rune) *GapBuffer {
 	//
 	// Inserting into a GapBuffer looks like this:
 	//
@@ -136,7 +137,8 @@ func (gb *GapBuffer) Insert(what []rune) {
 	}
 	copy(gb.buf[gb.pre:], what)
 	gb.pre += len(what)
-	hexdump(gb.buf)
+	//hexdump(gb.buf)
+	return gb
 }
 
 func (gb *GapBuffer) Delete() {
@@ -147,7 +149,7 @@ func (gb *GapBuffer) Delete() {
 }
 
 func (gb *GapBuffer) Get() []rune {
-	//debug("(Get) pre=%d  post=%d", gb.pre, gb.post)
+	debug("(Get) pre=%d  post=%d", gb.pre, gb.post)
 	ret := make([]rune, len(gb.buf)-gb.gaplen())
 	copy(ret, gb.buf[:gb.pre])
 	copy(ret[gb.pre:], gb.buf[gb.post:])

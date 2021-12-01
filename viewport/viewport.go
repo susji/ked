@@ -27,8 +27,8 @@ type RenderFunc func(lineno, col int, line []rune)
 
 func (v *Viewport) doRenderWrapped(w, h, lineno int, line []rune, rf RenderFunc) int {
 	nlinefrag := int(math.Ceil(float64(len(line)) / float64(w)))
-	log.Printf("[doRenderWrapped]: w=%d  h=%d  lineno=%d  lenline=%d   linefrags=%d\n",
-		w, h, lineno, len(line), nlinefrag)
+	//log.Printf("[doRenderWrapped]: w=%d  h=%d  lineno=%d  lenline=%d   linefrags=%d\n",
+	//	w, h, lineno, len(line), nlinefrag)
 	for i := 0; i < nlinefrag; i++ {
 		start := i * w
 		endraw := (i + 1) * w
@@ -50,11 +50,10 @@ func (v *Viewport) doRenderWrapped(w, h, lineno int, line []rune, rf RenderFunc)
 
 func (v *Viewport) Render(w, h, cx, cy int, rf RenderFunc) {
 	log.Printf("[Render] w=%d  h=%d  c=(%d, %d)\n", w, h, cx, cy)
-	lines := v.buffer.Lines()
 	linenodraw := v.y
 	linenobuf := v.y
-	for linenobuf < len(lines) && linenodraw < h {
-		line := lines[linenobuf].Get()
+	for linenobuf < v.buffer.Lines() && linenodraw < h {
+		line := v.buffer.GetLine(linenobuf).Get()
 		linenobuf++
 
 		if v.wrap {

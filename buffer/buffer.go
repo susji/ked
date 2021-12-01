@@ -66,9 +66,15 @@ func (b *Buffer) DeleteLine(pos int) {
 	left := b.lines[:pos]
 	right := b.lines[pos+1:]
 	b.lines = append(left, right...)
-
 }
 
-func (b *Buffer) Lines() []*gapbuffer.GapBuffer {
-	return b.lines
+func (b *Buffer) GetLine(pos int) *gapbuffer.GapBuffer {
+	if pos < 0 || len(b.lines) < pos {
+		panic(fmt.Sprintf("GetLine: invalid pos=%d", pos))
+	}
+	return b.lines[pos]
+}
+
+func (b *Buffer) Lines() int {
+	return len(b.lines)
 }
