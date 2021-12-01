@@ -76,7 +76,7 @@ func (e *Editor) drawactivebuf() {
 	eb := e.getactivebuf()
 	w, h := e.s.Size()
 	eb.v.Render(w, h, 0, 0, rf)
-	e.s.Sync()
+	e.s.Show()
 }
 
 func (e *Editor) insertrune(r rune) {
