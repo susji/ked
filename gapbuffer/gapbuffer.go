@@ -1,9 +1,9 @@
 package gapbuffer
 
 import (
+	"bytes"
 	"encoding/hex"
-	"fmt"
-	"os"
+	"log"
 )
 
 const DEFAULTSZ = 64
@@ -32,12 +32,14 @@ func NewFrom(runes []rune) *GapBuffer {
 }
 
 func hexdump(what []rune) {
-	d := hex.Dumper(os.Stderr)
+	b := &bytes.Buffer{}
+	d := hex.Dumper(b)
 	d.Write([]byte(string(what)))
+	log.Println(b.String())
 }
 
 func debug(f string, va ...interface{}) {
-	fmt.Fprintf(os.Stderr, f+"\n", va...)
+	log.Printf(f+"\n", va...)
 }
 
 func (gb *GapBuffer) Cursor() int {
