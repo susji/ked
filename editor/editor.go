@@ -54,7 +54,6 @@ main:
 			w, h := ev.Size()
 			log.Printf("[resize] w=%d  h=%d\n", w, h)
 			e.s.Sync()
-			continue main
 		case *tcell.EventKey:
 			switch {
 			case ev.Key() == tcell.KeyCtrlC:
