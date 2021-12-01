@@ -85,6 +85,7 @@ func (e *Editor) insertrune(r rune) {
 	col := eb.col - 1
 	line.SetCursor(col)
 	line.Insert([]rune{r})
+	eb.col++
 }
 
 func (e *Editor) Run() error {
