@@ -3,6 +3,7 @@ package gapbuffer
 import (
 	"bytes"
 	"encoding/hex"
+	"fmt"
 	"log"
 )
 
@@ -154,4 +155,8 @@ func (gb *GapBuffer) Get() []rune {
 	copy(ret, gb.buf[:gb.pre])
 	copy(ret[gb.pre:], gb.buf[gb.post:])
 	return ret
+}
+
+func (gb *GapBuffer) String() string {
+	return fmt.Sprintf("GapBuffer(cursor=%d, contents=%q)", gb.pre, string(gb.Get()))
 }
