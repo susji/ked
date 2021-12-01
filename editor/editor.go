@@ -6,10 +6,12 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/susji/ked/buffer"
+	"github.com/susji/ked/viewport"
 )
 
 type editorBuffer struct {
 	b           *buffer.Buffer
+	v           *viewport.Viewport
 	lineno, col int
 }
 
@@ -22,6 +24,7 @@ type Editor struct {
 func newEditorBuffer(b *buffer.Buffer) *editorBuffer {
 	return &editorBuffer{
 		b:      b,
+		v:      viewport.New(b),
 		lineno: 1,
 		col:    1,
 	}
@@ -63,16 +66,16 @@ func (e *Editor) drawactivebuf() {
 	if len(e.buffers) == 0 {
 		return
 	}
-	eb := e.getactivebuf()
-	w, h := e.s.Size()
-	lines := eb.b.Lines()
-	for lineno := 0; lineno < h && lineno < len(lines); lineno++ {
-		linerunes := lines[lineno].Get()
-		for col := 0; col < w && col < len(linerunes); col++ {
-			e.s.SetContent(col, lineno, linerunes[col], nil,
-				tcell.StyleDefault)
+
+	rf := func(lineno, col int, linerunes []rune) {
+		for i, r := range linerunes {
+			e.s.SetContent(col+i, lineno, r, nil, tcell.StyleDefault)
 		}
 	}
+
+	eb := e.getactivebuf()
+	w, h := e.s.Size()
+	eb.v.Render(w, h, 0, 0, rf)
 	e.s.Sync()
 }
 
