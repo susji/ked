@@ -22,16 +22,19 @@ func New(rawlines [][]rune) *Buffer {
 	return ret
 }
 
-func NewFromFile(f *os.File) *Buffer {
+func NewFromFile(f *os.File) (*Buffer, error) {
 	lines := []*gapbuffer.GapBuffer{}
 	s := bufio.NewScanner(f)
 	for s.Scan() {
 		lines = append(lines, gapbuffer.NewFrom([]rune(string(s.Bytes()))))
 	}
+	if err := s.Err(); err != nil {
+		return nil, err
+	}
 	return &Buffer{
 		lines: lines,
 		file:  f,
-	}
+	}, nil
 }
 
 func (b *Buffer) File() *os.File {
@@ -42,6 +45,7 @@ func (b *Buffer) Save() {
 	if b.file == nil {
 		panic("Save: no file backing this buffer")
 	}
+	panic("NOTIMPLEMENTED")
 }
 
 func (b *Buffer) NewLine(pos int) {
