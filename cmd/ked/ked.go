@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"io"
 	"log"
 	"os"
 
@@ -22,6 +23,8 @@ func main() {
 		}
 		log.SetOutput(f)
 		log.Println("Opening logfile: ", debugfile)
+	} else {
+		log.SetOutput(io.Discard)
 	}
 
 	// Initial editor context consists of a canvas and an optional
