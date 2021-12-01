@@ -75,6 +75,8 @@ func (e *Editor) drawactivebuf() {
 	}
 
 	rf := func(lineno, col int, linerunes []rune) {
+		//log.Printf("[rf] lineno=%d  col=%d  linerunes=%q\n",
+		//	lineno, col, string(linerunes))
 		for i, r := range linerunes {
 			e.s.SetContent(col+i, lineno, r, nil, tcell.StyleDefault)
 		}
