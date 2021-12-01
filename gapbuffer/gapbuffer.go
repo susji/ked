@@ -147,7 +147,7 @@ func (gb *GapBuffer) Delete() {
 }
 
 func (gb *GapBuffer) Get() []rune {
-	debug("(Get) pre=%d  post=%d", gb.pre, gb.post)
+	//debug("(Get) pre=%d  post=%d", gb.pre, gb.post)
 	ret := make([]rune, len(gb.buf)-gb.gaplen())
 	copy(ret, gb.buf[:gb.pre])
 	copy(ret[gb.pre:], gb.buf[gb.post:])
