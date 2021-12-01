@@ -6,10 +6,12 @@ import (
 	"os"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/susji/ked/buffer"
 )
 
 type editorCtx struct {
-	s tcell.Screen
+	s       tcell.Screen
+	buffers []buffer.Buffer
 }
 
 func (ctx *editorCtx) initscreen() error {
@@ -70,7 +72,20 @@ func main() {
 		log.Println("Opening logfile: ", debugfile)
 	}
 
+	// Initial editor context consists of a canvas and an optional
+	// list file-backed buffers.
 	ctx := &editorCtx{}
+
+	filenames := flag.Args()
+	for _, filename := range filenames {
+		f, err := os.Open(filename)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		log.Println("opening buffer for file: ", filename)
+		ctx.buffers = append(ctx.buffers, *buffer.NewFromFile(f))
+	}
+
 	if err := ctx.initscreen(); err != nil {
 		log.Fatalln("initscreen: ", err)
 	}

@@ -1,13 +1,16 @@
 package buffer
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 
 	"github.com/susji/ked/gapbuffer"
 )
 
 type Buffer struct {
 	lines []*gapbuffer.GapBuffer
+	file  *os.File
 }
 
 func New(rawlines [][]rune) *Buffer {
@@ -17,6 +20,28 @@ func New(rawlines [][]rune) *Buffer {
 		ret.lines = append(ret.lines, gapbuffer.NewFrom(rawline))
 	}
 	return ret
+}
+
+func NewFromFile(f *os.File) *Buffer {
+	lines := []*gapbuffer.GapBuffer{}
+	s := bufio.NewScanner(f)
+	for s.Scan() {
+		lines = append(lines, gapbuffer.NewFrom([]rune(string(s.Bytes()))))
+	}
+	return &Buffer{
+		lines: lines,
+		file:  f,
+	}
+}
+
+func (b *Buffer) File() *os.File {
+	return b.file
+}
+
+func (b *Buffer) Save() {
+	if b.file == nil {
+		panic("Save: no file backing this buffer")
+	}
 }
 
 func (b *Buffer) NewLine(pos int) {
