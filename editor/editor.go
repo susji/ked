@@ -8,10 +8,23 @@ import (
 	"github.com/susji/ked/buffer"
 )
 
+type editorBuffer struct {
+	b           *buffer.Buffer
+	lineno, col int
+}
+
 type Editor struct {
 	s         tcell.Screen
-	buffers   []buffer.Buffer
+	buffers   []editorBuffer
 	activebuf int
+}
+
+func newEditorBuffer(b *buffer.Buffer) *editorBuffer {
+	return &editorBuffer{
+		b:      b,
+		lineno: 1,
+		col:    1,
+	}
 }
 
 func New() *Editor {
@@ -23,8 +36,15 @@ func (e *Editor) NewBufferFromFile(f *os.File) error {
 	if err != nil {
 		return err
 	}
-	e.buffers = append(e.buffers, *buf)
+	e.buffers = append(e.buffers, *newEditorBuffer(buf))
 	return nil
+}
+
+func (e *Editor) getactivebuf() *editorBuffer {
+	if e.activebuf > len(e.buffers)-1 {
+		panic("activebuf too large")
+	}
+	return &e.buffers[e.activebuf]
 }
 
 func (e *Editor) initscreen() error {
@@ -39,21 +59,51 @@ func (e *Editor) initscreen() error {
 	return nil
 }
 
+func (e *Editor) drawactivebuf() {
+	if len(e.buffers) == 0 {
+		return
+	}
+	eb := e.getactivebuf()
+	w, h := e.s.Size()
+	lines := eb.b.Lines()
+	for lineno := 0; lineno < h && lineno < len(lines); lineno++ {
+		linerunes := lines[lineno].Get()
+		for col := 0; col < w && col < len(linerunes); col++ {
+			e.s.SetContent(col, lineno, linerunes[col], nil,
+				tcell.StyleDefault)
+		}
+	}
+	e.s.Sync()
+}
+
+func (e *Editor) insertrune(r rune) {
+	if len(e.buffers) == 0 {
+		return
+	}
+	eb := e.getactivebuf()
+	line := eb.b.Lines()[eb.lineno-1]
+	col := eb.col - 1
+	line.SetCursor(col)
+	line.Insert([]rune{r})
+}
+
 func (e *Editor) Run() error {
 
 	if err := e.initscreen(); err != nil {
 		return err
 	}
+	e.drawactivebuf()
 main:
 	for {
 		e.s.Show()
 		ev := e.s.PollEvent()
 		log.Printf("event: %+v\n", ev)
+		redraw := false
 		switch ev := ev.(type) {
 		case *tcell.EventResize:
 			w, h := ev.Size()
 			log.Printf("[resize] w=%d  h=%d\n", w, h)
-			e.s.Sync()
+			redraw = true
 		case *tcell.EventKey:
 			switch {
 			case ev.Key() == tcell.KeyCtrlC:
@@ -62,8 +112,16 @@ main:
 				break main
 			case ev.Key() == tcell.KeyCtrlR:
 				e.s.Clear()
+			case ev.Key() == tcell.KeyRune:
+				e.insertrune(ev.Rune())
+				redraw = true
 			}
+
 		}
+		if redraw {
+			e.drawactivebuf()
+		}
+
 	}
 	return nil
 }
