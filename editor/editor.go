@@ -111,8 +111,6 @@ main:
 				log.Println("[quit]")
 				e.s.Fini()
 				break main
-			case ev.Key() == tcell.KeyCtrlR:
-				e.s.Clear()
 			case ev.Key() == tcell.KeyRune:
 				e.insertrune(ev.Rune())
 				redraw = true
