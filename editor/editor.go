@@ -62,6 +62,13 @@ func (e *Editor) initscreen() error {
 	return nil
 }
 
+func (e *Editor) logbuffer() {
+	eb := e.getactivebuf()
+	for lineno := 0; lineno < eb.b.Lines(); lineno++ {
+		log.Printf("[%d] %s\n", lineno, string(eb.b.GetLine(lineno).Get()))
+	}
+}
+
 func (e *Editor) drawactivebuf() {
 	if len(e.buffers) == 0 {
 		return
@@ -75,7 +82,7 @@ func (e *Editor) drawactivebuf() {
 
 	eb := e.getactivebuf()
 	w, h := e.s.Size()
-	eb.v.Render(w, h, 0, 0, rf)
+	eb.v.Render(w, h, eb.col, eb.lineno, rf)
 	e.s.Show()
 }
 
@@ -94,6 +101,8 @@ func (e *Editor) insertlinefeed() {
 	if len(e.buffers) == 0 {
 		return
 	}
+	e.logbuffer()
+
 	eb := e.getactivebuf()
 	line := eb.b.GetLine(eb.lineno).Get()
 	oldline := line[:eb.col]
@@ -102,16 +111,12 @@ func (e *Editor) insertlinefeed() {
 	log.Printf("[insertlinefeed] lineno=%d/%d  oldline=%q  newline=%q\n",
 		eb.lineno, eb.b.Lines(), oldline, newline)
 
-	eb.b.DeleteLine(eb.lineno)
-	eb.b.NewLine(eb.lineno)
-	eb.b.NewLine(eb.lineno)
+	eb.b.GetLine(eb.lineno).Clear().Insert(oldline)
+	eb.b.NewLine(eb.lineno + 1).Insert(newline)
 
-	eb.b.GetLine(eb.lineno).Insert(oldline).SetCursor(len(oldline))
-	eb.b.GetLine(eb.lineno + 1).Insert(newline).SetCursor(0)
-
-	for lineno := 0; lineno < eb.b.Lines(); lineno++ {
-		log.Printf("[%d] %s\n", lineno, string(eb.b.GetLine(lineno).Get()))
-	}
+	eb.lineno++
+	eb.col = 0
+	e.logbuffer()
 }
 
 func (e *Editor) Run() error {

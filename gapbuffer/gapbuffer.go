@@ -157,6 +157,13 @@ func (gb *GapBuffer) Get() []rune {
 	return ret
 }
 
+func (gb *GapBuffer) Clear() *GapBuffer {
+	gb.buf = make([]rune, DEFAULTSZ)
+	gb.pre = 0
+	gb.post = DEFAULTSZ
+	return gb
+}
+
 func (gb *GapBuffer) String() string {
 	return fmt.Sprintf("GapBuffer(cursor=%d, contents=%q)", gb.pre, string(gb.Get()))
 }

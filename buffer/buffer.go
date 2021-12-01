@@ -3,6 +3,7 @@ package buffer
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/susji/ked/gapbuffer"
@@ -48,15 +49,24 @@ func (b *Buffer) Save() {
 	panic("NOTIMPLEMENTED")
 }
 
-func (b *Buffer) NewLine(pos int) {
+func (b *Buffer) NewLine(pos int) *gapbuffer.GapBuffer {
 	if pos < 0 || len(b.lines) < pos {
 		panic(fmt.Sprintf("NewLine: invalid pos=%d", pos))
 	}
 
 	left := b.lines[:pos]
 	right := b.lines[pos:]
-	b.lines = append(left, gapbuffer.New(gapbuffer.DEFAULTSZ))
-	b.lines = append(b.lines, right...)
+	newline := gapbuffer.New(gapbuffer.DEFAULTSZ)
+
+	newlines := make([]*gapbuffer.GapBuffer, len(left)+len(right)+1)
+
+	copy(newlines, left)
+	newlines[len(left)] = newline
+	copy(newlines[len(left)+1:], right)
+	b.lines = newlines
+
+	log.Printf("[NewLine=%d] left=%q  right=%q => %q\n", pos, left, right, b.lines)
+	return newline
 }
 
 func (b *Buffer) DeleteLine(pos int) {
@@ -65,6 +75,7 @@ func (b *Buffer) DeleteLine(pos int) {
 	}
 	left := b.lines[:pos]
 	right := b.lines[pos+1:]
+	log.Printf("[DeleteLine=%d] left=%q  right=%q\n", pos, left, right)
 	b.lines = append(left, right...)
 }
 
