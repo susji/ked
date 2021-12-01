@@ -25,8 +25,8 @@ func newEditorBuffer(b *buffer.Buffer) *editorBuffer {
 	return &editorBuffer{
 		b:      b,
 		v:      viewport.New(b),
-		lineno: 1,
-		col:    1,
+		lineno: 0,
+		col:    0,
 	}
 }
 
@@ -84,8 +84,8 @@ func (e *Editor) insertrune(r rune) {
 		return
 	}
 	eb := e.getactivebuf()
-	line := eb.b.Lines()[eb.lineno-1]
-	col := eb.col - 1
+	line := eb.b.Lines()[eb.lineno]
+	col := eb.col
 	line.SetCursor(col)
 	line.Insert([]rune{r})
 	eb.col++
