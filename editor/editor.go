@@ -157,7 +157,7 @@ func (e *Editor) backspace() {
 	eb.col--
 }
 
-func (e *Editor) moveVertical(up bool) {
+func (e *Editor) movevertical(up bool) {
 	if len(e.buffers) == 0 {
 		return
 	}
@@ -179,7 +179,7 @@ func (e *Editor) moveVertical(up bool) {
 	}
 }
 
-func (e *Editor) moveLeft() {
+func (e *Editor) moveleft() {
 	if len(e.buffers) == 0 {
 		return
 	}
@@ -189,7 +189,7 @@ func (e *Editor) moveLeft() {
 	}
 }
 
-func (e *Editor) moveRight() {
+func (e *Editor) moveright() {
 	if len(e.buffers) == 0 {
 		return
 	}
@@ -200,7 +200,7 @@ func (e *Editor) moveRight() {
 	}
 }
 
-func (e *Editor) moveLine(start bool) {
+func (e *Editor) moveline(start bool) {
 	if len(e.buffers) == 0 {
 		return
 	}
@@ -217,10 +217,12 @@ func (e *Editor) savebuffer() {
 	if len(e.buffers) == 0 {
 		return
 	}
+	// XXX Ask user for a filename just to be sure
 	eb := e.getactivebuf()
 	log.Printf("[savebuffer] %q\n", eb.b.File().Name())
 	if err := eb.b.Save(); err != nil {
 		log.Println("[savebuffer] failed: ", err)
+		// XXX Report error to UI somehow
 	}
 }
 
@@ -283,22 +285,22 @@ main:
 				e.backspace()
 				redraw = true
 			case ev.Key() == tcell.KeyUp:
-				e.moveVertical(true)
+				e.movevertical(true)
 				redraw = true
 			case ev.Key() == tcell.KeyDown:
-				e.moveVertical(false)
+				e.movevertical(false)
 				redraw = true
 			case ev.Key() == tcell.KeyLeft:
-				e.moveLeft()
+				e.moveleft()
 				redraw = true
 			case ev.Key() == tcell.KeyRight:
-				e.moveRight()
+				e.moveright()
 				redraw = true
 			case ev.Key() == tcell.KeyCtrlA:
-				e.moveLine(true)
+				e.moveline(true)
 				redraw = true
 			case ev.Key() == tcell.KeyCtrlE:
-				e.moveLine(false)
+				e.moveline(false)
 				redraw = true
 			case ev.Key() == tcell.KeyCtrlS:
 				e.savebuffer()
