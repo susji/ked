@@ -5,6 +5,7 @@ package editor
 //     way to make those prettier.
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -84,12 +85,12 @@ func (e *Editor) drawactivebuf() {
 
 	col := 0
 	lineno := 0
-	for rend.Scan() {
+	for h > 0 && rend.Scan() {
 		for i, r := range rend.Line() {
 			e.s.SetContent(col+i, lineno, r, nil, tcell.StyleDefault)
 		}
 		lineno++
-		if lineno == h {
+		if lineno == h-1 {
 			break
 		}
 	}
@@ -210,6 +211,31 @@ func (e *Editor) moveLine(start bool) {
 	eb.col = len(line)
 }
 
+func (e *Editor) drawstatusline() {
+	w, h := e.s.Size()
+	fn := "{no file}"
+	lineno := 0
+	col := 0
+	if len(e.buffers) > e.activebuf {
+		eb := e.getactivebuf()
+		f := eb.b.File()
+		if f != nil {
+			fn = f.Name()
+		}
+		lineno = eb.lineno + 1
+		col = eb.col + 1
+	}
+	line := []rune(
+		fmt.Sprintf(
+			"[%03d] %3d, %2d:  %s", e.activebuf, lineno, col, fn))
+	for i, r := range line {
+		e.s.SetContent(i, h-1, r, nil, tcell.StyleDefault)
+		if i > w {
+			break
+		}
+	}
+}
+
 func (e *Editor) Run() error {
 	if err := e.initscreen(); err != nil {
 		return err
@@ -219,7 +245,7 @@ func (e *Editor) Run() error {
 main:
 	for {
 		ev := e.s.PollEvent()
-		log.Printf("[Run] event: %+v\n", ev)
+		//log.Printf("[Run] event: %+v\n", ev)
 		redraw := false
 		sync := false
 		switch ev := ev.(type) {
@@ -267,6 +293,7 @@ main:
 		if redraw {
 			e.s.Clear()
 			e.drawactivebuf()
+			e.drawstatusline()
 			e.s.Show()
 		}
 		if sync {
