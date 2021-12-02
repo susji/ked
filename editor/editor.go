@@ -144,11 +144,13 @@ main:
 		ev := e.s.PollEvent()
 		log.Printf("event: %+v\n", ev)
 		redraw := false
+		sync := false
 		switch ev := ev.(type) {
 		case *tcell.EventResize:
 			w, h := ev.Size()
 			log.Printf("[resize] w=%d  h=%d\n", w, h)
 			redraw = true
+			sync = true
 		case *tcell.EventKey:
 			switch {
 			case ev.Key() == tcell.KeyCtrlC:
@@ -166,8 +168,14 @@ main:
 				redraw = true
 			}
 		}
+		if sync {
+			e.s.Clear()
+		}
 		if redraw {
 			e.drawactivebuf()
+		}
+		if sync {
+			e.s.Sync()
 		}
 
 	}
