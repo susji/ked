@@ -1,7 +1,6 @@
 package viewport
 
 import (
-	"log"
 	"math"
 
 	"github.com/susji/ked/buffer"
@@ -12,6 +11,9 @@ type Viewport struct {
 	// x and y define the upper-left coordinates of the viewport
 	x, y int
 	wrap bool
+	// cursorsx and cursory define the latest known
+	// screen-coordinates for our cursor
+	cursorx, cursory int
 }
 
 func New(buffer *buffer.Buffer) *Viewport {
@@ -24,6 +26,7 @@ func New(buffer *buffer.Buffer) *Viewport {
 }
 
 type RenderFunc func(lineno, col int, line []rune)
+type CursorFunc func(lineno, col int)
 
 func getPadding(howmuch int) []rune {
 	ret := make([]rune, howmuch)
@@ -33,16 +36,23 @@ func getPadding(howmuch int) []rune {
 	return ret
 }
 
-func (v *Viewport) doRenderWrapped(w, h, lineno int, line []rune, rf RenderFunc) int {
-	nlinefrag := int(math.Ceil(float64(len(line)) / float64(w)))
-	log.Printf("[doRenderWrapped]: w=%d  h=%d  lineno=%d  lenline=%d   linefrags=%d\n",
-		w, h, lineno, len(line), nlinefrag)
+func (v *Viewport) doRenderWrapped(w, h, cursorlineno, cursorcol,
+	linenobuf, linenodraw int, line []rune,
+	rf RenderFunc, cf CursorFunc) int {
 
+	nlinefrag := int(math.Ceil(float64(len(line)) / float64(w)))
+	//log.Printf("[doRenderWrapped]: w=%d  h=%d  linenobuf=%d  lenline=%d   linefrags=%d\n",
+	//	w, h, linenobuf, len(line), nlinefrag)
+
+	// As we're wrapping the display, long lines need to split
+	// into line fragments, which are rendered on their own
+	// terminal rows. Also, we need similar logic to figure out
+	// our cursor position.
 	for i := 0; i < nlinefrag; i++ {
 		start := i * w
 		endraw := (i + 1) * w
 		end := int(math.Min(float64(endraw), float64(len(line))))
-		log.Printf("[doRenderWrapped] line[%d:%d]\n", start, end)
+		// log.Printf("[doRenderWrapped] line[%d:%d]\n", start, end)
 		drawfrag := line[start:end]
 		if endraw > end {
 			// Add some padding to the last fragment to
@@ -51,31 +61,36 @@ func (v *Viewport) doRenderWrapped(w, h, lineno int, line []rune, rf RenderFunc)
 			// static padding buffer.
 			drawfrag = append(drawfrag, getPadding(endraw-end)...)
 		}
-		rf(lineno+i, 0, drawfrag)
+		rf(linenodraw+i, 0, drawfrag)
+		if linenobuf == cursorlineno && cursorcol >= start && cursorcol <= end {
+			cf(linenodraw+i, cursorcol-start)
+		}
 	}
 	// Zero fragments means one line still.
 	if nlinefrag == 0 {
-		rf(lineno, 0, getPadding(w))
+		rf(linenodraw, 0, getPadding(w))
+		cf(linenodraw, 0)
 		return 1
 	}
 	return nlinefrag
 }
 
-func (v *Viewport) Render(w, h, cx, cy int, rf RenderFunc) {
-	log.Printf("[Render] w=%d  h=%d  c=(%d, %d)\n", w, h, cx, cy)
+func (v *Viewport) Render(w, h, cursorlineno, cursorcol int, rf RenderFunc, cf CursorFunc) {
+	//log.Printf("[Render] w=%d  h=%d  c=(%d, %d)\n", w, h, cx, cy)
 	linenodraw := v.y
 	linenobuf := v.y
 	for linenobuf < v.buffer.Lines() && linenodraw < h {
 		line := v.buffer.GetLine(linenobuf).Get()
-		log.Printf("[Render] line=%q\n", string(line))
-		linenobuf++
-
+		//log.Printf("[Render] line=%q\n", string(line))
 		if v.wrap {
-			linesdrawn := v.doRenderWrapped(w, h, linenodraw, line, rf)
+			linesdrawn := v.doRenderWrapped(
+				w, h, cursorlineno, cursorcol,
+				linenobuf, linenodraw, line, rf, cf)
 			linenodraw += linesdrawn
 		} else {
 			panic("NOTIMPLEMENTED")
 		}
+		linenobuf++
 	}
 }
 

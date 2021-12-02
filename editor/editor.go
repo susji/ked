@@ -81,11 +81,13 @@ func (e *Editor) drawactivebuf() {
 			e.s.SetContent(col+i, lineno, r, nil, tcell.StyleDefault)
 		}
 	}
-
+	cf := func(lineno, col int) {
+		log.Printf("[cf] lineno=%d  col=%d\n", lineno, col)
+		e.s.ShowCursor(col, lineno)
+	}
 	eb := e.getactivebuf()
 	w, h := e.s.Size()
-	eb.v.Render(w, h, eb.col, eb.lineno, rf)
-	e.s.Show()
+	eb.v.Render(w, h, eb.lineno, eb.col, rf, cf)
 }
 
 func (e *Editor) insertrune(r rune) {
@@ -133,16 +135,59 @@ func (e *Editor) backspace() {
 	eb.col--
 }
 
+func (e *Editor) moveVertical(up bool) {
+	if len(e.buffers) == 0 {
+		return
+	}
+	eb := e.getactivebuf()
+	if up {
+		if eb.lineno == 0 {
+			return
+		}
+		eb.lineno--
+	} else {
+		if eb.lineno == eb.b.Lines() {
+			return
+		}
+		eb.lineno++
+	}
+	line := eb.b.GetLine(eb.lineno).Get()
+	if eb.col >= len(line) {
+		eb.col = len(line)
+	}
+}
+
+func (e *Editor) moveLeft() {
+	if len(e.buffers) == 0 {
+		return
+	}
+	eb := e.getactivebuf()
+	if eb.col > 0 {
+		eb.col--
+	}
+}
+
+func (e *Editor) moveRight() {
+	if len(e.buffers) == 0 {
+		return
+	}
+	eb := e.getactivebuf()
+	line := eb.b.GetLine(eb.lineno).Get()
+	if eb.col < len(line) {
+		eb.col++
+	}
+}
+
 func (e *Editor) Run() error {
 	if err := e.initscreen(); err != nil {
 		return err
 	}
 	e.drawactivebuf()
+	e.s.Show()
 main:
 	for {
-		e.s.Show()
 		ev := e.s.PollEvent()
-		log.Printf("event: %+v\n", ev)
+		log.Printf("[Run] event: %+v\n", ev)
 		redraw := false
 		sync := false
 		switch ev := ev.(type) {
@@ -166,6 +211,18 @@ main:
 			case ev.Key() == tcell.KeyBackspace, ev.Key() == tcell.KeyBackspace2:
 				e.backspace()
 				redraw = true
+			case ev.Key() == tcell.KeyUp:
+				e.moveVertical(true)
+				redraw = true
+			case ev.Key() == tcell.KeyDown:
+				e.moveVertical(false)
+				redraw = true
+			case ev.Key() == tcell.KeyLeft:
+				e.moveLeft()
+				redraw = true
+			case ev.Key() == tcell.KeyRight:
+				e.moveRight()
+				redraw = true
 			}
 		}
 		if sync {
@@ -173,11 +230,11 @@ main:
 		}
 		if redraw {
 			e.drawactivebuf()
+			e.s.Show()
 		}
 		if sync {
 			e.s.Sync()
 		}
-
 	}
 	return nil
 }
