@@ -82,14 +82,9 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int, rf RenderFunc, cf C
 	for linenobuf < v.buffer.Lines() && linenodraw < h {
 		line := v.buffer.GetLine(linenobuf).Get()
 		//log.Printf("[Render] line=%q\n", string(line))
-		if v.wrap {
-			linesdrawn := v.doRenderWrapped(
-				w, h, cursorlineno, cursorcol,
-				linenobuf, linenodraw, line, rf, cf)
-			linenodraw += linesdrawn
-		} else {
-			panic("NOTIMPLEMENTED")
-		}
+		// XXX We only do line-wrapped mode here.
+		linenodraw += v.doRenderWrapped(w, h, cursorlineno, cursorcol,
+			linenobuf, linenodraw, line, rf, cf)
 		linenobuf++
 	}
 }
