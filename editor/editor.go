@@ -15,9 +15,11 @@ import (
 )
 
 type editorBuffer struct {
-	b           *buffer.Buffer
-	v           *viewport.Viewport
-	lineno, col int
+	b                    *buffer.Buffer
+	v                    *viewport.Viewport
+	lineno, col          int
+	scrollup, scrolldown int
+	linesinview          int
 }
 
 type Editor struct {
@@ -81,12 +83,12 @@ func (e *Editor) drawactivebuf() {
 
 	eb := e.getactivebuf()
 	w, h := e.s.Size()
-	rend := eb.v.Render(w, h, eb.lineno, eb.col)
-
+	rend := eb.v.Render(w, h-1, eb.lineno, eb.col)
 	col := 0
 	lineno := 0
 	for h > 0 && rend.Scan() {
-		for i, r := range rend.Line() {
+		rl := rend.Line()
+		for i, r := range rl.Content {
 			e.s.SetContent(col+i, lineno, r, nil, tcell.StyleDefault)
 		}
 		lineno++
@@ -166,7 +168,7 @@ func (e *Editor) moveVertical(up bool) {
 		}
 		eb.lineno--
 	} else {
-		if eb.lineno == eb.b.Lines()-1 {
+		if eb.lineno >= eb.b.Lines()-1 {
 			return
 		}
 		eb.lineno++
