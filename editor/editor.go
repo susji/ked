@@ -179,6 +179,14 @@ func (e *Editor) movevertical(up bool) {
 	}
 }
 
+func (e *Editor) movepage(up bool) {
+	if len(e.buffers) == 0 {
+		return
+	}
+	eb := e.getactivebuf()
+	_ = eb
+}
+
 func (e *Editor) moveleft() {
 	if len(e.buffers) == 0 {
 		return
@@ -305,6 +313,12 @@ main:
 			case ev.Key() == tcell.KeyCtrlS:
 				e.savebuffer()
 				redraw = false
+			case ev.Key() == tcell.KeyPgUp:
+				e.movepage(true)
+				redraw = true
+			case ev.Key() == tcell.KeyPgDn:
+				e.movepage(false)
+				redraw = true
 			}
 		}
 
