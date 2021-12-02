@@ -41,11 +41,17 @@ func (b *Buffer) File() *os.File {
 	return b.file
 }
 
-func (b *Buffer) Save() {
+func (b *Buffer) Save() error {
 	if b.file == nil {
 		panic("Save: no file backing this buffer")
 	}
-	panic("NOTIMPLEMENTED")
+	data := []byte{}
+	for _, gb := range b.lines {
+		linedata := []byte(string(gb.Get()))
+		linedata = append(linedata, '\n')
+		data = append(data, linedata...)
+	}
+	return os.WriteFile(b.file.Name(), data, 0644)
 }
 
 func (b *Buffer) NewLine(pos int) *gapbuffer.GapBuffer {

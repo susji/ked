@@ -213,6 +213,17 @@ func (e *Editor) moveLine(start bool) {
 	eb.col = len(line)
 }
 
+func (e *Editor) savebuffer() {
+	if len(e.buffers) == 0 {
+		return
+	}
+	eb := e.getactivebuf()
+	log.Printf("[savebuffer] %q\n", eb.b.File().Name())
+	if err := eb.b.Save(); err != nil {
+		log.Println("[savebuffer] failed: ", err)
+	}
+}
+
 func (e *Editor) drawstatusline() {
 	w, h := e.s.Size()
 	fn := "{no file}"
@@ -289,6 +300,9 @@ main:
 			case ev.Key() == tcell.KeyCtrlE:
 				e.moveLine(false)
 				redraw = true
+			case ev.Key() == tcell.KeyCtrlS:
+				e.savebuffer()
+				redraw = false
 			}
 		}
 
