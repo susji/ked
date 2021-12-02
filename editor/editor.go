@@ -1,5 +1,9 @@
 package editor
 
+// XXX We have lots of buffer-checking and active-buffer-selection
+//     repetition in the handler functions below. Perhaps there is a
+//     way to make those prettier.
+
 import (
 	"log"
 	"os"
@@ -178,6 +182,19 @@ func (e *Editor) moveRight() {
 	}
 }
 
+func (e *Editor) moveLine(start bool) {
+	if len(e.buffers) == 0 {
+		return
+	}
+	eb := e.getactivebuf()
+	if start {
+		eb.col = 0
+		return
+	}
+	line := eb.b.GetLine(eb.lineno).Get()
+	eb.col = len(line)
+}
+
 func (e *Editor) Run() error {
 	if err := e.initscreen(); err != nil {
 		return err
@@ -222,6 +239,12 @@ main:
 				redraw = true
 			case ev.Key() == tcell.KeyRight:
 				e.moveRight()
+				redraw = true
+			case ev.Key() == tcell.KeyCtrlA:
+				e.moveLine(true)
+				redraw = true
+			case ev.Key() == tcell.KeyCtrlE:
+				e.moveLine(false)
 				redraw = true
 			}
 		}
