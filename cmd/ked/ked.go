@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/susji/ked/editor"
 )
@@ -32,7 +33,11 @@ func main() {
 	e := editor.New()
 	filenames := flag.Args()
 	for _, filename := range filenames {
-		f, err := os.Open(filename)
+		absname, err := filepath.Abs(filename)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		f, err := os.Open(absname)
 		if err != nil {
 			log.Fatalln(err)
 		}
