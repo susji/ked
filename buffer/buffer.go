@@ -3,7 +3,6 @@ package buffer
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/susji/ked/gapbuffer"
@@ -65,7 +64,7 @@ func (b *Buffer) NewLine(pos int) *gapbuffer.GapBuffer {
 	copy(newlines[len(left)+1:], right)
 	b.lines = newlines
 
-	log.Printf("[NewLine=%d] left=%q  right=%q => %q\n", pos, left, right, b.lines)
+	//log.Printf("[NewLine=%d] left=%q  right=%q => %q\n", pos, left, right, b.lines)
 	return newline
 }
 
@@ -75,7 +74,7 @@ func (b *Buffer) DeleteLine(pos int) {
 	}
 	left := b.lines[:pos]
 	right := b.lines[pos+1:]
-	log.Printf("[DeleteLine=%d] left=%q  right=%q\n", pos, left, right)
+	//log.Printf("[DeleteLine=%d] left=%q  right=%q\n", pos, left, right)
 	b.lines = append(left, right...)
 }
 

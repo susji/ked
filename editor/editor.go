@@ -78,20 +78,28 @@ func (e *Editor) drawactivebuf() {
 		return
 	}
 
-	rf := func(lineno, col int, linerunes []rune) {
-		//log.Printf("[rf] lineno=%d  col=%d  linerunes=%q\n",
-		//	lineno, col, string(linerunes))
-		for i, r := range linerunes {
-			e.s.SetContent(col+i, lineno, r, nil, tcell.StyleDefault)
-		}
-	}
-	cf := func(lineno, col int) {
-		log.Printf("[cf] lineno=%d  col=%d\n", lineno, col)
-		e.s.ShowCursor(col, lineno)
-	}
 	eb := e.getactivebuf()
 	w, h := e.s.Size()
-	eb.v.Render(w, h, eb.lineno, eb.col, rf, cf)
+	rend := eb.v.Render(w, h, eb.lineno, eb.col)
+
+	col := 0
+	lineno := 0
+	for rend.Scan() {
+		for i, r := range rend.Line() {
+			e.s.SetContent(col+i, lineno, r, nil, tcell.StyleDefault)
+		}
+		lineno++
+		if lineno == h {
+			break
+		}
+	}
+
+	/*
+		cf := func(lineno, col int) {
+			log.Printf("[cf] lineno=%d  col=%d\n", lineno, col)
+			e.s.ShowCursor(col, lineno)
+		}
+	*/
 }
 
 func (e *Editor) insertrune(r rune) {
@@ -260,10 +268,9 @@ main:
 				redraw = true
 			}
 		}
-		if sync {
-			e.s.Clear()
-		}
+
 		if redraw {
+			e.s.Clear()
 			e.drawactivebuf()
 			e.s.Show()
 		}
