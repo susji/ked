@@ -165,7 +165,7 @@ func (e *Editor) moveVertical(up bool) {
 		}
 		eb.lineno--
 	} else {
-		if eb.lineno == eb.b.Lines() {
+		if eb.lineno == eb.b.Lines()-1 {
 			return
 		}
 		eb.lineno++
