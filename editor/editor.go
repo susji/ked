@@ -130,10 +130,22 @@ func (e *Editor) backspace() {
 		return
 	}
 	eb := e.getactivebuf()
-	if eb.col == 0 {
+	line := eb.b.GetLine(eb.lineno)
+	linerunes := line.Get()
+	if eb.col == 0 && eb.lineno > 0 {
+		eb.b.DeleteLine(eb.lineno)
+		if eb.lineno > 0 {
+			lineup := eb.b.GetLine(eb.lineno - 1)
+			lineuprunes := lineup.Get()
+			lineup.SetCursor(len(lineuprunes))
+			lineup.Insert(linerunes[eb.col:])
+			eb.lineno--
+			eb.col = len(lineuprunes)
+		}
+		return
+	} else if eb.col == 0 {
 		return
 	}
-	line := eb.b.GetLine(eb.lineno)
 	line.SetCursor(eb.col)
 	line.Delete()
 	eb.col--
