@@ -93,13 +93,8 @@ func (e *Editor) drawactivebuf() {
 			break
 		}
 	}
-
-	/*
-		cf := func(lineno, col int) {
-			log.Printf("[cf] lineno=%d  col=%d\n", lineno, col)
-			e.s.ShowCursor(col, lineno)
-		}
-	*/
+	vx, vy := rend.Cursor()
+	e.s.ShowCursor(vx, vy)
 }
 
 func (e *Editor) insertrune(r rune) {

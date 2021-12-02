@@ -26,6 +26,10 @@ type Rendering struct {
 	cursorx, cursory int
 }
 
+func (r *Rendering) Cursor() (int, int) {
+	return r.cursorx, r.cursory
+}
+
 func (r *Rendering) Scan() bool {
 	//log.Printf("[Scan] done=%t  cur=%q  buf=%q\n", r.done, string(r.cur), r.buf)
 	if r.done {
@@ -70,7 +74,7 @@ func getPadding(howmuch int) []rune {
 }
 
 func (v *Viewport) doRenderWrapped(
-	w, cursorlineno, cursorcol, linenobuf, linenodraw int, line []rune) [][]rune {
+	w, cursorlineno, cursorcol, linenobuf, linenodraw int, line []rune) ([][]rune, int, int) {
 	ret := [][]rune{}
 
 	nlinefrag := int(math.Ceil(float64(len(line)) / float64(w)))
@@ -81,6 +85,8 @@ func (v *Viewport) doRenderWrapped(
 	// into line fragments, which are rendered on their own
 	// terminal rows. Also, we need similar logic to figure out
 	// our cursor position.
+	cx := -1
+	cy := -1
 	for i := 0; i < nlinefrag; i++ {
 		start := i * w
 		endraw := (i + 1) * w
@@ -96,16 +102,20 @@ func (v *Viewport) doRenderWrapped(
 			drawfrag = append(drawfrag, getPadding(endraw-end)...)
 		}
 		ret = append(ret, drawfrag)
-		//		if linenobuf == cursorlineno && cursorcol >= start && cursorcol <= end {
-		//	cf(linenodraw+i, cursorcol-start)
-		//}
+		if linenobuf == cursorlineno && cursorcol >= start && cursorcol <= end {
+			cx = cursorcol - start
+			cy = linenodraw + i
+		}
 	}
 	// Zero fragments means one line still.
 	if nlinefrag == 0 {
 		ret = append(ret, getPadding(w))
-		//cf(linenodraw, 0)
+		if linenobuf == cursorlineno {
+			cx = 0
+			cy = linenodraw
+		}
 	}
-	return ret
+	return ret, cx, cy
 }
 
 func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
@@ -113,17 +123,23 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
 	// XXX Temporarily render all lines.
 	linenodrawn := 0
 	renderlines := [][]rune{}
+	cx := 0
+	cy := 0
 	for linenobuf := 0; linenobuf < v.buffer.Lines(); linenobuf++ {
 		line := v.buffer.GetLine(linenobuf).Get()
 		//log.Printf("[Render=%d] line=%q\n", linenobuf, string(line))
 		// XXX We only do line-wrapped mode here.
-		newlines := v.doRenderWrapped(
+		newlines, _cx, _cy := v.doRenderWrapped(
 			w, cursorlineno, cursorcol,
 			linenobuf, linenodrawn, line)
 		linenodrawn += len(newlines)
 		renderlines = append(renderlines, newlines...)
+		if _cx != -1 && _cy != -1 {
+			cx = _cx
+			cy = _cy
+		}
 	}
-	return &Rendering{buf: renderlines}
+	return &Rendering{buf: renderlines, cursorx: cx, cursory: cy}
 }
 
 func (v *Viewport) SetWrapping(wrapping bool) {
