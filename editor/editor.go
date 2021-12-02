@@ -103,26 +103,37 @@ func (e *Editor) insertlinefeed() {
 	if len(e.buffers) == 0 {
 		return
 	}
-	e.logbuffer()
 
 	eb := e.getactivebuf()
 	line := eb.b.GetLine(eb.lineno).Get()
 	oldline := line[:eb.col]
 	newline := line[eb.col:]
 
-	log.Printf("[insertlinefeed] lineno=%d/%d  oldline=%q  newline=%q\n",
-		eb.lineno, eb.b.Lines(), oldline, newline)
+	//log.Printf("[insertlinefeed] lineno=%d/%d  oldline=%q  newline=%q\n",
+	//	eb.lineno, eb.b.Lines(), oldline, newline)
 
 	eb.b.GetLine(eb.lineno).Clear().Insert(oldline)
 	eb.b.NewLine(eb.lineno + 1).Insert(newline)
 
 	eb.lineno++
 	eb.col = 0
-	e.logbuffer()
+}
+
+func (e *Editor) backspace() {
+	if len(e.buffers) == 0 {
+		return
+	}
+	eb := e.getactivebuf()
+	if eb.col == 0 {
+		return
+	}
+	line := eb.b.GetLine(eb.lineno)
+	line.SetCursor(eb.col)
+	line.Delete()
+	eb.col--
 }
 
 func (e *Editor) Run() error {
-
 	if err := e.initscreen(); err != nil {
 		return err
 	}
@@ -149,6 +160,9 @@ main:
 				redraw = true
 			case ev.Key() == tcell.KeyEnter:
 				e.insertlinefeed()
+				redraw = true
+			case ev.Key() == tcell.KeyBackspace, ev.Key() == tcell.KeyBackspace2:
+				e.backspace()
 				redraw = true
 			}
 		}
