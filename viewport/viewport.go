@@ -11,12 +11,19 @@ import (
 type Viewport struct {
 	buffer *buffer.Buffer
 	wrap   bool
-	// y0 defines the buffer line located uppermost at the moment
+	// y0 defines the buffer line located uppermost at the
+	// moment. Note that these are *buffer* lines, not *drawn*
+	// lines.
 	y0 int
 	// scrollup and scrolldown define the buffer lines to jump
-	// into if viewport is scrolled up or down.
+	// into if viewport is scrolled up or down. Our viewport
+	// calculation logic tries to do this such that we move in
+	// jumps of screen-height/2.
 	scrollup, scrolldown int
-	limitdown            int
+	// limitdown specifies the buffer line, which marks a
+	// scroll-down. Note that this, as is y0, is in *buffer*
+	// lines, not *drawn* lines.
+	limitdown int
 }
 
 type RenderLine struct {
@@ -200,6 +207,7 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
 	postviewdrawn := 0
 	postviewbufs := 0
 	downscrolldone := false
+	downlimitfound := false
 	// Some sane defaults to down-scroll limits. These will be
 	// used if the state machine below does manage to find actual
 	// viewport-crossings, ie. the buffer is not yet long enough.
@@ -235,18 +243,24 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
 			// upwards from our viewport.
 			hss.Push(len(newlines))
 			linesdrawnpreview += len(newlines)
-		} else if !inview && viewed && !downscrolldone {
+		} else if !inview && viewed {
 			// Similar to the case of counting
 			// logical/wrapped lines before entering the
 			// viewport, we have to handle the
 			// post-viewport thing, too. So we count how
 			// many buffer lines we need to jump to get a
 			// decent line to scroll the viewport down.
+			// We also calculate the down-scrolling limit
+			// here.
 			postviewdrawn += len(newlines)
 			postviewbufs++
-			if postviewdrawn >= h/2 {
+			if postviewdrawn >= h/2 && !downscrolldone {
 				v.scrolldown = v.y0 + postviewbufs
 				downscrolldone = true
+			}
+			if postviewdrawn >= h && !downlimitfound {
+				v.limitdown = v.y0 + postviewbufs
+				downlimitfound = true
 			}
 		}
 		//
