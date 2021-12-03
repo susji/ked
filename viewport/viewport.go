@@ -257,9 +257,9 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
 	// Some sane defaults to down-scroll limits. These will be
 	// used if the state machine below does manage to find actual
 	// viewport-crossings, ie. the buffer is not yet long enough.
-	v.limitdown = v.y0 + h - 1
 	v.pagedown = v.buffer.Lines() - 1
-	v.scrolldown = v.y0 + h/2 - 1
+	v.scrolldown = v.buffer.Lines() - 1
+	v.limitdown = v.buffer.Lines()
 scanline:
 	for ; linenobuf < linenobufend; linenobuf++ {
 		line := v.buffer.GetLine(linenobuf).Get()
@@ -320,6 +320,17 @@ scanline:
 		// last.
 		//
 		if inview {
+			// The scanning window thing we have here
+			// hopefully gets a peek at the stuff after
+			// our viewport. However, if we are operating
+			// on a short buffer, or more generally at the
+			// end of *any* buffer, we have to propose some
+			// known-good values, because scanning
+			// something after the viewport is
+			// impossible. Thus we calculate some decent
+			// values for `v.scrolldown` and `v.limitdown`.
+			v.limitdown = linenobuf
+			v.scrolldown = linenobuf + 1
 			for ri, linecontent := range newlines {
 				rl := &RenderLine{
 					Content:     linecontent,
@@ -336,8 +347,8 @@ scanline:
 		}
 		linenodrawn += len(newlines)
 	}
-	log.Printf("[Render] viewed=%t  downscrollfound=%t\n",
-		viewed, downscrollfound)
+	log.Printf("[Render] inview=%t  viewed=%t  downscrollfound=%t\n",
+		inview, viewed, downscrollfound)
 	log.Printf("[......] scrollup=%d  scrolldown=%d  limitdown=%d  pageup=%d  pagedown=%d\n",
 		v.scrollup, v.scrolldown, v.limitdown, v.pageup, v.pagedown)
 	return &Rendering{
