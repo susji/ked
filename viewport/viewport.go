@@ -178,7 +178,7 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
 		float64(v.y0-h)))
 	linenobufend := int(math.Min(
 		float64(v.buffer.Lines()),
-		float64(v.y0+h*2)))
+		float64(v.y0+h*2+1)))
 
 	//
 	// A rough sketch of the viewport and scrolling algorithm:
@@ -252,7 +252,7 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
 	// used if the state machine below does manage to find actual
 	// viewport-crossings, ie. the buffer is not yet long enough.
 	v.limitdown = v.y0 + h - 1
-	v.pagedown = v.limitdown
+	v.pagedown = v.buffer.Lines() - 1
 	v.scrolldown = v.y0 + h/2 - 1
 	for ; linenobuf < linenobufend; linenobuf++ {
 		line := v.buffer.GetLine(linenobuf).Get()
@@ -331,7 +331,8 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
 		}
 		linenodrawn += len(newlines)
 	}
-	log.Printf("[Render] scrollup=%d  scrolldown=%d  limitdown=%d  pageup=%d  pagedown=%d\n",
+	log.Printf("[Render] downscrollfound=%t  downlimitfound=%t\n", downscrollfound, downlimitfound)
+	log.Printf("[......] scrollup=%d  scrolldown=%d  limitdown=%d  pageup=%d  pagedown=%d\n",
 		v.scrollup, v.scrolldown, v.limitdown, v.pageup, v.pagedown)
 	return &Rendering{
 		buf:     renderlines,
