@@ -189,15 +189,63 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
 		float64(v.y0+h*2)))
 
 	//
-	// Below you'll see a loop where we render buffer lines
-	// beginning from somewhere before the current cursor line all
-	// the way beyond a few pages after our cursor. The point of
-	// this is to find suitable scroll-positions: If we render
-	// with soft-wrapping, a single "buffer line" may produce an
-	// arbitrarily large amount of "logical" or "drawing
-	// lines". This means that we have to calculate our
-	// scroll-lines based on the "logical" lines. Hence all this
-	// wrestling.
+	// A rough sketch of the viewport and scrolling algorithm:
+	//
+	// The larger outer rectangle is the buffer we are currently
+	// rendering. We do soft-wrapping here, so each line longer
+	// than the viewport width is split into multiple logical,
+	// viewport lines. This is where the trouble arises from: We
+	// cannot jump an amount of BUFFER lines because the amount of
+	// DRAWN lines may be wildly different. Thus we have to figure
+	// out how many drawn lines each relevant buffer line
+	// represents so we can do scroll nicely.
+	//
+	// Variables:
+	//
+	//   - `w` is viewport width in runes
+	//   - `h` is viewport height in runes
+	//   - `v.y0  is the current buffer line where the viewport's
+	//     drawing begins from
+	//   - `v.scrollup` is the buffer's linecount where we will
+	//     jump if user scrolls above 'v.y0'
+	//   - `v.scrolldown` is the buffer's linecount where we will
+	//     jump if user scrolls below `v.limitdown`
+	//   - `v.limitdown` represents the buffer line, where the
+	//     viewport ends; if cursor crosses this, we jump to
+	//     `v.scrolldown`
+	//   - `v.pageup` and `v.pagedown` represent the buffer lines
+	//      to jump to` when user wants to scroll up or down
+	//      full pages
+	//
+	// Note: In the above explanations, "jump to" means "to set
+	// the value of `v.y0`".
+	//
+	//                          w
+	//       .-------------------------------------.
+	//       |                                     |
+	//       |                                     |
+	//       | r     <runes before viewport>       |-v.pageup
+	//       | r                                   |
+	//       | r                                   |-v.scrollup
+	//       | r                                   |
+	//    |  +-r-----------------------------------+-v.y0
+	//    |  | r                                   |
+	//  h |  | r                                   |-v.scrolldown
+	//    |  | r                                   |
+	//    |  +-r-----------------------------------+-v.limitdown
+	//       | r                                   |
+	//       | r                                   |
+	//       | r      <runes after viewport>       |
+	//       | r                                   |-v.pagedown
+	//       |                                     |
+	//       '-------------------------------------'
+	//
+	//  `r` stands for lines which are rendered by the viewport
+	//  algorithm while it's searching for the variables.
+	//
+	// Note: We probably have some edgecases here, which I have
+	// not accounted for. I'm guessing really long lines may cause
+	// wild viewport and scrolling behavior.
 	//
 	inview := false
 	linesdrawnpreview := 0
