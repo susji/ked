@@ -133,36 +133,24 @@ func (v *Viewport) doRenderWrapped(
 
 type historySumStack struct {
 	memory []int
-	done   bool
 }
 
 func (h *historySumStack) Push(val int) {
-	if h.done {
-		panic("historySumStack: stack already exhausted")
-	}
 	h.memory = append(h.memory, val)
 }
 
-func (h *historySumStack) CountBackwards(wantsum int) (int, error) {
-	if h.done {
-		panic("historySumStack: can count only once")
-	}
+func (h *historySumStack) CountBackwards(wantsum int) (count int, err error) {
 	sum := 0
-	popped := 0
-	for {
-		if len(h.memory) == 0 {
-			h.done = true
-			return -1, errors.New("memory ran out")
-		}
-		sum += h.memory[len(h.memory)-1]
-		popped++
-		h.memory = h.memory[1:]
+	err = errors.New("cannot find enough elements")
+	for i := len(h.memory) - 1; i >= 0; i-- {
+		sum += h.memory[i]
+		count++
 		if sum >= wantsum {
+			err = nil
 			break
 		}
 	}
-	h.done = true
-	return popped, nil
+	return
 }
 
 func (v *Viewport) checktranslation(cursorlineno int) {
