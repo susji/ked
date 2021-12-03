@@ -247,7 +247,6 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
 	postviewdrawn := 0
 	postviewbufs := 0
 	downscrollfound := false
-	downlimitfound := false
 	// Some sane defaults to down-scroll limits. These will be
 	// used if the state machine below does manage to find actual
 	// viewport-crossings, ie. the buffer is not yet long enough.
@@ -280,6 +279,8 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
 			// log.Printf("[Render] out of view, linenobuf=%d\n", linenobuf)
 			inview = false
 			viewed = true
+			v.limitdown = linenobuf - 1
+			v.pagedown = linenobuf
 		} else if !inview && !viewed {
 			// We keep a memo of how many preceding buffer
 			// lines we need to scroll half a page
@@ -301,11 +302,6 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
 			if postviewdrawn >= h/2 && !downscrollfound {
 				v.scrolldown = v.y0 + postviewbufs
 				downscrollfound = true
-			}
-			if postviewdrawn >= h && !downlimitfound {
-				v.limitdown = v.y0 + postviewbufs
-				v.pagedown = v.limitdown
-				downlimitfound = true
 			}
 		}
 		//
@@ -331,7 +327,8 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
 		}
 		linenodrawn += len(newlines)
 	}
-	log.Printf("[Render] downscrollfound=%t  downlimitfound=%t\n", downscrollfound, downlimitfound)
+	log.Printf("[Render] viewed=%t  downscrollfound=%t\n",
+		viewed, downscrollfound)
 	log.Printf("[......] scrollup=%d  scrolldown=%d  limitdown=%d  pageup=%d  pagedown=%d\n",
 		v.scrollup, v.scrolldown, v.limitdown, v.pageup, v.pagedown)
 	return &Rendering{
