@@ -253,6 +253,7 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
 	v.limitdown = v.y0 + h - 1
 	v.pagedown = v.buffer.Lines() - 1
 	v.scrolldown = v.y0 + h/2 - 1
+scanline:
 	for ; linenobuf < linenobufend; linenobuf++ {
 		line := v.buffer.GetLine(linenobuf).Get()
 		//log.Printf("[Render=%d] line=%q\n", linenobuf, string(line))
@@ -302,6 +303,7 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
 			if postviewdrawn >= h/2 && !downscrollfound {
 				v.scrolldown = v.y0 + postviewbufs
 				downscrollfound = true
+				break scanline
 			}
 		}
 		//
