@@ -15,11 +15,10 @@ import (
 )
 
 type editorBuffer struct {
-	b                    *buffer.Buffer
-	v                    *viewport.Viewport
-	lineno, col          int
-	scrollup, scrolldown int
-	linesinview          int
+	b           *buffer.Buffer
+	v           *viewport.Viewport
+	lineno, col int
+	linesinview int
 }
 
 type Editor struct {
@@ -184,7 +183,12 @@ func (e *Editor) movepage(up bool) {
 		return
 	}
 	eb := e.getactivebuf()
-	_ = eb
+	if up {
+		eb.lineno = eb.v.PageUp()
+
+	} else {
+		eb.lineno = eb.v.PageDown()
+	}
 }
 
 func (e *Editor) moveleft() {

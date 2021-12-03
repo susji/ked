@@ -24,6 +24,10 @@ type Viewport struct {
 	// scroll-down. Note that this, as is y0, is in *buffer*
 	// lines, not *drawn* lines.
 	limitdown int
+	// pageup and pagedown define the buffer lines to jump into if
+	// viewport is scrolled one page up or down. As above, these
+	// are also in BUFFER lines, not viewport (drawn) lines.
+	pageup, pagedown int
 }
 
 type RenderLine struct {
@@ -242,12 +246,13 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
 	hss := &historySumStack{}
 	postviewdrawn := 0
 	postviewbufs := 0
-	downscrolldone := false
+	downscrollfound := false
 	downlimitfound := false
 	// Some sane defaults to down-scroll limits. These will be
 	// used if the state machine below does manage to find actual
 	// viewport-crossings, ie. the buffer is not yet long enough.
-	v.limitdown = v.y0 + h - 3
+	v.limitdown = v.y0 + h - 1
+	v.pagedown = v.limitdown
 	v.scrolldown = v.y0 + h/2 - 1
 	for ; linenobuf < linenobufend; linenobuf++ {
 		line := v.buffer.GetLine(linenobuf).Get()
@@ -258,18 +263,21 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
 
 		if linenobuf >= v.y0 && !inview && !viewed {
 			// Arrived into visible viewport.
-			log.Printf("[Render] into view, linenobuf=%d\n",
-				linenobuf)
+			// log.Printf("[Render] into view, linenobuf=%d\n", linenobuf)
 			inview = true
 			if backlines, err := hss.CountBackwards(h / 2); err == nil {
 				v.scrollup = v.y0 - backlines
 			} else {
 				v.scrollup = 0
 			}
+			if backlines, err := hss.CountBackwards(h); err == nil {
+				v.pageup = v.y0 - backlines
+			} else {
+				v.pageup = v.scrollup
+			}
 		} else if linesdrawninview >= h && inview && !viewed {
 			// Crossed below visible viewport.
-			log.Printf("[Render] out of view, linenobuf=%d\n",
-				linenobuf)
+			// log.Printf("[Render] out of view, linenobuf=%d\n", linenobuf)
 			inview = false
 			viewed = true
 		} else if !inview && !viewed {
@@ -290,12 +298,13 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
 			// here.
 			postviewdrawn += len(newlines)
 			postviewbufs++
-			if postviewdrawn >= h/2 && !downscrolldone {
+			if postviewdrawn >= h/2 && !downscrollfound {
 				v.scrolldown = v.y0 + postviewbufs
-				downscrolldone = true
+				downscrollfound = true
 			}
 			if postviewdrawn >= h && !downlimitfound {
 				v.limitdown = v.y0 + postviewbufs
+				v.pagedown = v.limitdown
 				downlimitfound = true
 			}
 		}
@@ -322,11 +331,21 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
 		}
 		linenodrawn += len(newlines)
 	}
-	log.Printf("[Render] scrollup=%d  scrolldown=%d  limitdown=%d\n",
-		v.scrollup, v.scrolldown, v.limitdown)
+	log.Printf("[Render] scrollup=%d  scrolldown=%d  limitdown=%d  pageup=%d  pagedown=%d\n",
+		v.scrollup, v.scrolldown, v.limitdown, v.pageup, v.pagedown)
 	return &Rendering{
 		buf:     renderlines,
 		cursorx: cx,
 		cursory: cy,
 	}
+}
+
+func (v *Viewport) PageUp() int {
+	v.y0 = v.pageup
+	return v.y0
+}
+
+func (v *Viewport) PageDown() int {
+	v.y0 = v.pagedown
+	return v.y0
 }
