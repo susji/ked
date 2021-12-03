@@ -28,6 +28,9 @@ type Viewport struct {
 	// viewport is scrolled one page up or down. As above, these
 	// are also in BUFFER lines, not viewport (drawn) lines.
 	pageup, pagedown int
+	// paged maintains state so we don't trigger viewport
+	// translation due to page up & down
+	paged bool
 }
 
 type RenderLine struct {
@@ -166,7 +169,11 @@ func (v *Viewport) checktranslation(cursorlineno int) {
 }
 
 func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
-	v.checktranslation(cursorlineno)
+	if v.paged {
+		v.paged = false
+	} else {
+		v.checktranslation(cursorlineno)
+	}
 
 	log.Printf("[Render] w=%d  h=%d  y0=%d  cy=%d\n", w, h, v.y0, cursorlineno)
 	linenodrawn := 0
@@ -341,11 +348,13 @@ scanline:
 }
 
 func (v *Viewport) PageUp() int {
+	v.paged = true
 	v.y0 = v.pageup
 	return v.y0
 }
 
 func (v *Viewport) PageDown() int {
+	v.paged = true
 	v.y0 = v.pagedown
 	return v.y0
 }
