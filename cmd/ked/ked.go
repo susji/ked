@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"errors"
 	"flag"
 	"io"
 	"log"
@@ -38,11 +40,14 @@ func main() {
 			log.Fatalln(err)
 		}
 		f, err := os.Open(absname)
-		if err != nil {
+		if err == nil {
+			log.Println("opening buffer for file: ", filename)
+			e.NewBufferFromFile(f)
+		} else if errors.Is(err, os.ErrNotExist) {
+			e.NewBuffer(absname, &bytes.Buffer{})
+		} else {
 			log.Fatalln(err)
 		}
-		log.Println("opening buffer for file: ", filename)
-		e.NewBufferFromFile(f)
 	}
 
 	if err := e.Run(); err != nil {

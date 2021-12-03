@@ -6,6 +6,7 @@ package editor
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 
@@ -41,7 +42,11 @@ func New() *Editor {
 }
 
 func (e *Editor) NewBufferFromFile(f *os.File) error {
-	buf, err := buffer.NewFromFile(f)
+	return e.NewBuffer(f.Name(), f)
+}
+
+func (e *Editor) NewBuffer(filepath string, r io.Reader) error {
+	buf, err := buffer.NewFromReader(filepath, r)
 	if err != nil {
 		return err
 	}
@@ -231,7 +236,7 @@ func (e *Editor) savebuffer() {
 	}
 	// XXX Ask user for a filename just to be sure
 	eb := e.getactivebuf()
-	log.Printf("[savebuffer] %q\n", eb.b.File().Name())
+	log.Printf("[savebuffer] %q\n", eb.b.Filepath())
 	if err := eb.b.Save(); err != nil {
 		log.Println("[savebuffer] failed: ", err)
 		// XXX Report error to UI somehow
@@ -245,9 +250,9 @@ func (e *Editor) drawstatusline() {
 	col := 0
 	if len(e.buffers) > e.activebuf {
 		eb := e.getactivebuf()
-		f := eb.b.File()
-		if f != nil {
-			fn = f.Name()
+		f := eb.b.Filepath()
+		if len(f) > 0 {
+			fn = f
 		}
 		lineno = eb.lineno + 1
 		col = eb.col + 1

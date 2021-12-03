@@ -3,14 +3,15 @@ package buffer
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/susji/ked/gapbuffer"
 )
 
 type Buffer struct {
-	lines []*gapbuffer.GapBuffer
-	file  *os.File
+	lines    []*gapbuffer.GapBuffer
+	filepath string
 }
 
 func New(rawlines [][]rune) *Buffer {
@@ -22,27 +23,30 @@ func New(rawlines [][]rune) *Buffer {
 	return ret
 }
 
-func NewFromFile(f *os.File) (*Buffer, error) {
+func NewFromReader(filepath string, r io.Reader) (*Buffer, error) {
 	lines := []*gapbuffer.GapBuffer{}
-	s := bufio.NewScanner(f)
+	s := bufio.NewScanner(r)
 	for s.Scan() {
 		lines = append(lines, gapbuffer.NewFrom([]rune(string(s.Bytes()))))
 	}
 	if err := s.Err(); err != nil {
 		return nil, err
 	}
+	if len(lines) == 0 {
+		lines = append(lines, gapbuffer.New(gapbuffer.DEFAULTSZ))
+	}
 	return &Buffer{
-		lines: lines,
-		file:  f,
+		lines:    lines,
+		filepath: filepath,
 	}, nil
 }
 
-func (b *Buffer) File() *os.File {
-	return b.file
+func (b *Buffer) Filepath() string {
+	return b.filepath
 }
 
 func (b *Buffer) Save() error {
-	if b.file == nil {
+	if len(b.filepath) == 0 {
 		panic("Save: no file backing this buffer")
 	}
 	data := []byte{}
@@ -51,7 +55,7 @@ func (b *Buffer) Save() error {
 		linedata = append(linedata, '\n')
 		data = append(data, linedata...)
 	}
-	return os.WriteFile(b.file.Name(), data, 0644)
+	return os.WriteFile(b.filepath, data, 0644)
 }
 
 func (b *Buffer) NewLine(pos int) *gapbuffer.GapBuffer {
