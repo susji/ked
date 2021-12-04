@@ -8,6 +8,10 @@ import (
 	"github.com/susji/ked/buffer"
 )
 
+const (
+	TABSZ = 4
+)
+
 type Viewport struct {
 	buffer *buffer.Buffer
 	wrap   bool
@@ -93,10 +97,24 @@ func getpadding(howmuch int) []rune {
 	return ret
 }
 
+func tabexpand(what []rune, tabsz int) []rune {
+	exp := []rune("                                        ")
+	new := make([]rune, 0, len(what))
+	for _, r := range what {
+		if r != '\t' {
+			new = append(new, r)
+			continue
+		}
+		new = append(new, exp[:tabsz]...)
+	}
+	return new
+}
+
 func (v *Viewport) doRenderWrapped(
 	w, cursorlineno, cursorcol, linenobuf, linenodrawn int, line []rune) ([][]rune, int, int) {
-	ret := [][]rune{}
 
+	ret := [][]rune{}
+	line = tabexpand(line, TABSZ)
 	nlinefrag := int(math.Ceil(float64(len(line)) / float64(w)))
 	//log.Printf("[doRenderWrapped]: w=%d  h=%d  linenobuf=%d  lenline=%d   linefrags=%d\n",
 	//	w, h, linenobuf, len(line), nlinefrag)
