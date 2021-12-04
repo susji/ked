@@ -2,7 +2,6 @@ package viewport
 
 import (
 	"errors"
-	"log"
 	"math"
 
 	"github.com/susji/ked/buffer"
@@ -150,8 +149,8 @@ func (v *Viewport) doRenderWrapped(
 			(cursorcol+tabbedlen[cursorcol]) <= end {
 			cx = cursorcol - start + tabbedlen[cursorcol]
 			cy = linenodrawn + i
-			log.Printf("[cursor] cx=%d  cy=%d  cursorcol=%d  tabbedlen[%d]=%v\n",
-				cx, cy, cursorcol, len(tabbedlen), tabbedlen)
+			//log.Printf("[cursor] cx=%d  cy=%d  cursorcol=%d  tabbedlen[%d]=%v\n",
+			//	cx, cy, cursorcol, len(tabbedlen), tabbedlen)
 		}
 	}
 	// Zero fragments means one line still.
@@ -202,7 +201,7 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
 		v.checktranslation(cursorlineno)
 	}
 
-	log.Printf("[Render] w=%d  h=%d  y0=%d  cy=%d\n", w, h, v.y0, cursorlineno)
+	//log.Printf("[Render] w=%d  h=%d  y0=%d  cy=%d\n", w, h, v.y0, cursorlineno)
 	linenodrawn := 0
 	renderlines := []*RenderLine{}
 	cx := 0
@@ -367,15 +366,16 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
 	// is filled with empty lines and deduce the correct limits.
 	if !viewed {
 		missinglines := h - linesdrawninview
-		log.Printf("[------] linesdrawinview=%d  missinglines=%d\n",
-			linesdrawninview, missinglines)
+		//log.Printf("[------] linesdrawinview=%d  missinglines=%d\n",
+		//	linesdrawninview, missinglines)
 		v.limitdown = v.y0 + linesbufinview + missinglines - 1
 		v.pagedown = v.y0 + linesbufinview - 1
 	}
-	log.Printf("[Render] inview=%t  viewed=%t  downscrollfound=%t\n",
-		inview, viewed, downscrollfound)
-	log.Printf("[......] scrollup=%d  scrolldown=%d  limitdown=%d  pageup=%d  pagedown=%d\n",
-		v.scrollup, v.scrolldown, v.limitdown, v.pageup, v.pagedown)
+	//log.Printf("[Render] inview=%t  viewed=%t  downscrollfound=%t\n",
+	//	inview, viewed, downscrollfound)
+	//log.Printf("[......] scrollup=%d  scrolldown=%d  limitdown=%d  pageup=%d  pagedown=%d\n",
+	//	v.scrollup, v.scrolldown, v.limitdown, v.pageup, v.pagedown)
+
 	return &Rendering{
 		buf:     renderlines,
 		cursorx: cx,
