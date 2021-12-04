@@ -203,6 +203,9 @@ func (e *Editor) moveleft() {
 	eb := e.getactivebuf()
 	if eb.col > 0 {
 		eb.col--
+	} else if eb.lineno > 0 {
+		eb.lineno--
+		eb.col = eb.b.GetLine(eb.lineno).Length()
 	}
 }
 
@@ -214,6 +217,9 @@ func (e *Editor) moveright() {
 	line := eb.b.GetLine(eb.lineno).Get()
 	if eb.col < len(line) {
 		eb.col++
+	} else if eb.lineno < eb.b.Lines()-1 {
+		eb.lineno++
+		eb.col = 0
 	}
 }
 
