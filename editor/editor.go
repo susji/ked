@@ -9,10 +9,15 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/susji/ked/buffer"
 	"github.com/susji/ked/viewport"
+)
+
+const (
+	WORD_DELIMS = " ./(){}[]#+*%"
 )
 
 type editorBuffer struct {
@@ -249,6 +254,56 @@ func (e *Editor) savebuffer() {
 	}
 }
 
+func (e *Editor) jumpword(left bool) {
+	log.Println("[jumpword] ", left)
+	if len(e.buffers) == 0 {
+		return
+	}
+	eb := e.getactivebuf()
+	lineno := eb.lineno
+	col := eb.col
+	found := false
+out:
+	for lineno >= 0 && lineno < eb.b.Lines() {
+		line := eb.b.GetLine(lineno).Get()
+		var i int
+		if left {
+			//log.Printf("[jumpword, left] lineno=%d  col=%d\n", lineno, col)
+			for i = col - 1; i > 0; i-- {
+				if strings.ContainsAny(string(line[i-1]), WORD_DELIMS) {
+					col = i
+					found = true
+					break out
+				}
+			}
+			if lineno == 0 {
+				found = true
+				col = 0
+				break out
+			}
+			lineno--
+			col = eb.b.GetLine(lineno).Length() - 1
+			//log.Printf("[jumpword, left] jumping ->  lineno=%d  col=%d\n", lineno, col)
+		} else {
+			for i = col; i < len(line)-1; i++ {
+				if strings.ContainsAny(string(line[i]), WORD_DELIMS) {
+					col = i + 1
+					found = true
+					break out
+				}
+			}
+			found = true
+			lineno++
+			col = 0
+			break out
+		}
+	}
+	if found {
+		eb.col = col
+		eb.lineno = lineno
+	}
+}
+
 func (e *Editor) drawstatusline() {
 	w, h := e.s.Size()
 	fn := "{no file}"
@@ -293,7 +348,14 @@ main:
 			redraw = true
 			sync = true
 		case *tcell.EventKey:
+			log.Printf("[EventKey] %s (mods=%X)\n", ev.Name(), ev.Modifiers())
 			switch {
+			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Key() == tcell.KeyLeft:
+				e.jumpword(true)
+				redraw = true
+			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Key() == tcell.KeyRight:
+				e.jumpword(false)
+				redraw = true
 			case ev.Key() == tcell.KeyCtrlC:
 				log.Println("[quit]")
 				e.s.Fini()
