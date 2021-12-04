@@ -249,18 +249,10 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
 	inview := false
 	linesdrawnpreview := 0
 	linesdrawninview := 0
+	linesbufinview := 0
 	viewed := false
 	hss := &historySumStack{}
-	postviewdrawn := 0
-	postviewbufs := 0
 	downscrollfound := false
-	// Some sane defaults to down-scroll limits. These will be
-	// used if the state machine below does manage to find actual
-	// viewport-crossings, ie. the buffer is not yet long enough.
-	v.pagedown = v.buffer.Lines() - 1
-	v.scrolldown = v.buffer.Lines() - 1
-	v.limitdown = v.buffer.Lines()
-scanline:
 	for ; linenobuf < linenobufend; linenobuf++ {
 		line := v.buffer.GetLine(linenobuf).Get()
 		//log.Printf("[Render=%d] line=%q\n", linenobuf, string(line))
@@ -296,21 +288,16 @@ scanline:
 			// upwards from our viewport.
 			hss.Push(len(newlines))
 			linesdrawnpreview += len(newlines)
-		} else if !inview && viewed {
+		} else if inview && !viewed && !downscrollfound {
 			// Similar to the case of counting
 			// logical/wrapped lines before entering the
 			// viewport, we have to handle the
-			// post-viewport thing, too. So we count how
+			// within-viewport thing, too. So we count how
 			// many buffer lines we need to jump to get a
 			// decent line to scroll the viewport down.
-			// We also calculate the down-scrolling limit
-			// here.
-			postviewdrawn += len(newlines)
-			postviewbufs++
-			if postviewdrawn >= h/2 && !downscrollfound {
-				v.scrolldown = v.y0 + postviewbufs
+			v.scrolldown = v.y0 + linesdrawninview - 1
+			if linesdrawninview >= h/2 && !downscrollfound {
 				downscrollfound = true
-				break scanline
 			}
 		}
 		//
@@ -330,7 +317,6 @@ scanline:
 			// impossible. Thus we calculate some decent
 			// values for `v.scrolldown` and `v.limitdown`.
 			v.limitdown = linenobuf
-			v.scrolldown = linenobuf + 1
 			for ri, linecontent := range newlines {
 				rl := &RenderLine{
 					Content:     linecontent,
@@ -339,6 +325,7 @@ scanline:
 				}
 				renderlines = append(renderlines, rl)
 			}
+			linesbufinview++
 			linesdrawninview += len(newlines)
 			if _cx != -1 && _cy != -1 {
 				cx = _cx
@@ -346,6 +333,17 @@ scanline:
 			}
 		}
 		linenodrawn += len(newlines)
+	}
+	// It may be we have only a partial viewport to render. In
+	// that case, we do not have scanned values for down-limits
+	// yet. This means that we assume that the rest of the buffer
+	// is filled with empty lines and deduce the correct limits.
+	if !viewed {
+		missinglines := h - linesdrawninview
+		log.Printf("[------] linesdrawinview=%d  missinglines=%d\n",
+			linesdrawninview, missinglines)
+		v.limitdown = v.y0 + linesbufinview + missinglines - 1
+		v.pagedown = v.y0 + linesbufinview - 1
 	}
 	log.Printf("[Render] inview=%t  viewed=%t  downscrollfound=%t\n",
 		inview, viewed, downscrollfound)
