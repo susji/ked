@@ -180,10 +180,10 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
 	renderlines := []*RenderLine{}
 	cx := 0
 	cy := 0
-	linenobuf := int(math.Max(
+	n := int(math.Max(
 		0,
 		float64(v.y0-h)))
-	linenobufend := int(math.Min(
+	lastbufline := int(math.Min(
 		float64(v.buffer.Lines()),
 		float64(v.y0+h*2+1)))
 
@@ -253,14 +253,14 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
 	viewed := false
 	hss := &historySumStack{}
 	downscrollfound := false
-	for ; linenobuf < linenobufend; linenobuf++ {
-		line := v.buffer.GetLine(linenobuf).Get()
+	for ; n < lastbufline; n++ {
+		line := v.buffer.GetLine(n).Get()
 		//log.Printf("[Render=%d] line=%q\n", linenobuf, string(line))
 		newlines, _cx, _cy := v.doRenderWrapped(
 			w, cursorlineno, cursorcol,
-			linenobuf, linenodrawn, line)
+			n, linenodrawn, line)
 
-		if linenobuf >= v.y0 && !inview && !viewed {
+		if n >= v.y0 && !inview && !viewed {
 			// Arrived into visible viewport.
 			// log.Printf("[Render] into view, linenobuf=%d\n", linenobuf)
 			inview = true
@@ -279,8 +279,8 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
 			// log.Printf("[Render] out of view, linenobuf=%d\n", linenobuf)
 			inview = false
 			viewed = true
-			v.limitdown = linenobuf - 1
-			v.pagedown = linenobuf
+			v.limitdown = n - 1
+			v.pagedown = n
 		} else if !inview && !viewed {
 			// We keep a memo of how many preceding buffer
 			// lines we need to scroll half a page
@@ -316,12 +316,12 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
 			// something after the viewport is
 			// impossible. Thus we calculate some decent
 			// values for `v.scrolldown` and `v.limitdown`.
-			v.limitdown = linenobuf
+			v.limitdown = n
 			for ri, linecontent := range newlines {
 				rl := &RenderLine{
 					Content:     linecontent,
 					LineLogical: linenodrawn + ri,
-					LineBuffer:  linenobuf,
+					LineBuffer:  n,
 				}
 				renderlines = append(renderlines, rl)
 			}
