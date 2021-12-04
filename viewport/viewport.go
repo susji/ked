@@ -85,7 +85,7 @@ func New(buffer *buffer.Buffer) *Viewport {
 type RenderFunc func(lineno, col int, line []rune)
 type CursorFunc func(lineno, col int)
 
-func getPadding(howmuch int) []rune {
+func getpadding(howmuch int) []rune {
 	ret := make([]rune, howmuch)
 	for i := 0; i < howmuch; i++ {
 		ret[i] = rune(' ')
@@ -119,7 +119,7 @@ func (v *Viewport) doRenderWrapped(
 			// have cleaner render. This could be
 			// optimized faster by using, for example, a
 			// static padding buffer.
-			drawfrag = append(drawfrag, getPadding(endraw-end)...)
+			drawfrag = append(drawfrag, getpadding(endraw-end)...)
 		}
 		ret = append(ret, drawfrag)
 		if linenobuf == cursorlineno && cursorcol >= start && cursorcol <= end {
@@ -129,7 +129,7 @@ func (v *Viewport) doRenderWrapped(
 	}
 	// Zero fragments means one line still.
 	if nlinefrag == 0 {
-		ret = append(ret, getPadding(w))
+		ret = append(ret, getpadding(w))
 		if linenobuf == cursorlineno {
 			cx = 0
 			cy = linenodrawn
