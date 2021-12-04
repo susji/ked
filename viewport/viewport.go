@@ -97,24 +97,29 @@ func getpadding(howmuch int) []rune {
 	return ret
 }
 
-func tabexpand(what []rune, tabsz int) []rune {
+func tabexpand(what []rune, tabsz int) ([]rune, []int) {
 	exp := []rune("                                        ")
 	new := make([]rune, 0, len(what))
+	tabbedlen := make([]int, 0, len(what)+1)
+	tabbedlen = append(tabbedlen, 0)
+	ntabs := 0
 	for _, r := range what {
 		if r != '\t' {
 			new = append(new, r)
-			continue
+		} else {
+			new = append(new, exp[:tabsz]...)
+			ntabs++
 		}
-		new = append(new, exp[:tabsz]...)
+		tabbedlen = append(tabbedlen, ntabs*(tabsz-1))
 	}
-	return new
+	return new, tabbedlen
 }
 
 func (v *Viewport) doRenderWrapped(
 	w, cursorlineno, cursorcol, linenobuf, linenodrawn int, line []rune) ([][]rune, int, int) {
 
 	ret := [][]rune{}
-	line = tabexpand(line, TABSZ)
+	line, tabbedlen := tabexpand(line, TABSZ)
 	nlinefrag := int(math.Ceil(float64(len(line)) / float64(w)))
 	//log.Printf("[doRenderWrapped]: w=%d  h=%d  linenobuf=%d  lenline=%d   linefrags=%d\n",
 	//	w, h, linenobuf, len(line), nlinefrag)
@@ -140,9 +145,13 @@ func (v *Viewport) doRenderWrapped(
 			drawfrag = append(drawfrag, getpadding(endraw-end)...)
 		}
 		ret = append(ret, drawfrag)
-		if linenobuf == cursorlineno && cursorcol >= start && cursorcol <= end {
-			cx = cursorcol - start
+		if linenobuf == cursorlineno &&
+			(cursorcol+tabbedlen[cursorcol]) >= start &&
+			(cursorcol+tabbedlen[cursorcol]) <= end {
+			cx = cursorcol - start + tabbedlen[cursorcol]
 			cy = linenodrawn + i
+			log.Printf("[cursor] cx=%d  cy=%d  cursorcol=%d  tabbedlen[%d]=%v\n",
+				cx, cy, cursorcol, len(tabbedlen), tabbedlen)
 		}
 	}
 	// Zero fragments means one line still.

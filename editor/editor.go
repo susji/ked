@@ -328,6 +328,9 @@ main:
 			case ev.Key() == tcell.KeyPgDn:
 				e.movepage(false)
 				redraw = true
+			case ev.Key() == tcell.KeyTab:
+				e.insertrune('\t')
+				redraw = true
 			}
 		}
 
