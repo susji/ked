@@ -9,10 +9,12 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/susji/ked/buffer"
+	"github.com/susji/ked/textentry"
 	"github.com/susji/ked/viewport"
 )
 
@@ -245,9 +247,54 @@ func (e *Editor) savebuffer() {
 	if len(e.buffers) == 0 {
 		return
 	}
-	// XXX Ask user for a filename just to be sure
 	eb := e.getactivebuf()
 	log.Printf("[savebuffer] %q\n", eb.b.Filepath())
+
+	ur := func() (rune, error) {
+		for {
+			ev := e.s.PollEvent()
+			switch ev := ev.(type) {
+			case *tcell.EventKey:
+				// XXX Resize not handled at all.
+				switch {
+				case ev.Key() == tcell.KeyCtrlC:
+					log.Println("[savebuffer, cancel]")
+					return 'a', textentry.Cancel
+				case ev.Key() == tcell.KeyRune:
+					return ev.Rune(), nil
+				case ev.Key() == tcell.KeyEnter:
+					return 'a', textentry.Done
+				case ev.Key() == tcell.KeyBackspace, ev.Key() == tcell.KeyBackspace2:
+					return 'a', textentry.Delete
+				}
+
+			}
+			return 'a', textentry.Cancel
+		}
+	}
+	rf := func(column int, r rune) error {
+		w, h := e.s.Size()
+		if column >= w {
+			return textentry.Overflow
+		}
+		e.s.SetContent(column, h-1, r, nil, tcell.StyleDefault)
+		e.s.Show()
+		return nil
+	}
+	fp, err := textentry.
+		New(eb.b.Filepath(), "Filename to save: ", 512).
+		Ask(ur, rf)
+	if err != nil {
+		log.Println("[savebuffer, error-ask] ", err)
+		return
+	}
+	abspath, err := filepath.Abs(string(fp))
+	if err != nil {
+		log.Println("[savebuffer, error-abs] ", err)
+		return
+	}
+	log.Println("[savebuffer, abs] ", abspath)
+	eb.b.SetFilepath(abspath)
 	if err := eb.b.Save(); err != nil {
 		log.Println("[savebuffer] failed: ", err)
 		// XXX Report error to UI somehow
@@ -264,6 +311,7 @@ func (e *Editor) jumpword(left bool) {
 	col := eb.col
 	found := false
 out:
+	// XXX This looks like it could use some cleanup...
 	for lineno >= 0 && lineno < eb.b.Lines() {
 		line := eb.b.GetLine(lineno).Get()
 		var i int
@@ -389,7 +437,7 @@ main:
 				redraw = true
 			case ev.Key() == tcell.KeyCtrlS:
 				e.savebuffer()
-				redraw = false
+				redraw = true
 			case ev.Key() == tcell.KeyPgUp:
 				e.movepage(true)
 				redraw = true

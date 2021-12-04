@@ -45,6 +45,10 @@ func (b *Buffer) Filepath() string {
 	return b.filepath
 }
 
+func (b *Buffer) SetFilepath(filepath string) {
+	b.filepath = filepath
+}
+
 func (b *Buffer) Save() error {
 	if len(b.filepath) == 0 {
 		panic("Save: no file backing this buffer")
