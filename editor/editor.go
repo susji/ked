@@ -250,40 +250,10 @@ func (e *Editor) savebuffer() {
 	eb := e.getactivebuf()
 	log.Printf("[savebuffer] %q\n", eb.b.Filepath())
 
-	ur := func() (rune, error) {
-		for {
-			ev := e.s.PollEvent()
-			switch ev := ev.(type) {
-			case *tcell.EventKey:
-				// XXX Resize not handled at all.
-				switch {
-				case ev.Key() == tcell.KeyCtrlC:
-					log.Println("[savebuffer, cancel]")
-					return 'a', textentry.Cancel
-				case ev.Key() == tcell.KeyRune:
-					return ev.Rune(), nil
-				case ev.Key() == tcell.KeyEnter:
-					return 'a', textentry.Done
-				case ev.Key() == tcell.KeyBackspace, ev.Key() == tcell.KeyBackspace2:
-					return 'a', textentry.Delete
-				}
-
-			}
-			return 'a', textentry.Cancel
-		}
-	}
-	rf := func(column int, r rune) error {
-		w, h := e.s.Size()
-		if column >= w {
-			return textentry.Overflow
-		}
-		e.s.SetContent(column, h-1, r, nil, tcell.StyleDefault)
-		e.s.Show()
-		return nil
-	}
+	_, h := e.s.Size()
 	fp, err := textentry.
 		New(eb.b.Filepath(), "Filename to save: ", 512).
-		Ask(ur, rf)
+		Ask(e.s, 0, h-1)
 	if err != nil {
 		log.Println("[savebuffer, error-ask] ", err)
 		return
