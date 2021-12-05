@@ -140,7 +140,6 @@ func (gb *GapBuffer) Insert(what []rune) *GapBuffer {
 	}
 	copy(gb.buf[gb.pre:], what)
 	gb.pre += len(what)
-	log.Println("[Insert]")
 	hexdump(gb.buf)
 	return gb
 }
