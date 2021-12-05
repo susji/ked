@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
@@ -271,6 +272,36 @@ func (e *Editor) savebuffer() {
 	}
 }
 
+func (e *Editor) jumpline() {
+	if len(e.buffers) == 0 {
+		return
+	}
+	eb := e.getactivebuf()
+	_, h := e.s.Size()
+	linenoraw, err := textentry.
+		New("", "Line to jump: ", 12).
+		Ask(e.s, 0, h-1)
+	if err != nil {
+		log.Println("[jumpline, error-ask] ", err)
+		return
+	}
+	lineno, err := strconv.Atoi(string(linenoraw))
+	if err != nil {
+		log.Println("[jumpline, error-conv] ", err)
+		return
+	}
+	if lineno < 1 {
+		log.Println("[jumpline, invalid line] ", lineno)
+		return
+	}
+	if lineno > eb.b.Lines() {
+		lineno = eb.b.Lines()
+	}
+	eb.lineno = lineno - 1
+	eb.col = 0
+	eb.v.SetTeleported(eb.lineno)
+}
+
 func (e *Editor) delline() {
 	if len(e.buffers) == 0 {
 		return
@@ -394,6 +425,9 @@ main:
 			switch {
 			case ev.Key() == tcell.KeyCtrlK:
 				e.delline()
+				redraw = true
+			case ev.Key() == tcell.KeyCtrlG:
+				e.jumpline()
 				redraw = true
 			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Key() == tcell.KeyLeft:
 				e.jumpword(true)

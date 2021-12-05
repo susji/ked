@@ -396,3 +396,8 @@ func (v *Viewport) PageDown() int {
 	v.y0 = v.pagedown
 	return v.y0
 }
+
+func (v *Viewport) SetTeleported(y0 int) {
+	v.paged = true
+	v.y0 = y0
+}
