@@ -198,9 +198,12 @@ func (e *Editor) movepage(up bool) {
 	eb := e.getactivebuf()
 	if up {
 		eb.lineno = eb.v.PageUp()
-
 	} else {
 		eb.lineno = eb.v.PageDown()
+	}
+	line := eb.b.GetLine(eb.lineno)
+	if line.Length()-1 < eb.col {
+		eb.col = line.Length() - 1
 	}
 }
 
