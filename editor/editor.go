@@ -302,7 +302,6 @@ func (e *Editor) savebuffer() {
 }
 
 func (e *Editor) jumpword(left bool) {
-	log.Println("[jumpword] ", left)
 	if len(e.buffers) == 0 {
 		return
 	}
