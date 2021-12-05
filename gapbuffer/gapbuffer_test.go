@@ -87,7 +87,38 @@ func TestCursorExtremes(t *testing.T) {
 
 func TestNewFrom(t *testing.T) {
 	msg := []rune("This GapBuffer has been initialized from a rune slice.")
-	b := gapbuffer.NewFrom([]rune(msg))
+	b := gapbuffer.NewFrom(msg)
 	got := b.Get()
 	tu.Assert(t, reflect.DeepEqual(got, msg), "unexpected got: %q", got)
+}
+
+func TestBigInsertAndCursorMove(t *testing.T) {
+	b := gapbuffer.New(8)
+	msg := []rune("abcdefghijklmnopqrstuvwxyz0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+
+	b.Insert(msg)
+	b.SetCursor(len(msg) / 2)
+	got := b.Get()
+	tu.Assert(t, reflect.DeepEqual(got, msg), "wrong got: %q", got)
+
+}
+
+func TestDeleteLots(t *testing.T) {
+	msg := []rune("first second third fourth fifth sixth seventh eight ninth tenth eleventh")
+	t.Logf("msg: %q", string(msg))
+
+	left := msg[0:6]
+	right := msg[6+20:]
+	want := make([]rune, len(left)+len(right))
+	copy(want, left)
+	copy(want[len(left):], right)
+
+	b := gapbuffer.NewFrom(msg)
+	for i := 0; i < 20; i++ {
+		b.SetCursor(6)
+		b.Delete()
+		t.Logf("Now: %q", string(b.Get()))
+	}
+	got := b.Get()
+	tu.Assert(t, reflect.DeepEqual(got, want), "unexpected got: %q, want: %q", string(got), string(want))
 }

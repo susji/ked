@@ -36,7 +36,7 @@ func hexdump(what []rune) {
 	b := &bytes.Buffer{}
 	d := hex.Dumper(b)
 	d.Write([]byte(string(what)))
-	log.Println(b.String())
+	//log.Println("\n" + b.String())
 }
 
 func debug(f string, va ...interface{}) {
@@ -87,9 +87,10 @@ func (gb *GapBuffer) SetCursor(cursor int) *GapBuffer {
 
 	for i := 0; i < moves; i++ {
 		f()
+		hexdump(gb.buf)
 	}
 	debug("(SetCursor afterwards) pre=%d  post=%d", gb.pre, gb.post)
-	//hexdump(gb.buf)
+	hexdump(gb.buf)
 	return gb
 }
 
@@ -119,6 +120,7 @@ func (gb *GapBuffer) gapgrow(atleast int) {
 	srcend := gb.post + n
 	dststart := gb.post + atleast
 	dstend := gb.post + atleast + n
+	log.Printf("[capgrow] src=[%d, %d]  dst=[%d, %d]\n", srcstart, srcend, dststart, dstend)
 	copy(gb.buf[dststart:dstend], gb.buf[srcstart:srcend])
 	gb.post += atleast
 }
@@ -138,7 +140,8 @@ func (gb *GapBuffer) Insert(what []rune) *GapBuffer {
 	}
 	copy(gb.buf[gb.pre:], what)
 	gb.pre += len(what)
-	//hexdump(gb.buf)
+	log.Println("[Insert]")
+	hexdump(gb.buf)
 	return gb
 }
 
@@ -150,8 +153,9 @@ func (gb *GapBuffer) Delete() {
 }
 
 func (gb *GapBuffer) Get() []rune {
-	debug("(Get) pre=%d  post=%d", gb.pre, gb.post)
-	ret := make([]rune, len(gb.buf)-gb.gaplen())
+	retlen := len(gb.buf) - gb.gaplen()
+	debug("(Get) len(buf)=%d/len(ret)=%d  pre=%d  post=%d", len(gb.buf), retlen, gb.pre, gb.post)
+	ret := make([]rune, retlen)
 	copy(ret, gb.buf[:gb.pre])
 	copy(ret[gb.pre:], gb.buf[gb.post:])
 	return ret
