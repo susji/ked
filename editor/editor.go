@@ -380,6 +380,37 @@ out:
 	}
 }
 
+func (e *Editor) search() {
+	if len(e.buffers) == 0 {
+		return
+	}
+	eb := e.getactivebuf()
+	_, h := e.s.Size()
+	term, err := textentry.New("", "Search: ", 256).Ask(e.s, 0, h-1)
+	if err != nil {
+		log.Println("[search, error-ask] ", err)
+		return
+	}
+	sterm := strings.ToLower(string(term))
+	foundline := -1
+	foundcol := -1
+	for i := eb.lineno; i < eb.b.Lines(); i++ {
+		line := eb.b.GetLine(i)
+		x := strings.Index(strings.ToLower(string(line.Get())), sterm)
+		if x >= 0 {
+			foundline = i
+			foundcol = x
+			break
+		}
+	}
+	if foundline == -1 {
+		return
+	}
+	eb.lineno = foundline
+	eb.col = foundcol
+	eb.v.SetTeleported(eb.lineno)
+}
+
 func (e *Editor) drawstatusline() {
 	w, h := e.s.Size()
 	fn := "{no file}"
@@ -426,6 +457,9 @@ main:
 		case *tcell.EventKey:
 			log.Printf("[EventKey] %s (mods=%X)\n", ev.Name(), ev.Modifiers())
 			switch {
+			case ev.Key() == tcell.KeyCtrlF:
+				e.search()
+				redraw = true
 			case ev.Key() == tcell.KeyCtrlK:
 				e.delline()
 				redraw = true
