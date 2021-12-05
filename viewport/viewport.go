@@ -2,6 +2,7 @@ package viewport
 
 import (
 	"errors"
+	"log"
 	"math"
 
 	"github.com/susji/ked/buffer"
@@ -144,13 +145,14 @@ func (v *Viewport) doRenderWrapped(
 			drawfrag = append(drawfrag, getpadding(endraw-end)...)
 		}
 		ret = append(ret, drawfrag)
+		log.Printf("[linefrag] linenobuf=%d  cursorcol=%d tabbedlen[%d]=%v\n",
+			linenobuf, cursorcol, len(tabbedlen), tabbedlen)
 		if linenobuf == cursorlineno &&
 			(cursorcol+tabbedlen[cursorcol]) >= start &&
 			(cursorcol+tabbedlen[cursorcol]) <= end {
 			cx = cursorcol - start + tabbedlen[cursorcol]
 			cy = linenodrawn + i
-			//log.Printf("[cursor] cx=%d  cy=%d  cursorcol=%d  tabbedlen[%d]=%v\n",
-			//	cx, cy, cursorcol, len(tabbedlen), tabbedlen)
+			log.Printf("[cursor] cx=%d  cy=%d\n", cx, cy)
 		}
 	}
 	// Zero fragments means one line still.
