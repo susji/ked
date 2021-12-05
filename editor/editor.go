@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	WORD_DELIMS = " ./(){}[]#+*%"
+	WORD_DELIMS = " \t./(){}[]#+*%"
 )
 
 type editorBuffer struct {
