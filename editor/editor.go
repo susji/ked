@@ -201,10 +201,7 @@ func (e *Editor) movepage(up bool) {
 	} else {
 		eb.lineno = eb.v.PageDown()
 	}
-	line := eb.b.GetLine(eb.lineno)
-	if line.Length()-1 < eb.col {
-		eb.col = line.Length() - 1
-	}
+	eb.col = 0
 }
 
 func (e *Editor) moveleft() {
