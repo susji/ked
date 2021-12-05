@@ -271,6 +271,31 @@ func (e *Editor) savebuffer() {
 	}
 }
 
+func (e *Editor) delline() {
+	if len(e.buffers) == 0 {
+		return
+	}
+	eb := e.getactivebuf()
+
+	lineno := eb.lineno
+	col := eb.col
+	line := eb.b.GetLine(lineno)
+
+	if line.Length() == 0 && eb.b.Lines() > 1 {
+		eb.b.DeleteLine(lineno)
+		if lineno == eb.b.Lines() {
+			eb.lineno--
+		}
+		return
+	}
+
+	for line.Length() > col {
+		log.Printf("[delline] line.length=%d  col=%d\n", line.Length(), col)
+		line.SetCursor(col + 1)
+		line.Delete()
+	}
+}
+
 func (e *Editor) jumpword(left bool) {
 	if len(e.buffers) == 0 {
 		return
@@ -367,6 +392,9 @@ main:
 		case *tcell.EventKey:
 			log.Printf("[EventKey] %s (mods=%X)\n", ev.Name(), ev.Modifiers())
 			switch {
+			case ev.Key() == tcell.KeyCtrlK:
+				e.delline()
+				redraw = true
 			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Key() == tcell.KeyLeft:
 				e.jumpword(true)
 				redraw = true
