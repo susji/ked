@@ -443,84 +443,63 @@ main:
 	for {
 		ev := e.s.PollEvent()
 		//log.Printf("[Run] event: %+v\n", ev)
-		redraw := false
 		sync := false
 		switch ev := ev.(type) {
 		case *tcell.EventResize:
 			w, h := ev.Size()
 			log.Printf("[resize] w=%d  h=%d\n", w, h)
-			redraw = true
 			sync = true
 		case *tcell.EventKey:
 			log.Printf("[EventKey] %s (mods=%X)\n", ev.Name(), ev.Modifiers())
 			switch {
 			case ev.Key() == tcell.KeyCtrlF:
 				e.search()
-				redraw = true
 			case ev.Key() == tcell.KeyCtrlK:
 				e.delline()
-				redraw = true
 			case ev.Key() == tcell.KeyCtrlG:
 				e.jumpline()
-				redraw = true
 			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Key() == tcell.KeyLeft:
 				e.jumpword(true)
-				redraw = true
 			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Key() == tcell.KeyRight:
 				e.jumpword(false)
-				redraw = true
 			case ev.Key() == tcell.KeyCtrlC:
 				log.Println("[quit]")
 				e.s.Fini()
 				break main
 			case ev.Key() == tcell.KeyRune:
 				e.insertrune(ev.Rune())
-				redraw = true
 			case ev.Key() == tcell.KeyEnter:
 				e.insertlinefeed()
-				redraw = true
 			case ev.Key() == tcell.KeyBackspace, ev.Key() == tcell.KeyBackspace2:
 				e.backspace()
-				redraw = true
 			case ev.Key() == tcell.KeyUp:
 				e.movevertical(true)
-				redraw = true
 			case ev.Key() == tcell.KeyDown:
 				e.movevertical(false)
-				redraw = true
 			case ev.Key() == tcell.KeyLeft:
 				e.moveleft()
-				redraw = true
 			case ev.Key() == tcell.KeyRight:
 				e.moveright()
-				redraw = true
 			case ev.Key() == tcell.KeyCtrlA:
 				e.moveline(true)
-				redraw = true
 			case ev.Key() == tcell.KeyCtrlE:
 				e.moveline(false)
-				redraw = true
 			case ev.Key() == tcell.KeyCtrlS:
 				e.savebuffer()
-				redraw = true
 			case ev.Key() == tcell.KeyPgUp:
 				e.movepage(true)
-				redraw = true
 			case ev.Key() == tcell.KeyPgDn:
 				e.movepage(false)
-				redraw = true
 			case ev.Key() == tcell.KeyTab:
 				e.insertrune('\t')
-				redraw = true
 			}
 		}
 
-		if redraw {
-			e.s.Clear()
-			e.drawactivebuf()
-			e.drawstatusline()
-			e.s.Show()
-		}
+		e.s.Clear()
+		e.drawactivebuf()
+		e.drawstatusline()
+		e.s.Show()
+
 		if sync {
 			e.s.Sync()
 		}
