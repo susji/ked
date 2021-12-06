@@ -165,3 +165,53 @@ func TestLinefeed(t *testing.T) {
 			"unexpected got: %q, want: %q", string(got), string(want))
 	}
 }
+
+func TestDeleteLineContent(t *testing.T) {
+	b := buffer.New([][]rune{
+		[]rune("First line."),
+		[]rune("Second line."),
+		[]rune("Third line."),
+	})
+
+	// First delete middle line partially
+	b.DeleteLineContent(1, 6)
+	wants1 := [][]rune{
+		[]rune("First line."),
+		[]rune("Second"),
+		[]rune("Third line."),
+	}
+
+	for i, want := range wants1 {
+		got := b.GetLine(i)
+		ta.Assert(t, reflect.DeepEqual(got, want),
+			"unexpected got: %q, want: %q", string(got), string(want))
+	}
+
+	// Then delete rest of middle.
+	b.DeleteLineContent(1, 0)
+	wants2 := [][]rune{
+		[]rune("First line."),
+		[]rune(""),
+		[]rune("Third line."),
+	}
+
+	for i, want := range wants2 {
+		got := b.GetLine(i)
+		ta.Assert(t, reflect.DeepEqual(got, want),
+			"unexpected got: %q, want: %q", string(got), string(want))
+	}
+
+	// Then delete empty middle line.
+	b.DeleteLineContent(1, 0)
+	wants3 := [][]rune{
+		[]rune("First line."),
+		[]rune("Third line."),
+	}
+
+	for i, want := range wants3 {
+		got := b.GetLine(i)
+		ta.Assert(t, reflect.DeepEqual(got, want),
+			"unexpected got: %q, want: %q", string(got), string(want))
+	}
+
+}
