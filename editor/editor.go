@@ -225,11 +225,13 @@ func (e *Editor) savebuffer() {
 		Ask(e.s, 0, h-1)
 	if err != nil {
 		log.Println("[savebuffer, error-ask] ", err)
+		e.drawstatusmsg(fmt.Sprintf("%v", err))
 		return
 	}
 	abspath, err := filepath.Abs(string(fp))
 	if err != nil {
 		log.Println("[savebuffer, error-abs] ", err)
+		e.drawstatusmsg(fmt.Sprintf("%v", err))
 		return
 	}
 	log.Println("[savebuffer, abs] ", abspath)
@@ -337,6 +339,7 @@ func (e *Editor) search() {
 	term, err := textentry.New("", "Search: ", 256).Ask(e.s, 0, h-1)
 	if err != nil {
 		log.Println("[search, error-ask] ", err)
+		e.drawstatusmsg(fmt.Sprintf("%v", err))
 		return
 	}
 	sterm := []rune{}
@@ -354,6 +357,18 @@ func (e *Editor) search() {
 		eb.col = col
 		eb.v.SetTeleported(eb.lineno)
 	}
+}
+
+func (e *Editor) drawstatusmsg(msg string) {
+	log.Println("[drawstatusmsg] ", msg)
+	w, h := e.s.Size()
+	for i, r := range []rune(msg) {
+		e.s.SetContent(i, h-1, r, nil, tcell.StyleDefault)
+		if i > w {
+			break
+		}
+	}
+	e.s.Show()
 }
 
 func (e *Editor) drawstatusline() {
