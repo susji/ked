@@ -215,3 +215,32 @@ func TestDeleteLineContent(t *testing.T) {
 	}
 
 }
+
+func TestSearch(t *testing.T) {
+	b := buffer.New([][]rune{
+		[]rune("First line."),
+		[]rune("Second line."),
+		[]rune("Third line."),
+	})
+
+	lineno, col := b.Search([]rune(strings.ToLower("First")))
+	ta.Assert(t, lineno == 0 && col == 0, "unexpected lineno & col: %d, %d", lineno, col)
+
+	lineno, col = b.Search([]rune(" line."))
+	ta.Assert(t, lineno == 0 && col == 5, "unexpected lineno & col: %d, %d", lineno, col)
+
+	lineno, col = b.Search([]rune("second"))
+	ta.Assert(t, lineno == 1 && col == 0, "unexpected lineno & col: %d, %d", lineno, col)
+
+	limits := &buffer.SearchLimit{
+		StartLineno: 2,
+		StartCol:    0,
+		EndLineno:   2,
+		EndCol:      len([]rune("Third line.")) - 1,
+	}
+	lineno, col = b.SearchRange([]rune("line"), limits)
+	ta.Assert(t, lineno == 2 && col == 6, "unexpected lineno & col: %d, %d", lineno, col)
+
+	lineno, col = b.Search([]rune("nonexistent"))
+	ta.Assert(t, lineno == -1 && col == -1, "unexpected lineno & col: %d, %d", lineno, col)
+}

@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/susji/ked/buffer"
@@ -338,24 +339,21 @@ func (e *Editor) search() {
 		log.Println("[search, error-ask] ", err)
 		return
 	}
-	sterm := strings.ToLower(string(term))
-	foundline := -1
-	foundcol := -1
-	for i := eb.lineno; i < eb.b.Lines(); i++ {
-		line := eb.b.GetLine(i)
-		x := strings.Index(strings.ToLower(string(line)), sterm)
-		if x >= 0 {
-			foundline = i
-			foundcol = x
-			break
-		}
+	sterm := []rune{}
+	for _, r := range term {
+		sterm = append(sterm, unicode.ToLower(r))
 	}
-	if foundline == -1 {
-		return
+	limits := &buffer.SearchLimit{
+		StartLineno: eb.lineno,
+		StartCol:    eb.col,
+		EndLineno:   eb.b.Lines() - 1,
+		EndCol:      eb.b.LineLength(eb.b.Lines() - 1),
 	}
-	eb.lineno = foundline
-	eb.col = foundcol
-	eb.v.SetTeleported(eb.lineno)
+	if lineno, col := eb.b.SearchRange(sterm, limits); lineno != -1 && col != -1 {
+		eb.lineno = lineno
+		eb.col = col
+		eb.v.SetTeleported(eb.lineno)
+	}
 }
 
 func (e *Editor) drawstatusline() {

@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"log"
 	"os"
+	"strings"
 
 	"github.com/susji/ked/gapbuffer"
 )
@@ -169,4 +171,44 @@ func (b *Buffer) DeleteLineContent(lineno, col int) (newlineno int) {
 		b.Backspace(lineno, col+1)
 	}
 	return lineno
+}
+
+type SearchLimit struct {
+	StartLineno, StartCol int
+	EndLineno, EndCol     int
+}
+
+func (b *Buffer) Search(term []rune) (lineno, col int) {
+	limits := &SearchLimit{
+		StartLineno: 0,
+		StartCol:    0,
+		EndLineno:   b.Lines() - 1,
+		EndCol:      b.LineLength(b.Lines() - 1),
+	}
+	return b.SearchRange(term, limits)
+}
+
+func (b *Buffer) SearchRange(term []rune, limits *SearchLimit) (lineno, col int) {
+	sterm := string(term)
+	for lineno := limits.StartLineno; lineno <= limits.EndLineno; lineno++ {
+		line := b.GetLine(lineno)
+		if len(line) == 0 {
+			continue
+		}
+		a, b := 0, len(line)
+		if lineno == limits.StartLineno {
+			a = limits.StartCol
+		}
+		if lineno == limits.EndLineno {
+			b = limits.EndCol
+		}
+		line = line[a:b]
+		s := strings.ToLower(string(line))
+		col := strings.Index(s, sterm)
+		log.Printf("ZZZ: %q/%q -> %d\n", sterm, s, col)
+		if col >= 0 {
+			return lineno, col
+		}
+	}
+	return -1, -1
 }
