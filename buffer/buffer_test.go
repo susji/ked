@@ -144,3 +144,24 @@ func TestBackspace(t *testing.T) {
 	ta.Assert(t, reflect.DeepEqual(got, []rune("However, the second line has too many runes!")),
 		"unexpected second line: %q", string(got))
 }
+
+func TestLinefeed(t *testing.T) {
+	b := buffer.New([][]rune{
+		[]rune("First line.Second line."),
+		[]rune("Third line."),
+	})
+
+	b.InsertLinefeed(0, 11)
+
+	wants := [][]rune{
+		[]rune("First line."),
+		[]rune("Second line."),
+		[]rune("Third line."),
+	}
+
+	for i, want := range wants {
+		got := b.GetLine(i)
+		ta.Assert(t, reflect.DeepEqual(got, want),
+			"unexpected got: %q, want: %q", string(got), string(want))
+	}
+}
