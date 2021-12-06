@@ -6,7 +6,10 @@ import (
 	"fmt"
 )
 
-const DEFAULTSZ = 64
+const (
+	DEFAULTSZ        = 64
+	GAP_MIN_INCREASE = 16
+)
 
 type GapBuffer struct {
 	buf []rune
@@ -112,6 +115,10 @@ func (gb *GapBuffer) gapgrow(atleast int) {
 	// /----------------/ gapgapgapgap /----------------|
 	//                 pre          newpost
 	//
+	if atleast < GAP_MIN_INCREASE {
+		atleast = GAP_MIN_INCREASE
+	}
+
 	n := len(gb.buf) - gb.post
 	gb.buf = append(gb.buf, make([]rune, atleast)...)
 
