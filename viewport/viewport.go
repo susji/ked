@@ -281,7 +281,7 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
 	hss := &historySumStack{}
 	downscrollfound := false
 	for ; n < lastbufline; n++ {
-		line := v.buffer.GetLine(n).Get()
+		line := v.buffer.GetLine(n)
 		//log.Printf("[Render=%d] line=%q\n", linenobuf, string(line))
 		newlines, _cx, _cy := v.doRenderWrapped(
 			w, cursorlineno, cursorcol,

@@ -92,11 +92,64 @@ func (b *Buffer) DeleteLine(pos int) {
 	b.lines = append(left, right...)
 }
 
-func (b *Buffer) GetLine(pos int) *gapbuffer.GapBuffer {
-	if pos < 0 || len(b.lines) < pos {
-		panic(fmt.Sprintf("GetLine: invalid pos=%d", pos))
+func (b *Buffer) GetLine(lineno int) []rune {
+	if lineno < 0 || len(b.lines) < lineno {
+		panic(fmt.Sprintf("GetLine: invalid lineno=%d", lineno))
 	}
-	return b.lines[pos]
+	return b.lines[lineno].Get()
+}
+
+func (b *Buffer) LineLength(lineno int) int {
+	if lineno < 0 || len(b.lines) < lineno {
+		panic(fmt.Sprintf("GetLine: invalid lineno=%d", lineno))
+	}
+	return b.lines[lineno].Length()
+}
+
+func (b *Buffer) InsertRune(lineno, col int, r rune) int {
+	b.lines[lineno].SetCursor(col)
+	b.lines[lineno].Insert([]rune{r})
+	return col + 1
+}
+
+func (b *Buffer) InsertRunes(lineno, col int, rs []rune) int {
+	b.lines[lineno].SetCursor(col)
+	b.lines[lineno].Insert(rs)
+	return col + len(rs)
+}
+
+func (b *Buffer) InsertLinefeed(lineno, col int) (newlineno int, newcol int) {
+	line := b.lines[lineno].Get()
+	oldline := line[:col]
+	newline := line[col:]
+
+	b.lines[lineno].Clear().Insert(oldline)
+	b.NewLine(lineno + 1).Insert(newline)
+
+	return lineno + 1, 0
+}
+
+func (b *Buffer) Backspace(lineno, col int) (newlineno int, newcol int) {
+	line := b.lines[lineno]
+	linerunes := line.Get()
+	if col == 0 && lineno > 0 {
+		b.DeleteLine(lineno)
+		if lineno > 0 {
+			lineup := b.lines[lineno-1]
+			lineuprunes := lineup.Get()
+			lineup.SetCursor(len(lineuprunes))
+			lineup.Insert(linerunes[col:])
+			lineno--
+			col = len(lineuprunes)
+		}
+		return lineno, col
+	} else if col == 0 {
+		return lineno, col
+	}
+	line.SetCursor(col)
+	line.Delete()
+	col--
+	return lineno, col
 }
 
 func (b *Buffer) Lines() int {

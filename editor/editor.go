@@ -84,7 +84,7 @@ func (e *Editor) initscreen() error {
 func (e *Editor) logbuffer() {
 	eb := e.getactivebuf()
 	for lineno := 0; lineno < eb.b.Lines(); lineno++ {
-		log.Printf("[%d] %s\n", lineno, string(eb.b.GetLine(lineno).Get()))
+		log.Printf("[%d] %s\n", lineno, string(eb.b.GetLine(lineno)))
 	}
 }
 
@@ -117,30 +117,15 @@ func (e *Editor) insertrune(r rune) {
 		return
 	}
 	eb := e.getactivebuf()
-	line := eb.b.GetLine(eb.lineno)
-	line.SetCursor(eb.col)
-	line.Insert([]rune{r})
-	eb.col++
+	eb.col = eb.b.InsertRune(eb.lineno, eb.col, r)
 }
 
 func (e *Editor) insertlinefeed() {
 	if len(e.buffers) == 0 {
 		return
 	}
-
 	eb := e.getactivebuf()
-	line := eb.b.GetLine(eb.lineno).Get()
-	oldline := line[:eb.col]
-	newline := line[eb.col:]
-
-	//log.Printf("[insertlinefeed] lineno=%d/%d  oldline=%q  newline=%q\n",
-	//	eb.lineno, eb.b.Lines(), oldline, newline)
-
-	eb.b.GetLine(eb.lineno).Clear().Insert(oldline)
-	eb.b.NewLine(eb.lineno + 1).Insert(newline)
-
-	eb.lineno++
-	eb.col = 0
+	eb.lineno, eb.col = eb.b.InsertLinefeed(eb.lineno, eb.col)
 }
 
 func (e *Editor) backspace() {
@@ -148,25 +133,7 @@ func (e *Editor) backspace() {
 		return
 	}
 	eb := e.getactivebuf()
-	line := eb.b.GetLine(eb.lineno)
-	linerunes := line.Get()
-	if eb.col == 0 && eb.lineno > 0 {
-		eb.b.DeleteLine(eb.lineno)
-		if eb.lineno > 0 {
-			lineup := eb.b.GetLine(eb.lineno - 1)
-			lineuprunes := lineup.Get()
-			lineup.SetCursor(len(lineuprunes))
-			lineup.Insert(linerunes[eb.col:])
-			eb.lineno--
-			eb.col = len(lineuprunes)
-		}
-		return
-	} else if eb.col == 0 {
-		return
-	}
-	line.SetCursor(eb.col)
-	line.Delete()
-	eb.col--
+	eb.lineno, eb.col = eb.b.Backspace(eb.lineno, eb.col)
 }
 
 func (e *Editor) movevertical(up bool) {
@@ -185,7 +152,7 @@ func (e *Editor) movevertical(up bool) {
 		}
 		eb.lineno++
 	}
-	line := eb.b.GetLine(eb.lineno).Get()
+	line := eb.b.GetLine(eb.lineno)
 	if eb.col >= len(line) {
 		eb.col = len(line)
 	}
@@ -213,7 +180,7 @@ func (e *Editor) moveleft() {
 		eb.col--
 	} else if eb.lineno > 0 {
 		eb.lineno--
-		eb.col = eb.b.GetLine(eb.lineno).Length()
+		eb.col = len(eb.b.GetLine(eb.lineno))
 	}
 }
 
@@ -222,7 +189,7 @@ func (e *Editor) moveright() {
 		return
 	}
 	eb := e.getactivebuf()
-	line := eb.b.GetLine(eb.lineno).Get()
+	line := eb.b.GetLine(eb.lineno)
 	if eb.col < len(line) {
 		eb.col++
 	} else if eb.lineno < eb.b.Lines()-1 {
@@ -240,7 +207,7 @@ func (e *Editor) moveline(start bool) {
 		eb.col = 0
 		return
 	}
-	line := eb.b.GetLine(eb.lineno).Get()
+	line := eb.b.GetLine(eb.lineno)
 	eb.col = len(line)
 }
 
@@ -310,9 +277,8 @@ func (e *Editor) delline() {
 
 	lineno := eb.lineno
 	col := eb.col
-	line := eb.b.GetLine(lineno)
 
-	if line.Length() == 0 && eb.b.Lines() > 1 {
+	if eb.b.LineLength(lineno) == 0 && eb.b.Lines() > 1 {
 		eb.b.DeleteLine(lineno)
 		if lineno == eb.b.Lines() {
 			eb.lineno--
@@ -320,10 +286,9 @@ func (e *Editor) delline() {
 		return
 	}
 
-	for line.Length() > col {
-		log.Printf("[delline] line.length=%d  col=%d\n", line.Length(), col)
-		line.SetCursor(col + 1)
-		line.Delete()
+	for eb.b.LineLength(eb.lineno) > col {
+		log.Printf("[delline] line.length=%d  col=%d\n", eb.b.LineLength(lineno), col)
+		eb.b.Backspace(lineno, col+1)
 	}
 }
 
@@ -338,7 +303,7 @@ func (e *Editor) jumpword(left bool) {
 out:
 	// XXX This looks like it could use some cleanup...
 	for lineno >= 0 && lineno < eb.b.Lines() {
-		line := eb.b.GetLine(lineno).Get()
+		line := eb.b.GetLine(lineno)
 		var i int
 		if left {
 			//log.Printf("[jumpword, left] lineno=%d  col=%d\n", lineno, col)
@@ -355,7 +320,7 @@ out:
 				break out
 			}
 			lineno--
-			col = eb.b.GetLine(lineno).Length() - 1
+			col = eb.b.LineLength(lineno) - 1
 			//log.Printf("[jumpword, left] jumping ->  lineno=%d  col=%d\n", lineno, col)
 		} else {
 			for i = col; i < len(line)-1; i++ {
@@ -393,7 +358,7 @@ func (e *Editor) search() {
 	foundcol := -1
 	for i := eb.lineno; i < eb.b.Lines(); i++ {
 		line := eb.b.GetLine(i)
-		x := strings.Index(strings.ToLower(string(line.Get())), sterm)
+		x := strings.Index(strings.ToLower(string(line)), sterm)
 		if x >= 0 {
 			foundline = i
 			foundcol = x
