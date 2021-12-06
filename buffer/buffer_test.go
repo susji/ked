@@ -99,6 +99,26 @@ func TestInsertDelete(t *testing.T) {
 		"should be empty, got %q", gotlines4)
 }
 
+func TestInsertRune(t *testing.T) {
+	b := buffer.New([][]rune{[]rune("There is text.")})
+
+	b.InsertRune(0, 9, 's')
+	b.InsertRune(0, 10, 'o')
+	b.InsertRune(0, 11, 'm')
+	b.InsertRune(0, 12, 'e')
+	b.InsertRune(0, 13, ' ')
+
+	b.InsertRune(0, 18, ' ')
+	b.InsertRune(0, 19, 'h')
+	b.InsertRune(0, 20, 'e')
+	b.InsertRune(0, 21, 'r')
+	b.InsertRune(0, 22, 'e')
+
+	got := b.GetLine(0)
+	want := []rune("There is some text here.")
+	ta.Assert(t, reflect.DeepEqual(got, want), "unexpected line: %q", string(got))
+}
+
 func TestBackspace(t *testing.T) {
 	b := buffer.New([][]rune{
 		[]rune("This is the first line with too much text."),
