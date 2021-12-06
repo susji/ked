@@ -274,22 +274,7 @@ func (e *Editor) delline() {
 		return
 	}
 	eb := e.getactivebuf()
-
-	lineno := eb.lineno
-	col := eb.col
-
-	if eb.b.LineLength(lineno) == 0 && eb.b.Lines() > 1 {
-		eb.b.DeleteLine(lineno)
-		if lineno == eb.b.Lines() {
-			eb.lineno--
-		}
-		return
-	}
-
-	for eb.b.LineLength(eb.lineno) > col {
-		log.Printf("[delline] line.length=%d  col=%d\n", eb.b.LineLength(lineno), col)
-		eb.b.Backspace(lineno, col+1)
-	}
+	eb.lineno = eb.b.DeleteLineContent(eb.lineno, eb.col)
 }
 
 func (e *Editor) jumpword(left bool) {

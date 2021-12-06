@@ -155,3 +155,18 @@ func (b *Buffer) Backspace(lineno, col int) (newlineno int, newcol int) {
 func (b *Buffer) Lines() int {
 	return len(b.lines)
 }
+
+func (b *Buffer) DeleteLineContent(lineno, col int) (newlineno int) {
+	if b.LineLength(lineno) == 0 && b.Lines() > 1 {
+		b.DeleteLine(lineno)
+		if lineno == b.Lines() {
+			return lineno - 1
+		}
+		return lineno
+	}
+
+	for b.LineLength(lineno) > col {
+		b.Backspace(lineno, col+1)
+	}
+	return lineno
+}
