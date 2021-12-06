@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"log"
 )
 
 const DEFAULTSZ = 64
@@ -120,7 +119,7 @@ func (gb *GapBuffer) gapgrow(atleast int) {
 	srcend := gb.post + n
 	dststart := gb.post + atleast
 	dstend := gb.post + atleast + n
-	log.Printf("[capgrow] src=[%d, %d]  dst=[%d, %d]\n", srcstart, srcend, dststart, dstend)
+	//log.Printf("[capgrow] src=[%d, %d]  dst=[%d, %d]\n", srcstart, srcend, dststart, dstend)
 	copy(gb.buf[dststart:dstend], gb.buf[srcstart:srcend])
 	gb.post += atleast
 }

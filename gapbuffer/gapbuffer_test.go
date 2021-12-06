@@ -78,7 +78,6 @@ func TestCursorExtremes(t *testing.T) {
 	for i := 0; i < len("phrase"); i++ {
 		b.Delete()
 	}
-	print("ZZZ", b.Get())
 	b.Insert([]rune("sentence"))
 	got := b.Get()
 	want := []rune("this is a sentence")
@@ -117,7 +116,7 @@ func TestDeleteLots(t *testing.T) {
 	for i := 0; i < 20; i++ {
 		b.SetCursor(6)
 		b.Delete()
-		t.Logf("Now: %q", string(b.Get()))
+		//t.Logf("Now: %q", string(b.Get()))
 	}
 	got := b.Get()
 	tu.Assert(t, reflect.DeepEqual(got, want), "unexpected got: %q, want: %q", string(got), string(want))
