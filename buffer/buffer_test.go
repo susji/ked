@@ -97,5 +97,30 @@ func TestInsertDelete(t *testing.T) {
 	gotlines4 := bufferToRunes(b)
 	ta.Assert(t, reflect.DeepEqual(gotlines4, wantlines4),
 		"should be empty, got %q", gotlines4)
+}
 
+func TestBackspace(t *testing.T) {
+	b := buffer.New([][]rune{
+		[]rune("This is the first line with too much text."),
+		[]rune("However, the second line also has way too many runes!"),
+	})
+
+	// Remove 'first'.
+	for i := 0; i < len(" first"); i++ {
+		b.Backspace(0, 17-i)
+	}
+	got := b.GetLine(0)
+	ta.Assert(t, reflect.DeepEqual(got, []rune("This is the line with too much text.")),
+		"unexpected first line: %q", string(got))
+
+	// Remove 'also' and 'way'.
+	for i := 0; i < len(" way"); i++ {
+		b.Backspace(1, 37-i)
+	}
+	for i := 0; i < len(" also"); i++ {
+		b.Backspace(1, 29-i)
+	}
+	got = b.GetLine(1)
+	ta.Assert(t, reflect.DeepEqual(got, []rune("However, the second line has too many runes!")),
+		"unexpected second line: %q", string(got))
 }
