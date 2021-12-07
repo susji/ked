@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	WORD_DELIMS = " ./(){}[]#+*%'\"-"
+	WORD_DELIMS = " ./(){}[]#+*%'-:?'\""
 )
 
 type Buffer struct {
