@@ -244,3 +244,27 @@ func TestSearch(t *testing.T) {
 	lineno, col = b.Search([]rune("nonexistent"))
 	ta.Assert(t, lineno == -1 && col == -1, "unexpected lineno & col: %d, %d", lineno, col)
 }
+
+func TestJump(t *testing.T) {
+	b := buffer.New([][]rune{
+		[]rune("First line with some text"),
+		[]rune("and the second line with more runes"),
+		[]rune("  flow into a third line with the end."),
+	})
+
+	// Jump left from the middle of a line.
+	lineno, col := b.JumpWord(1, 13, true)
+	ta.Assert(t, lineno == 1 && col == 8, "unexpected jump pos: %d, %d", lineno, col)
+
+	// Jump left from the beginning of a line.
+	lineno, col = b.JumpWord(1, 0, true)
+	ta.Assert(t, lineno == 0 && col == 21, "unexpected jump pos: %d, %d", lineno, col)
+
+	// Jump right from the middle of a line.
+	lineno, col = b.JumpWord(1, 13, false)
+	ta.Assert(t, lineno == 1 && col == 15, "unexpected jump pos: %d, %d", lineno, col)
+
+	// Jump right from the end of a line.
+	lineno, col = b.JumpWord(1, 33, false)
+	ta.Assert(t, lineno == 2 && col == 0, "unexpected jump pos: %d, %d", lineno, col)
+}

@@ -4,11 +4,14 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"strings"
 
 	"github.com/susji/ked/gapbuffer"
+)
+
+const (
+	WORD_DELIMS = " ./(){}[]#+*%'\"-"
 )
 
 type Buffer struct {
@@ -205,10 +208,43 @@ func (b *Buffer) SearchRange(term []rune, limits *SearchLimit) (lineno, col int)
 		line = line[a:b]
 		s := strings.ToLower(string(line))
 		col := strings.Index(s, sterm)
-		log.Printf("ZZZ: %q/%q -> %d\n", sterm, s, col)
+		//log.Printf("ZZZ: %q/%q -> %d\n", sterm, s, col)
 		if col >= 0 {
 			return lineno, col
 		}
 	}
 	return -1, -1
+}
+
+func (b *Buffer) JumpWord(lineno, col int, left bool) (newlineno, newcol int) {
+	origlineno := lineno
+	origcol := col
+
+	if left {
+		for lineno >= 0 && lineno < b.Lines() {
+			line := b.GetLine(lineno)
+			var i int
+			//log.Printf("[jumpword, left] lineno=%d  col=%d\n", lineno, col)
+			for i = col - 1; i > 0; i-- {
+				if strings.ContainsAny(string(line[i-1]), WORD_DELIMS) {
+					return lineno, i
+				}
+			}
+			if lineno == 0 {
+				return lineno, 0
+			}
+			lineno--
+			col = b.LineLength(lineno) - 1
+			//log.Printf("[jumpword, left] jumping ->  lineno=%d  col=%d\n", lineno, col)
+		}
+	} else {
+		line := b.GetLine(lineno)
+		for i := col; i < len(line)-1; i++ {
+			if strings.ContainsAny(string(line[i]), WORD_DELIMS) {
+				return lineno, i + 1
+			}
+		}
+		return lineno + 1, 0
+	}
+	return origlineno, origcol
 }

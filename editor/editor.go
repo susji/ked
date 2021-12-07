@@ -11,17 +11,12 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"unicode"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/susji/ked/buffer"
 	"github.com/susji/ked/textentry"
 	"github.com/susji/ked/viewport"
-)
-
-const (
-	WORD_DELIMS = " \t./(){}[]#+*%"
 )
 
 type editorBuffer struct {
@@ -285,49 +280,7 @@ func (e *Editor) jumpword(left bool) {
 		return
 	}
 	eb := e.getactivebuf()
-	lineno := eb.lineno
-	col := eb.col
-	found := false
-out:
-	// XXX This looks like it could use some cleanup...
-	for lineno >= 0 && lineno < eb.b.Lines() {
-		line := eb.b.GetLine(lineno)
-		var i int
-		if left {
-			//log.Printf("[jumpword, left] lineno=%d  col=%d\n", lineno, col)
-			for i = col - 1; i > 0; i-- {
-				if strings.ContainsAny(string(line[i-1]), WORD_DELIMS) {
-					col = i
-					found = true
-					break out
-				}
-			}
-			if lineno == 0 {
-				found = true
-				col = 0
-				break out
-			}
-			lineno--
-			col = eb.b.LineLength(lineno) - 1
-			//log.Printf("[jumpword, left] jumping ->  lineno=%d  col=%d\n", lineno, col)
-		} else {
-			for i = col; i < len(line)-1; i++ {
-				if strings.ContainsAny(string(line[i]), WORD_DELIMS) {
-					col = i + 1
-					found = true
-					break out
-				}
-			}
-			found = true
-			lineno++
-			col = 0
-			break out
-		}
-	}
-	if found {
-		eb.col = col
-		eb.lineno = lineno
-	}
+	eb.lineno, eb.col = eb.b.JumpWord(eb.lineno, eb.col, left)
 }
 
 func (e *Editor) search() {
