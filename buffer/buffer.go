@@ -2,6 +2,7 @@ package buffer
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -214,6 +215,32 @@ func (b *Buffer) SearchRange(term []rune, limits *SearchLimit) (lineno, col int)
 		}
 	}
 	return -1, -1
+}
+
+func (b *Buffer) NextRune(lineno, col int) (rune, error) {
+	line := b.lines[lineno].Get()
+	if col+1 < len(line) {
+		return line[col+1], nil
+	}
+	nextlineno := lineno + 1
+	if nextlineno >= b.Lines() {
+		return ' ', errors.New("no next line => no next rune")
+	}
+	return b.lines[nextlineno].Get()[0], nil
+
+}
+
+func (b *Buffer) PrevRune(lineno, col int) (rune, error) {
+	line := b.lines[lineno].Get()
+	if col > 0 {
+		return line[col-1], nil
+	}
+	prevlineno := lineno - 1
+	if prevlineno < 0 {
+		return ' ', errors.New("no previous line => no previous rune")
+	}
+	prevline := b.lines[prevlineno].Get()
+	return prevline[len(prevline)-1], nil
 }
 
 func (b *Buffer) JumpWord(lineno, col int, left bool) (newlineno, newcol int) {

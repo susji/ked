@@ -1,6 +1,7 @@
 package buffer_test
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -243,6 +244,42 @@ func TestSearch(t *testing.T) {
 
 	lineno, col = b.Search([]rune("nonexistent"))
 	ta.Assert(t, lineno == -1 && col == -1, "unexpected lineno & col: %d, %d", lineno, col)
+}
+
+func TestNextPrevRune(t *testing.T) {
+	b := buffer.New([][]rune{
+		[]rune("Pretty"),
+		[]rune("short"),
+		[]rune("lines"),
+	})
+
+	table := []struct {
+		f           func(int, int) (rune, error)
+		lineno, col int
+		want        rune
+	}{
+		{b.NextRune, 1, 0, 'h'},
+		{b.NextRune, 0, len("Pretty") - 1, 's'},
+		{b.NextRune, 0, 0, 'r'},
+		{b.NextRune, 1, len("short") - 1, 'l'},
+		{b.NextRune, 2, len("li") - 1, 'n'},
+		{b.PrevRune, 0, 1, 'P'},
+		{b.PrevRune, 0, len("Pretty") - 1, 't'},
+		{b.PrevRune, 2, 0, 't'},
+		{b.PrevRune, 2, len("lin") - 1, 'i'},
+	}
+
+	for i, entry := range table {
+		t.Run(fmt.Sprintf("%d_(%d,%d)_%c", i, entry.lineno, entry.col, entry.want),
+			func(t *testing.T) {
+				got, err := entry.f(entry.lineno, entry.col)
+				if err != nil {
+					t.Fatal("should not error but did: ", err)
+				}
+				want := entry.want
+				ta.Assert(t, got == want, "got rune %c, want %c", got, want)
+			})
+	}
 }
 
 func TestJump(t *testing.T) {
