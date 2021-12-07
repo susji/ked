@@ -284,7 +284,7 @@ func TestNextPrevRune(t *testing.T) {
 
 func TestJump(t *testing.T) {
 	b := buffer.New([][]rune{
-		[]rune("First line with some text"),
+		[]rune("First line with some text   "),
 		[]rune("and the second line with more runes"),
 		[]rune("  flow into a third line with the end."),
 	})
@@ -303,5 +303,5 @@ func TestJump(t *testing.T) {
 
 	// Jump right from the end of a line.
 	lineno, col = b.JumpWord(1, 33, false)
-	ta.Assert(t, lineno == 2 && col == 0, "unexpected jump pos: %d, %d", lineno, col)
+	ta.Assert(t, lineno == 2 && col == 2, "unexpected jump pos: %d, %d", lineno, col)
 }

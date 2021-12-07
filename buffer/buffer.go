@@ -251,9 +251,10 @@ func (b *Buffer) JumpWord(lineno, col int, left bool) (newlineno, newcol int) {
 		for lineno >= 0 && lineno < b.Lines() {
 			line := b.GetLine(lineno)
 			var i int
-			//log.Printf("[jumpword, left] lineno=%d  col=%d\n", lineno, col)
 			for i = col - 1; i > 0; i-- {
-				if strings.ContainsAny(string(line[i-1]), WORD_DELIMS) {
+				pr, _ := b.PrevRune(lineno, i)
+				if strings.ContainsAny(string(pr), WORD_DELIMS) &&
+					!strings.ContainsAny(string(line[i]), WORD_DELIMS) {
 					return lineno, i
 				}
 			}
@@ -261,17 +262,23 @@ func (b *Buffer) JumpWord(lineno, col int, left bool) (newlineno, newcol int) {
 				return lineno, 0
 			}
 			lineno--
-			col = b.LineLength(lineno) - 1
-			//log.Printf("[jumpword, left] jumping ->  lineno=%d  col=%d\n", lineno, col)
+			col = b.LineLength(lineno)
 		}
 	} else {
-		line := b.GetLine(lineno)
-		for i := col; i < len(line)-1; i++ {
-			if strings.ContainsAny(string(line[i]), WORD_DELIMS) {
-				return lineno, i + 1
+		for lineno >= 0 && lineno < b.Lines() {
+			line := b.GetLine(lineno)
+			for i := col; i < len(line)-2; i++ {
+				if strings.ContainsAny(string(line[i]), WORD_DELIMS) {
+					// Skip subsequent word delimiters.
+					nr, _ := b.NextRune(lineno, i)
+					if !strings.ContainsAny(string(nr), WORD_DELIMS) {
+						return lineno, i + 1
+					}
+				}
 			}
+			lineno++
+			col = 0
 		}
-		return lineno + 1, 0
 	}
 	return origlineno, origcol
 }
