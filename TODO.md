@@ -7,3 +7,4 @@
 * [ ] Configurable list of boldable keywords
 * [ ] `Shift+Tab` should remove one tab level from line
 * [ ] Display status messages somehow
+* [ ] `Alt+Backspace` should remove one complete word
