@@ -267,8 +267,12 @@ func (b *Buffer) JumpWord(lineno, col int, left bool) (newlineno, newcol int) {
 	} else {
 		for lineno >= 0 && lineno < b.Lines() {
 			line := b.GetLine(lineno)
-			for i := col; i < len(line)-2; i++ {
+			for i := col; i <= len(line)-1; i++ {
 				if strings.ContainsAny(string(line[i]), WORD_DELIMS) {
+					// We consider end-of-line as a delimiter.
+					if i == len(line) - 1 {
+						return lineno, i+1
+					}
 					// Skip subsequent word delimiters.
 					nr, _ := b.NextRune(lineno, i)
 					if !strings.ContainsAny(string(nr), WORD_DELIMS) {

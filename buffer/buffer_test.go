@@ -283,25 +283,30 @@ func TestNextPrevRune(t *testing.T) {
 }
 
 func TestJump(t *testing.T) {
-	b := buffer.New([][]rune{
-		[]rune("First line with some text   "),
-		[]rune("and the second line with more runes"),
+	msg := [][]rune{
+		[]rune("First line with some text and a"),
+		[]rune("second line with more runes"),
 		[]rune("  flow into a third line with the end."),
-	})
+	}
+	b := buffer.New(msg)
 
 	// Jump left from the middle of a line.
 	lineno, col := b.JumpWord(1, 13, true)
-	ta.Assert(t, lineno == 1 && col == 8, "unexpected jump pos: %d, %d", lineno, col)
+	ta.Assert(t, lineno == 1 && col == 12, "unexpected jump pos: %d, %d", lineno, col)
 
 	// Jump left from the beginning of a line.
 	lineno, col = b.JumpWord(1, 0, true)
-	ta.Assert(t, lineno == 0 && col == 21, "unexpected jump pos: %d, %d", lineno, col)
+	ta.Assert(t, lineno == 0 && col == 30, "unexpected jump pos: %d, %d", lineno, col)
 
 	// Jump right from the middle of a line.
 	lineno, col = b.JumpWord(1, 13, false)
-	ta.Assert(t, lineno == 1 && col == 15, "unexpected jump pos: %d, %d", lineno, col)
+	ta.Assert(t, lineno == 1 && col == 17, "unexpected jump pos: %d, %d", lineno, col)
 
 	// Jump right from the end of a line.
-	lineno, col = b.JumpWord(1, 33, false)
+	lineno, col = b.JumpWord(1, len(msg[1]) - 1, false)
 	ta.Assert(t, lineno == 2 && col == 2, "unexpected jump pos: %d, %d", lineno, col)
+
+	// Grande finale: Try jumping right towards the lonely 'a'.
+    lineno, col = b.JumpWord(0, 26, false)
+    ta.Assert(t, lineno == 0 && col == len(msg[0]) - 1, "unexpected jump pos: %d, %d", lineno, col)
 }
