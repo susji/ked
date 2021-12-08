@@ -152,7 +152,7 @@ func TestLinefeed(t *testing.T) {
 		[]rune("Third line."),
 	})
 
-	b.InsertLinefeed(0, 11)
+	b.Perform(buffer.NewLinefeed(0, 11))
 
 	wants := [][]rune{
 		[]rune("First line."),

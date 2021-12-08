@@ -126,7 +126,7 @@ func (e *Editor) insertlinefeed() {
 		return
 	}
 	eb := e.getactivebuf()
-	eb.lineno, eb.col = eb.b.InsertLinefeed(eb.lineno, eb.col)
+	eb.update(eb.b.Perform(buffer.NewLinefeed(eb.lineno, eb.col)))
 }
 
 func (e *Editor) backspace() {

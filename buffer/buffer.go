@@ -113,7 +113,7 @@ func (b *Buffer) LineLength(lineno int) int {
 	return b.lines[lineno].Length()
 }
 
-func (b *Buffer) InsertLinefeed(lineno, col int) (newlineno int, newcol int) {
+func (b *Buffer) insertLinefeed(lineno, col int) (newlineno int, newcol int) {
 	line := b.lines[lineno].Get()
 	oldline := line[:col]
 	newline := line[col:]
@@ -293,9 +293,10 @@ func (b *Buffer) Perform(act *Action) ActionResult {
             Col: newcol,
         }
 	case ACT_LINEFEED:
+		newlineno, newcol := b.insertLinefeed(act.lineno, act.col)
         return ActionResult{
-            Lineno: act.lineno,
-            Col: act.col,
+            Lineno: newlineno,
+            Col: newcol,
         }
 	case ACT_DELLINE:
         return ActionResult{
