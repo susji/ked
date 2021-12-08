@@ -113,7 +113,9 @@ func (b *Buffer) LineLength(lineno int) int {
 	return b.lines[lineno].Length()
 }
 
-func (b *Buffer) insertLinefeed(lineno, col int) (newlineno int, newcol int) {
+func (b *Buffer) insertLinefeed(act *Action) ActionResult {
+	lineno := act.lineno
+	col := act.col
 	line := b.lines[lineno].Get()
 	oldline := line[:col]
 	newline := line[col:]
@@ -121,12 +123,14 @@ func (b *Buffer) insertLinefeed(lineno, col int) (newlineno int, newcol int) {
 	b.lines[lineno].Clear().Insert(oldline)
 	b.NewLine(lineno + 1).Insert(newline)
 
-	return lineno + 1, 0
+	return ActionResult{Lineno: lineno + 1, Col: 0}
 }
 
-func (b *Buffer) backspace(lineno, col int) (newlineno int, newcol int) {
-	line := b.lines[lineno]
+func (b *Buffer) backspace(act *Action) ActionResult {
+	line := b.lines[act.lineno]
 	linerunes := line.Get()
+	lineno := act.lineno
+	col := act.col
 	if col == 0 && lineno > 0 {
 		b.DeleteLine(lineno)
 		if lineno > 0 {
@@ -137,33 +141,35 @@ func (b *Buffer) backspace(lineno, col int) (newlineno int, newcol int) {
 			lineno--
 			col = len(lineuprunes)
 		}
-		return lineno, col
+		return ActionResult{Lineno: lineno, Col: col}
 	} else if col == 0 {
-		return lineno, col
+		return ActionResult{Lineno: lineno, Col: col}
 	}
 	line.SetCursor(col)
 	line.Delete()
 	col--
-	return lineno, col
+	return ActionResult{Lineno: lineno, Col: col}
 }
 
 func (b *Buffer) Lines() int {
 	return len(b.lines)
 }
 
-func (b *Buffer) deleteLineContent(lineno, col int) (newlineno, newcol int) {
+func (b *Buffer) deleteLineContent(act *Action) ActionResult {
+	lineno := act.lineno
+	col := act.col
 	if b.LineLength(lineno) == 0 && b.Lines() > 1 {
 		b.DeleteLine(lineno)
 		if lineno == b.Lines() {
-			return lineno - 1, col
+			return ActionResult{Lineno: lineno - 1, Col: col}
 		}
-		return lineno, col
+		return ActionResult{Lineno: lineno, Col: col}
 	}
 
 	for b.LineLength(lineno) > col {
-		b.backspace(lineno, col+1)
+		b.backspace(NewBackspace(lineno, col+1))
 	}
-	return lineno, col
+	return ActionResult{Lineno: lineno, Col: col}
 }
 
 type SearchLimit struct {
@@ -276,36 +282,21 @@ func (b *Buffer) JumpWord(lineno, col int, left bool) (newlineno, newcol int) {
 	return origlineno, origcol
 }
 
+func (b *Buffer) insertRune(act *Action) ActionResult {
+	b.lines[act.lineno].SetCursor(act.col)
+	b.lines[act.lineno].Insert(act.data.([]rune))
+	return ActionResult{Lineno: act.lineno, Col: act.col + 1}
+}
+
 // Perform is our action dispatch. This should be the only way
 // for outsiders to generate changes in buffer contents. Here
 // we also handle all the relevant book-keepping for undo.
 func (b *Buffer) Perform(act *Action) ActionResult {
-	switch act.kind {
-	case ACT_RUNES:
-		b.lines[act.lineno].SetCursor(act.col)
-		b.lines[act.lineno].Insert(act.data.([]rune))
-		return ActionResult{
-			Lineno: act.lineno,
-			Col:    act.col + 1,
-		}
-	case ACT_BACKSPACE:
-		newlineno, newcol := b.backspace(act.lineno, act.col)
-		return ActionResult{
-			Lineno: newlineno,
-			Col:    newcol,
-		}
-	case ACT_LINEFEED:
-		newlineno, newcol := b.insertLinefeed(act.lineno, act.col)
-		return ActionResult{
-			Lineno: newlineno,
-			Col:    newcol,
-		}
-	case ACT_DELLINECONTENT:
-		newlineno, newcol := b.deleteLineContent(act.lineno, act.col)
-		return ActionResult{
-			Lineno: newlineno,
-			Col:    newcol,
-		}
+	dispatch := map[ActionKind]ActionFunc{
+		ACT_RUNES:          b.insertRune,
+		ACT_BACKSPACE:      b.backspace,
+		ACT_LINEFEED:       b.insertLinefeed,
+		ACT_DELLINECONTENT: b.deleteLineContent,
 	}
-	panic("NOTREACHED")
+	return dispatch[act.kind](act)
 }

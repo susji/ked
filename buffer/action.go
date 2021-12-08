@@ -7,8 +7,11 @@ const (
 	ACT_DELLINECONTENT
 )
 
+type ActionKind int
+type ActionFunc func(*Action) ActionResult
+
 type Action struct {
-	kind        int
+	kind        ActionKind
 	lineno, col int
 	data        interface{}
 }
