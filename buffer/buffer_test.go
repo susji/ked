@@ -312,13 +312,13 @@ func TestJump(t *testing.T) {
 }
 
 func TestUndoRunes(t *testing.T) {
-    msg := [][]rune{
-        []rune("First line with some text and a"),
-        []rune("second line with more runes"),
-        []rune("  flow into a third line with the end."),
-    }
+	msg := [][]rune{
+		[]rune("First line with some text and a"),
+		[]rune("second line with more runes"),
+		[]rune("  flow into a third line with the end."),
+	}
 	add := []rune("UNDO")
-    b := buffer.New(msg)
+	b := buffer.New(msg)
 
 	// Add modification and verify it's there.
 	b.Perform(buffer.NewInsert(0, 0, add))

@@ -24,6 +24,7 @@ type editorBuffer struct {
 	v           *viewport.Viewport
 	lineno, col int
 	linesinview int
+	prevsearch  string
 }
 
 type Editor struct {
@@ -298,7 +299,7 @@ func (e *Editor) search() {
 	}
 	eb := e.getactivebuf()
 	_, h := e.s.Size()
-	term, err := textentry.New("", "Search: ", 256).Ask(e.s, 0, h-1)
+	term, err := textentry.New(eb.prevsearch, "Search: ", 256).Ask(e.s, 0, h-1)
 	if err != nil {
 		log.Println("[search, error-ask] ", err)
 		e.drawstatusmsg(fmt.Sprintf("%v", err))
@@ -318,6 +319,7 @@ func (e *Editor) search() {
 		eb.lineno = lineno
 		eb.col = col
 		eb.v.SetTeleported(eb.lineno)
+		eb.prevsearch = string(term)
 	}
 }
 
