@@ -124,7 +124,7 @@ func (b *Buffer) InsertLinefeed(lineno, col int) (newlineno int, newcol int) {
 	return lineno + 1, 0
 }
 
-func (b *Buffer) Backspace(lineno, col int) (newlineno int, newcol int) {
+func (b *Buffer) backspace(lineno, col int) (newlineno int, newcol int) {
 	line := b.lines[lineno]
 	linerunes := line.Get()
 	if col == 0 && lineno > 0 {
@@ -161,7 +161,7 @@ func (b *Buffer) DeleteLineContent(lineno, col int) (newlineno int) {
 	}
 
 	for b.LineLength(lineno) > col {
-		b.Backspace(lineno, col+1)
+		b.backspace(lineno, col+1)
 	}
 	return lineno
 }
@@ -276,17 +276,32 @@ func (b *Buffer) JumpWord(lineno, col int, left bool) (newlineno, newcol int) {
 	return origlineno, origcol
 }
 
-func (b *Buffer) Perform(act *Action) {
+func (b *Buffer) Perform(act *Action) ActionResult {
+	b.actions = append(b.actions, act)
 	switch act.kind {
 	case ACT_RUNES:
-		b.actions = append(b.actions, act)
 		b.lines[act.lineno].SetCursor(act.col)
 		b.lines[act.lineno].Insert(act.data.([]rune))
+		return ActionResult{
+			Lineno: act.lineno,
+			Col: act.col + 1,
+		}
 	case ACT_BACKSPACE:
-
+		newlineno, newcol := b.backspace(act.lineno, act.col)
+        return ActionResult{
+            Lineno: newlineno,
+            Col: newcol,
+        }
 	case ACT_LINEFEED:
-
+        return ActionResult{
+            Lineno: act.lineno,
+            Col: act.col,
+        }
 	case ACT_DELLINE:
-
+        return ActionResult{
+            Lineno: act.lineno,
+            Col: act.col,
+        }
 	}
+	panic("NOTREACHED")
 }

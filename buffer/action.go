@@ -13,6 +13,10 @@ type Action struct {
 	data        interface{}
 }
 
+type ActionResult struct {
+	Lineno, Col int
+}
+
 func NewInsert(lineno, col int, rs []rune) *Action {
 	return &Action{
 		kind:   ACT_RUNES,

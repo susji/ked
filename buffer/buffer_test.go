@@ -128,7 +128,7 @@ func TestBackspace(t *testing.T) {
 
 	// Remove 'first'.
 	for i := 0; i < len(" first"); i++ {
-		b.Backspace(0, 17-i)
+		b.Perform(buffer.NewBackspace(0, 17-i))
 	}
 	got := b.GetLine(0)
 	ta.Assert(t, reflect.DeepEqual(got, []rune("This is the line with too much text.")),
@@ -136,10 +136,10 @@ func TestBackspace(t *testing.T) {
 
 	// Remove 'also' and 'way'.
 	for i := 0; i < len(" way"); i++ {
-		b.Backspace(1, 37-i)
+		b.Perform(buffer.NewBackspace(1, 37-i))
 	}
 	for i := 0; i < len(" also"); i++ {
-		b.Backspace(1, 29-i)
+		b.Perform(buffer.NewBackspace(1, 29-i))
 	}
 	got = b.GetLine(1)
 	ta.Assert(t, reflect.DeepEqual(got, []rune("However, the second line has too many runes!")),
