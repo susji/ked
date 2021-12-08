@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"strings"
 
@@ -18,7 +19,7 @@ const (
 type Buffer struct {
 	lines    []*gapbuffer.GapBuffer
 	filepath string
-	mods     []modification
+	mods     []*modification
 }
 
 func New(rawlines [][]rune) *Buffer {
@@ -48,7 +49,27 @@ func NewFromReader(filepath string, r io.Reader) (*Buffer, error) {
 	}, nil
 }
 
-func (b *Buffer) modify(mod modification) {
+func (b *Buffer) UndoModification() *ActionResult {
+	if len(b.mods) == 0 {
+		return nil
+	}
+	n := len(b.mods) - 1
+	mod := b.mods[n]
+	b.mods = b.mods[:n]
+	log.Printf("[UndoModification]: %+v\n", mod)
+	switch mod.kind {
+	case MOD_INSERTRUNES:
+		data := mod.data.([]rune)
+		for i := 0; i < len(data); i++ {
+			b.lines[mod.lineno].SetCursor(mod.col + 1).Delete()
+		}
+	default:
+		panic("NOTIMPLEMENTED")
+	}
+	return &ActionResult{Lineno: mod.lineno, Col: mod.col}
+}
+
+func (b *Buffer) modify(mod *modification) {
 	b.mods = append(b.mods, mod)
 }
 
@@ -286,11 +307,11 @@ func (b *Buffer) insertrune(act *Action) ActionResult {
 	rs := act.data.([]rune)
 	b.lines[act.lineno].SetCursor(act.col)
 	b.lines[act.lineno].Insert(rs)
-	b.modify(modification{
-		kind: MOD_INSERTRUNES,
+	b.modify(&modification{
+		kind:   MOD_INSERTRUNES,
 		lineno: act.lineno,
-		col: act.col,
-		data: rs,
+		col:    act.col,
+		data:   rs,
 	})
 	return ActionResult{Lineno: act.lineno, Col: act.col + 1}
 }

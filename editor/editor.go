@@ -358,6 +358,16 @@ func (e *Editor) drawstatusline() {
 	}
 }
 
+func (e *Editor) undo() {
+	if len(e.buffers) == 0 {
+		return
+	}
+	eb := e.getactivebuf()
+	if res := eb.b.UndoModification(); res != nil {
+		eb.update(*res)
+	}
+}
+
 func (e *Editor) Run() error {
 	if err := e.initscreen(); err != nil {
 		return err
@@ -377,6 +387,8 @@ main:
 		case *tcell.EventKey:
 			log.Printf("[EventKey] %s (mods=%X)\n", ev.Name(), ev.Modifiers())
 			switch {
+			case ev.Key() == tcell.KeyCtrlUnderscore:
+				e.undo()
 			case ev.Key() == tcell.KeyCtrlF:
 				e.search()
 			case ev.Key() == tcell.KeyCtrlK:
