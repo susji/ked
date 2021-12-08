@@ -9,3 +9,4 @@
 * [ ] Display status messages somehow
 * [ ] `Alt+Backspace` should remove one complete word
 * [ ] Search & replace
+* [ ] `Mod+Tab` should tabulate line like the previous line
