@@ -18,7 +18,7 @@ const (
 type Buffer struct {
 	lines    []*gapbuffer.GapBuffer
 	filepath string
-	actions  []*Action
+	mods     []*mods
 }
 
 func New(rawlines [][]rune) *Buffer {
@@ -46,6 +46,10 @@ func NewFromReader(filepath string, r io.Reader) (*Buffer, error) {
 		lines:    lines,
 		filepath: filepath,
 	}, nil
+}
+
+func (b *Buffer) Modify(mod *modification) {
+	b.mods = append(b.mods, mod)
 }
 
 func (b *Buffer) Filepath() string {
