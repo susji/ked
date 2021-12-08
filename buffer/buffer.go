@@ -276,6 +276,9 @@ func (b *Buffer) JumpWord(lineno, col int, left bool) (newlineno, newcol int) {
 	return origlineno, origcol
 }
 
+// Perform is our action dispatch. This should be the only way
+// for outsiders to generate changes in buffer contents. Here
+// we also handle all the relevant book-keepping for undo.
 func (b *Buffer) Perform(act *Action) ActionResult {
 	b.actions = append(b.actions, act)
 	switch act.kind {
