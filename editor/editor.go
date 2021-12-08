@@ -277,7 +277,7 @@ func (e *Editor) delline() {
 		return
 	}
 	eb := e.getactivebuf()
-	eb.lineno = eb.b.DeleteLineContent(eb.lineno, eb.col)
+	eb.update(eb.b.Perform(buffer.NewDelLineContent(eb.lineno, eb.col)))
 }
 
 func (e *Editor) jumpword(left bool) {

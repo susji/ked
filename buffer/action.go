@@ -4,7 +4,7 @@ const (
 	ACT_RUNES = iota
 	ACT_BACKSPACE
 	ACT_LINEFEED
-	ACT_DELLINE
+	ACT_DELLINECONTENT
 )
 
 type Action struct {
@@ -42,9 +42,10 @@ func NewLinefeed(lineno, col int) *Action {
 	}
 }
 
-func NewDelLine(lineno int) *Action {
+func NewDelLineContent(lineno, col int) *Action {
 	return &Action{
-		kind:   ACT_DELLINE,
+		kind:   ACT_DELLINECONTENT,
 		lineno: lineno,
+		col:    col,
 	}
 }

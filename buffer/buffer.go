@@ -151,19 +151,19 @@ func (b *Buffer) Lines() int {
 	return len(b.lines)
 }
 
-func (b *Buffer) DeleteLineContent(lineno, col int) (newlineno int) {
+func (b *Buffer) deleteLineContent(lineno, col int) (newlineno, newcol int) {
 	if b.LineLength(lineno) == 0 && b.Lines() > 1 {
 		b.DeleteLine(lineno)
 		if lineno == b.Lines() {
-			return lineno - 1
+			return lineno - 1, col
 		}
-		return lineno
+		return lineno, col
 	}
 
 	for b.LineLength(lineno) > col {
 		b.backspace(lineno, col+1)
 	}
-	return lineno
+	return lineno, col
 }
 
 type SearchLimit struct {
@@ -280,32 +280,32 @@ func (b *Buffer) JumpWord(lineno, col int, left bool) (newlineno, newcol int) {
 // for outsiders to generate changes in buffer contents. Here
 // we also handle all the relevant book-keepping for undo.
 func (b *Buffer) Perform(act *Action) ActionResult {
-	b.actions = append(b.actions, act)
 	switch act.kind {
 	case ACT_RUNES:
 		b.lines[act.lineno].SetCursor(act.col)
 		b.lines[act.lineno].Insert(act.data.([]rune))
 		return ActionResult{
 			Lineno: act.lineno,
-			Col: act.col + 1,
+			Col:    act.col + 1,
 		}
 	case ACT_BACKSPACE:
 		newlineno, newcol := b.backspace(act.lineno, act.col)
-        return ActionResult{
-            Lineno: newlineno,
-            Col: newcol,
-        }
+		return ActionResult{
+			Lineno: newlineno,
+			Col:    newcol,
+		}
 	case ACT_LINEFEED:
 		newlineno, newcol := b.insertLinefeed(act.lineno, act.col)
-        return ActionResult{
-            Lineno: newlineno,
-            Col: newcol,
-        }
-	case ACT_DELLINE:
-        return ActionResult{
-            Lineno: act.lineno,
-            Col: act.col,
-        }
+		return ActionResult{
+			Lineno: newlineno,
+			Col:    newcol,
+		}
+	case ACT_DELLINECONTENT:
+		newlineno, newcol := b.deleteLineContent(act.lineno, act.col)
+		return ActionResult{
+			Lineno: newlineno,
+			Col:    newcol,
+		}
 	}
 	panic("NOTREACHED")
 }

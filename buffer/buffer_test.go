@@ -175,7 +175,7 @@ func TestDeleteLineContent(t *testing.T) {
 	})
 
 	// First delete middle line partially
-	b.DeleteLineContent(1, 6)
+	b.Perform(buffer.NewDelLineContent(1, 6))
 	wants1 := [][]rune{
 		[]rune("First line."),
 		[]rune("Second"),
@@ -189,7 +189,7 @@ func TestDeleteLineContent(t *testing.T) {
 	}
 
 	// Then delete rest of middle.
-	b.DeleteLineContent(1, 0)
+	b.Perform(buffer.NewDelLineContent(1, 0))
 	wants2 := [][]rune{
 		[]rune("First line."),
 		[]rune(""),
@@ -203,7 +203,7 @@ func TestDeleteLineContent(t *testing.T) {
 	}
 
 	// Then delete empty middle line.
-	b.DeleteLineContent(1, 0)
+	b.Perform(buffer.NewDelLineContent(1, 0))
 	wants3 := [][]rune{
 		[]rune("First line."),
 		[]rune("Third line."),
