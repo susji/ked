@@ -82,7 +82,7 @@ func TestInsertDelete(t *testing.T) {
 	//
 	// Delete first line and make sure we have the second still.
 	//
-	b.DeleteLine(0)
+	b.Perform(buffer.NewDelLine(0))
 	wantlines3 := [][]rune{msg2}
 
 	gotlines3 := bufferToRunes(b)
@@ -92,7 +92,7 @@ func TestInsertDelete(t *testing.T) {
 	//
 	// Delete second line and make sure the buffer is empty again.
 	//
-	b.DeleteLine(0)
+	b.Perform(buffer.NewDelLine(0))
 	wantlines4 := [][]rune{}
 
 	gotlines4 := bufferToRunes(b)
@@ -203,7 +203,7 @@ func TestDeleteLineContent(t *testing.T) {
 	}
 
 	// Then delete empty middle line.
-	b.Perform(buffer.NewDelLineContent(1, 0))
+	b.Perform(buffer.NewDelLine(1))
 	wants3 := [][]rune{
 		[]rune("First line."),
 		[]rune("Third line."),
@@ -309,4 +309,31 @@ func TestJump(t *testing.T) {
 	// Grande finale: Try jumping right towards the lonely 'a'.
 	lineno, col = b.JumpWord(0, 26, false)
 	ta.Assert(t, lineno == 0 && col == len(msg[0])-1, "unexpected jump pos: %d, %d", lineno, col)
+}
+
+func TestUndoRunes(t *testing.T) {
+    msg := [][]rune{
+        []rune("First line with some text and a"),
+        []rune("second line with more runes"),
+        []rune("  flow into a third line with the end."),
+    }
+	add := []rune("UNDO")
+    b := buffer.New(msg)
+
+	// Add modification and verify it's there.
+	b.Perform(buffer.NewInsert(0, 0, add))
+	ta.Assert(
+		t,
+		reflect.DeepEqual(b.GetLine(0), append(add, msg[0]...)),
+		"unexpected after addition: %q",
+		string(b.GetLine(0)))
+
+	// Undo and verify.
+	res := b.UndoModification()
+	ta.Assert(t, res != nil, "res should not be nil")
+	ta.Assert(
+		t,
+		reflect.DeepEqual(b.GetLine(0), msg[0]),
+		"should return back to pre-undo state but did not: %q",
+		string(b.GetLine(0)))
 }
