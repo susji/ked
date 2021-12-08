@@ -18,7 +18,7 @@ const (
 type Buffer struct {
 	lines    []*gapbuffer.GapBuffer
 	filepath string
-	undo     []Action
+	actions  []*Action
 }
 
 func New(rawlines [][]rune) *Buffer {
@@ -279,6 +279,7 @@ func (b *Buffer) JumpWord(lineno, col int, left bool) (newlineno, newcol int) {
 func (b *Buffer) Perform(act *Action) {
 	switch act.kind {
 	case ACT_RUNES:
+		b.actions = append(b.actions, act)
 		b.lines[act.lineno].SetCursor(act.col)
 		b.lines[act.lineno].Insert(act.data.([]rune))
 	case ACT_BACKSPACE:
