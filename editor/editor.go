@@ -113,7 +113,8 @@ func (e *Editor) insertrune(r rune) {
 		return
 	}
 	eb := e.getactivebuf()
-	eb.col = eb.b.InsertRune(eb.lineno, eb.col, r)
+	eb.b.Perform(buffer.NewInsert(eb.lineno, eb.col, []rune{r}))
+	eb.col++
 }
 
 func (e *Editor) insertlinefeed() {

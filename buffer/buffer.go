@@ -18,6 +18,7 @@ const (
 type Buffer struct {
 	lines    []*gapbuffer.GapBuffer
 	filepath string
+	undo     []Action
 }
 
 func New(rawlines [][]rune) *Buffer {
@@ -110,18 +111,6 @@ func (b *Buffer) LineLength(lineno int) int {
 		panic(fmt.Sprintf("GetLine: invalid lineno=%d", lineno))
 	}
 	return b.lines[lineno].Length()
-}
-
-func (b *Buffer) InsertRune(lineno, col int, r rune) int {
-	b.lines[lineno].SetCursor(col)
-	b.lines[lineno].Insert([]rune{r})
-	return col + 1
-}
-
-func (b *Buffer) InsertRunes(lineno, col int, rs []rune) int {
-	b.lines[lineno].SetCursor(col)
-	b.lines[lineno].Insert(rs)
-	return col + len(rs)
 }
 
 func (b *Buffer) InsertLinefeed(lineno, col int) (newlineno int, newcol int) {
@@ -270,8 +259,8 @@ func (b *Buffer) JumpWord(lineno, col int, left bool) (newlineno, newcol int) {
 			for i := col; i <= len(line)-1; i++ {
 				if strings.ContainsAny(string(line[i]), WORD_DELIMS) {
 					// We consider end-of-line as a delimiter.
-					if i == len(line) - 1 {
-						return lineno, i+1
+					if i == len(line)-1 {
+						return lineno, i + 1
 					}
 					// Skip subsequent word delimiters.
 					nr, _ := b.NextRune(lineno, i)
@@ -285,4 +274,18 @@ func (b *Buffer) JumpWord(lineno, col int, left bool) (newlineno, newcol int) {
 		}
 	}
 	return origlineno, origcol
+}
+
+func (b *Buffer) Perform(act *Action) {
+	switch act.kind {
+	case ACT_RUNES:
+		b.lines[act.lineno].SetCursor(act.col)
+		b.lines[act.lineno].Insert(act.data.([]rune))
+	case ACT_BACKSPACE:
+
+	case ACT_LINEFEED:
+
+	case ACT_DELLINE:
+
+	}
 }

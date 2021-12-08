@@ -61,7 +61,7 @@ func TestInsertDelete(t *testing.T) {
 	//
 	msg := []rune("these are the new line contents!")
 	wantlines := [][]rune{msg}
-	b.InsertRunes(0, 0, msg)
+	b.Perform(buffer.NewInsert(0, 0, msg))
 
 	gotlines := bufferToRunes(b)
 	ta.Assert(t, reflect.DeepEqual(gotlines, wantlines),
@@ -73,7 +73,7 @@ func TestInsertDelete(t *testing.T) {
 	msg2 := []rune("We have some more text incoming!")
 	wantlines2 := [][]rune{msg, msg2}
 	b.NewLine(1)
-	b.InsertRunes(1, 0, msg2)
+	b.Perform(buffer.NewInsert(1, 0, msg2))
 
 	gotlines2 := bufferToRunes(b)
 	ta.Assert(t, reflect.DeepEqual(gotlines2, wantlines2),
@@ -103,17 +103,17 @@ func TestInsertDelete(t *testing.T) {
 func TestInsertRune(t *testing.T) {
 	b := buffer.New([][]rune{[]rune("There is text.")})
 
-	b.InsertRune(0, 9, 's')
-	b.InsertRune(0, 10, 'o')
-	b.InsertRune(0, 11, 'm')
-	b.InsertRune(0, 12, 'e')
-	b.InsertRune(0, 13, ' ')
+	b.Perform(buffer.NewInsert(0, 9, []rune{'s'}))
+	b.Perform(buffer.NewInsert(0, 10, []rune{'o'}))
+	b.Perform(buffer.NewInsert(0, 11, []rune{'m'}))
+	b.Perform(buffer.NewInsert(0, 12, []rune{'e'}))
+	b.Perform(buffer.NewInsert(0, 13, []rune{' '}))
 
-	b.InsertRune(0, 18, ' ')
-	b.InsertRune(0, 19, 'h')
-	b.InsertRune(0, 20, 'e')
-	b.InsertRune(0, 21, 'r')
-	b.InsertRune(0, 22, 'e')
+	b.Perform(buffer.NewInsert(0, 18, []rune{' '}))
+	b.Perform(buffer.NewInsert(0, 19, []rune{'h'}))
+	b.Perform(buffer.NewInsert(0, 20, []rune{'e'}))
+	b.Perform(buffer.NewInsert(0, 21, []rune{'r'}))
+	b.Perform(buffer.NewInsert(0, 22, []rune{'e'}))
 
 	got := b.GetLine(0)
 	want := []rune("There is some text here.")
@@ -303,10 +303,10 @@ func TestJump(t *testing.T) {
 	ta.Assert(t, lineno == 1 && col == 17, "unexpected jump pos: %d, %d", lineno, col)
 
 	// Jump right from the end of a line.
-	lineno, col = b.JumpWord(1, len(msg[1]) - 1, false)
+	lineno, col = b.JumpWord(1, len(msg[1])-1, false)
 	ta.Assert(t, lineno == 2 && col == 2, "unexpected jump pos: %d, %d", lineno, col)
 
 	// Grande finale: Try jumping right towards the lonely 'a'.
-    lineno, col = b.JumpWord(0, 26, false)
-    ta.Assert(t, lineno == 0 && col == len(msg[0]) - 1, "unexpected jump pos: %d, %d", lineno, col)
+	lineno, col = b.JumpWord(0, 26, false)
+	ta.Assert(t, lineno == 0 && col == len(msg[0])-1, "unexpected jump pos: %d, %d", lineno, col)
 }
