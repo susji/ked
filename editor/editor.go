@@ -58,6 +58,11 @@ func (e *Editor) NewBuffer(filepath string, r io.Reader) error {
 	return nil
 }
 
+func (eb *editorBuffer) update(res buffer.ActionResult) {
+	eb.lineno = res.Lineno
+	eb.col = res.Col
+}
+
 func (e *Editor) getactivebuf() *editorBuffer {
 	if e.activebuf > len(e.buffers)-1 {
 		panic("activebuf too large")
@@ -113,7 +118,7 @@ func (e *Editor) insertrune(r rune) {
 		return
 	}
 	eb := e.getactivebuf()
-	eb.col = eb.b.InsertRune(eb.lineno, eb.col, r)
+	eb.update(eb.b.Perform(buffer.NewInsert(eb.lineno, eb.col, []rune{r})))
 }
 
 func (e *Editor) insertlinefeed() {
@@ -121,7 +126,7 @@ func (e *Editor) insertlinefeed() {
 		return
 	}
 	eb := e.getactivebuf()
-	eb.lineno, eb.col = eb.b.InsertLinefeed(eb.lineno, eb.col)
+	eb.update(eb.b.Perform(buffer.NewLinefeed(eb.lineno, eb.col)))
 }
 
 func (e *Editor) backspace() {
@@ -129,7 +134,7 @@ func (e *Editor) backspace() {
 		return
 	}
 	eb := e.getactivebuf()
-	eb.lineno, eb.col = eb.b.Backspace(eb.lineno, eb.col)
+	eb.update(eb.b.Perform(buffer.NewBackspace(eb.lineno, eb.col)))
 }
 
 func (e *Editor) movevertical(up bool) {
@@ -272,7 +277,7 @@ func (e *Editor) delline() {
 		return
 	}
 	eb := e.getactivebuf()
-	eb.lineno = eb.b.DeleteLineContent(eb.lineno, eb.col)
+	eb.update(eb.b.Perform(buffer.NewDelLineContent(eb.lineno, eb.col)))
 }
 
 func (e *Editor) jumpword(left bool) {
