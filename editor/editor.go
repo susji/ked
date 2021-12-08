@@ -277,6 +277,10 @@ func (e *Editor) delline() {
 		return
 	}
 	eb := e.getactivebuf()
+	if eb.b.LineLength(eb.lineno) == 0 {
+		eb.update(eb.b.Perform(buffer.NewDelLine(eb.lineno)))
+		return
+	}
 	eb.update(eb.b.Perform(buffer.NewDelLineContent(eb.lineno, eb.col)))
 }
 

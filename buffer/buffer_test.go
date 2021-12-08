@@ -82,7 +82,7 @@ func TestInsertDelete(t *testing.T) {
 	//
 	// Delete first line and make sure we have the second still.
 	//
-	b.DeleteLine(0)
+	b.Perform(buffer.NewDelLine(0))
 	wantlines3 := [][]rune{msg2}
 
 	gotlines3 := bufferToRunes(b)
@@ -92,7 +92,7 @@ func TestInsertDelete(t *testing.T) {
 	//
 	// Delete second line and make sure the buffer is empty again.
 	//
-	b.DeleteLine(0)
+	b.Perform(buffer.NewDelLine(0))
 	wantlines4 := [][]rune{}
 
 	gotlines4 := bufferToRunes(b)
@@ -203,7 +203,7 @@ func TestDeleteLineContent(t *testing.T) {
 	}
 
 	// Then delete empty middle line.
-	b.Perform(buffer.NewDelLineContent(1, 0))
+	b.Perform(buffer.NewDelLine(1))
 	wants3 := [][]rune{
 		[]rune("First line."),
 		[]rune("Third line."),

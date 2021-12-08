@@ -5,6 +5,7 @@ const (
 	ACT_BACKSPACE
 	ACT_LINEFEED
 	ACT_DELLINECONTENT
+	ACT_DELLINE
 )
 
 type ActionKind int
@@ -50,5 +51,13 @@ func NewDelLineContent(lineno, col int) *Action {
 		kind:   ACT_DELLINECONTENT,
 		lineno: lineno,
 		col:    col,
+	}
+}
+
+func NewDelLine(lineno int) *Action {
+	return &Action{
+		kind:   ACT_DELLINE,
+		lineno: lineno,
+		col:    0,
 	}
 }

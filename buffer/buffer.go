@@ -93,14 +93,15 @@ func (b *Buffer) NewLine(pos int) *gapbuffer.GapBuffer {
 	return newline
 }
 
-func (b *Buffer) DeleteLine(pos int) {
-	if pos < 0 || len(b.lines) < pos {
-		panic(fmt.Sprintf("DeleteLine: invalid pos=%d", pos))
+func (b *Buffer) deleteline(act *Action) ActionResult {
+	lineno := act.lineno
+	if lineno < 0 || len(b.lines) < lineno {
+		panic(fmt.Sprintf("deleteline: invalid lineno=%d", lineno))
 	}
-	left := b.lines[:pos]
-	right := b.lines[pos+1:]
-	//log.Printf("[DeleteLine=%d] left=%q  right=%q\n", pos, left, right)
+	left := b.lines[:lineno]
+	right := b.lines[lineno+1:]
 	b.lines = append(left, right...)
+	return ActionResult{Lineno: act.lineno, Col: 0}
 }
 
 func (b *Buffer) GetLine(lineno int) []rune {
@@ -117,7 +118,7 @@ func (b *Buffer) LineLength(lineno int) int {
 	return b.lines[lineno].Length()
 }
 
-func (b *Buffer) insertLinefeed(act *Action) ActionResult {
+func (b *Buffer) insertlinefeed(act *Action) ActionResult {
 	lineno := act.lineno
 	col := act.col
 	line := b.lines[lineno].Get()
@@ -136,7 +137,7 @@ func (b *Buffer) backspace(act *Action) ActionResult {
 	lineno := act.lineno
 	col := act.col
 	if col == 0 && lineno > 0 {
-		b.DeleteLine(lineno)
+		b.Perform(NewDelLine(lineno))
 		if lineno > 0 {
 			lineup := b.lines[lineno-1]
 			lineuprunes := lineup.Get()
@@ -159,17 +160,12 @@ func (b *Buffer) Lines() int {
 	return len(b.lines)
 }
 
-func (b *Buffer) deleteLineContent(act *Action) ActionResult {
+func (b *Buffer) deletelinecontent(act *Action) ActionResult {
 	lineno := act.lineno
 	col := act.col
-	if b.LineLength(lineno) == 0 && b.Lines() > 1 {
-		b.DeleteLine(lineno)
-		if lineno == b.Lines() {
-			return ActionResult{Lineno: lineno - 1, Col: col}
-		}
-		return ActionResult{Lineno: lineno, Col: col}
+	if b.LineLength(lineno) == 0 {
+		panic("deletelinecontent: got an empty line")
 	}
-
 	for b.LineLength(lineno) > col {
 		b.backspace(NewBackspace(lineno, col+1))
 	}
@@ -286,7 +282,7 @@ func (b *Buffer) JumpWord(lineno, col int, left bool) (newlineno, newcol int) {
 	return origlineno, origcol
 }
 
-func (b *Buffer) insertRune(act *Action) ActionResult {
+func (b *Buffer) insertrune(act *Action) ActionResult {
 	b.lines[act.lineno].SetCursor(act.col)
 	b.lines[act.lineno].Insert(act.data.([]rune))
 	return ActionResult{Lineno: act.lineno, Col: act.col + 1}
@@ -297,10 +293,11 @@ func (b *Buffer) insertRune(act *Action) ActionResult {
 // we also handle all the relevant book-keepping for undo.
 func (b *Buffer) Perform(act *Action) ActionResult {
 	dispatch := map[ActionKind]ActionFunc{
-		ACT_RUNES:          b.insertRune,
+		ACT_RUNES:          b.insertrune,
 		ACT_BACKSPACE:      b.backspace,
-		ACT_LINEFEED:       b.insertLinefeed,
-		ACT_DELLINECONTENT: b.deleteLineContent,
+		ACT_LINEFEED:       b.insertlinefeed,
+		ACT_DELLINECONTENT: b.deletelinecontent,
+		ACT_DELLINE:        b.deleteline,
 	}
 	return dispatch[act.kind](act)
 }
