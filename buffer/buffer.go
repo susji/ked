@@ -18,7 +18,7 @@ const (
 type Buffer struct {
 	lines    []*gapbuffer.GapBuffer
 	filepath string
-	mods     []*mods
+	mods     []modification
 }
 
 func New(rawlines [][]rune) *Buffer {
@@ -48,7 +48,7 @@ func NewFromReader(filepath string, r io.Reader) (*Buffer, error) {
 	}, nil
 }
 
-func (b *Buffer) Modify(mod *modification) {
+func (b *Buffer) modify(mod modification) {
 	b.mods = append(b.mods, mod)
 }
 
@@ -283,8 +283,15 @@ func (b *Buffer) JumpWord(lineno, col int, left bool) (newlineno, newcol int) {
 }
 
 func (b *Buffer) insertrune(act *Action) ActionResult {
+	rs := act.data.([]rune)
 	b.lines[act.lineno].SetCursor(act.col)
-	b.lines[act.lineno].Insert(act.data.([]rune))
+	b.lines[act.lineno].Insert(rs)
+	b.modify(modification{
+		kind: MOD_INSERTRUNES,
+		lineno: act.lineno,
+		col: act.col,
+		data: rs,
+	})
 	return ActionResult{Lineno: act.lineno, Col: act.col + 1}
 }
 
