@@ -2,7 +2,7 @@
 
 * [x] Undo
 * [x] Searching through the file with a shortcut
-* [ ] Mechanism to run shell commands when buffer is saved
+* [x] Mechanism to run shell commands when buffer is saved
 * [ ] Opening a file to the current buffer, fuzzily
 * [ ] Managing multiple buffers
 * [ ] Configurable tabsize (now hardcoded to 4 spaces)
