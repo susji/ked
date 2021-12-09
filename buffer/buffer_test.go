@@ -406,3 +406,37 @@ func TestDetabulate(t *testing.T) {
 			string(want))
 	}
 }
+
+func TestUndoBackspace(t *testing.T) {
+	msg := [][]rune{
+		[]rune("first"),
+		[]rune("second"),
+	}
+	b := buffer.New(msg)
+	b.Perform(buffer.NewBackspace(1, 0))
+
+	ta.Assert(t, b.Lines() == 1, "want 1 line, got %d", b.Lines())
+
+	backspaced := make([]rune, len(msg[0])+len(msg[1]))
+	copy(backspaced, msg[0])
+	copy(backspaced[len(msg[0]):], msg[1])
+
+	got := b.GetLine(0)
+	ta.Assert(
+		t,
+		reflect.DeepEqual(backspaced, got),
+		"should get %q but got %q",
+		backspaced, got)
+
+	// Undo backspace and expect back to original msg.
+	for i := 0; i < 10; i++ {
+		b.UndoModification()
+	}
+	gotundo := bufferToRunes(b)
+	ta.Assert(
+		t,
+		reflect.DeepEqual(msg, gotundo),
+		"want %v but got %v",
+		msg,
+		gotundo)
+}
