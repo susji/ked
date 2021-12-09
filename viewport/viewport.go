@@ -5,10 +5,7 @@ import (
 	"math"
 
 	"github.com/susji/ked/buffer"
-)
-
-const (
-	TABSZ = 4
+	"github.com/susji/ked/config"
 )
 
 type Viewport struct {
@@ -118,7 +115,7 @@ func (v *Viewport) doRenderWrapped(
 	w, cursorlineno, cursorcol, linenobuf, linenodrawn int, line []rune) ([][]rune, int, int) {
 
 	ret := [][]rune{}
-	line, tabbedlen := tabexpand(line, TABSZ)
+	line, tabbedlen := tabexpand(line, config.TABSZ)
 	nlinefrag := int(math.Ceil(float64(len(line)) / float64(w)))
 	//log.Printf("[doRenderWrapped]: w=%d  h=%d  linenobuf=%d  lenline=%d   linefrags=%d\n",
 	//	w, h, linenobuf, len(line), nlinefrag)
