@@ -155,7 +155,10 @@ func (b *Buffer) deleteline(act *Action) ActionResult {
 		kind:   MOD_DELETELINE,
 		lineno: lineno,
 	})
-	return ActionResult{Lineno: act.lineno, Col: 0}
+	if lineno >= b.Lines() {
+		lineno = b.Lines() - 1
+	}
+	return ActionResult{Lineno: lineno, Col: 0}
 }
 
 func (b *Buffer) GetLine(lineno int) []rune {
