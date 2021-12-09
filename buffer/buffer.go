@@ -398,7 +398,9 @@ func (b *Buffer) detabulate(act *Action) ActionResult {
 		})
 		for i := 0; i < config.TABSZ; i++ {
 			line.SetCursor(1).Delete()
-			col--
+			if col > 0 {
+				col--
+			}
 		}
 	}
 	return ActionResult{Lineno: lineno, Col: col}
