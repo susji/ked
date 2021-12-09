@@ -200,12 +200,12 @@ func (b *Buffer) backspace(act *Action) ActionResult {
 	} else if col == 0 {
 		return ActionResult{Lineno: lineno, Col: col}
 	}
-    b.modify(&modification{
-        kind: MOD_DELETERUNE,
-        lineno: lineno,
-        col: col-1,
-        data: linerunes[col-1],
-    })
+	b.modify(&modification{
+		kind:   MOD_DELETERUNE,
+		lineno: lineno,
+		col:    col - 1,
+		data:   linerunes[col-1],
+	})
 	line.SetCursor(col)
 	line.Delete()
 	col--
