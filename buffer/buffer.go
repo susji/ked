@@ -53,6 +53,7 @@ func (b *Buffer) UndoModification() *ActionResult {
 	if len(b.mods) == 0 {
 		return nil
 	}
+restart:
 	n := len(b.mods) - 1
 	mod := b.mods[n]
 	b.mods = b.mods[:n]
@@ -88,6 +89,10 @@ func (b *Buffer) UndoModification() *ActionResult {
 		newlines[len(left)] = newline
 		copy(newlines[len(left)+1:], right)
 		b.lines = newlines
+	}
+	// Execute all sequential modifications of the same kind.
+	if len(b.mods) > 0 && mod.kind == b.mods[len(b.mods)-1].kind {
+		goto restart
 	}
 	return &ActionResult{Lineno: mod.lineno, Col: mod.col}
 }
