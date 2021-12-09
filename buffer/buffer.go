@@ -222,8 +222,16 @@ func (b *Buffer) deletelinecontent(act *Action) ActionResult {
 	if b.LineLength(lineno) == 0 {
 		panic("deletelinecontent: got an empty line")
 	}
+	line := b.lines[lineno]
+	b.modify(&modification{
+		kind: MOD_DELETERUNES,
+		lineno: lineno,
+		col: col,
+		data: line.Get()[col:],
+	})
 	for b.LineLength(lineno) > col {
-		b.backspace(NewBackspace(lineno, col+1))
+		line.SetCursor(col+1)
+		line.Delete()
 	}
 	return ActionResult{Lineno: lineno, Col: col}
 }
