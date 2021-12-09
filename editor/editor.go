@@ -391,7 +391,7 @@ main:
 			switch {
 			case ev.Key() == tcell.KeyCtrlUnderscore:
 				e.undo()
-			case ev.Key() == tcell.KeyCtrlF:
+			case ev.Key() == tcell.KeyCtrlS:
 				e.search()
 			case ev.Key() == tcell.KeyCtrlK:
 				e.delline()
@@ -423,7 +423,7 @@ main:
 				e.moveline(true)
 			case ev.Key() == tcell.KeyCtrlE:
 				e.moveline(false)
-			case ev.Key() == tcell.KeyCtrlS:
+			case ev.Key() == tcell.KeyCtrlW:
 				e.savebuffer()
 			case ev.Key() == tcell.KeyPgUp:
 				e.movepage(true)
