@@ -13,9 +13,11 @@ import (
 )
 
 func main() {
-	var debugfile string
+	var debugfile, savehook string
 
 	flag.StringVar(&debugfile, "debugfile", "", "File for appending debug log")
+	flag.StringVar(&savehook, "savehook", "",
+		"Command to run when a file is saved. __ABSPATH__ is expanded to filepath.")
 	flag.Parse()
 
 	if len(debugfile) > 0 {
@@ -32,7 +34,7 @@ func main() {
 
 	// Initial editor context consists of a canvas and an optional
 	// list file-backed buffers.
-	e := editor.New()
+	e := editor.New().SaveHook(savehook)
 	filenames := flag.Args()
 	for _, filename := range filenames {
 		absname, err := filepath.Abs(filename)

@@ -10,8 +10,10 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"unicode"
 
 	"github.com/gdamore/tcell/v2"
@@ -32,6 +34,7 @@ type Editor struct {
 	s         tcell.Screen
 	buffers   []editorBuffer
 	activebuf int
+	savehook  string
 }
 
 func newEditorBuffer(b *buffer.Buffer) *editorBuffer {
@@ -60,6 +63,27 @@ func (e *Editor) NewBuffer(filepath string, r io.Reader) error {
 	return nil
 }
 
+func (e *Editor) SaveHook(savehook string) *Editor {
+	e.savehook = savehook
+	return e
+}
+
+func (e *Editor) closeBuffer(bufnum int) {
+	if bufnum < 0 || bufnum >= len(e.buffers) {
+		panic("closeBuffer: invalid bufnum")
+	}
+	// XXX Maybe ask for confirmation if buffer
+	//     has unsaved changes.
+	newbufs := make([]editorBuffer, len(e.buffers)-1)
+	left := e.buffers[:bufnum]
+	right := e.buffers[bufnum+1:]
+	copy(newbufs, left)
+	copy(newbufs[:bufnum], right)
+	if e.activebuf > 0 && e.activebuf >= bufnum {
+		e.activebuf--
+	}
+}
+
 func (eb *editorBuffer) update(res buffer.ActionResult) {
 	eb.lineno = res.Lineno
 	eb.col = res.Col
@@ -67,6 +91,7 @@ func (eb *editorBuffer) update(res buffer.ActionResult) {
 
 func (e *Editor) getactivebuf() *editorBuffer {
 	if e.activebuf > len(e.buffers)-1 {
+
 		panic("activebuf too large")
 	}
 	return &e.buffers[e.activebuf]
@@ -242,6 +267,57 @@ func (e *Editor) savebuffer() {
 		log.Println("[savebuffer] failed: ", err)
 		// XXX Report error to UI somehow
 	}
+
+	if len(e.savehook) > 0 {
+		sh := strings.ReplaceAll(e.savehook, "__ABSPATH__", abspath)
+		log.Printf("[savebuffer, hook] %q -> %q\n", e.savehook, sh)
+		e.execandreload(abspath, sh)
+	}
+}
+
+func (e *Editor) execandreload(abspath, cmd string) {
+	args := []string{"-c", cmd}
+	c := exec.Command("/bin/sh", args...)
+	out, err := c.Output()
+	log.Println("[execandreread, output] ", out)
+	if err != nil {
+		// XXX Display error to user somehow.
+		log.Printf("[execandreread, exec error] %v\n", err)
+		return
+	}
+	f, err := os.Open(abspath)
+	if err != nil {
+		// XXX Display error to use somehow.
+		log.Printf("[execandreread, reopen error] %v\n", err)
+		return
+	}
+
+	oldbuf := e.getactivebuf()
+	oldbufnum := e.activebuf
+	lineno := oldbuf.lineno
+	col := oldbuf.col
+
+	log.Println("[execandreread, reopened] ", abspath)
+	if err := e.NewBufferFromFile(f); err != nil {
+		log.Printf("[execandreread, newbuffer error] %v\n", err)
+		return
+	}
+
+	e.closeBuffer(oldbufnum)
+
+	newbufnum := len(e.buffers) - 1
+	e.activebuf = newbufnum
+	newbuf := e.getactivebuf()
+	newbuf.lineno = lineno
+	if newbuf.lineno > newbuf.b.Lines()-1 {
+		newbuf.lineno = newbuf.b.Lines() - 1
+	}
+	newbuf.col = col
+	if newbuf.col > newbuf.b.LineLength(newbuf.lineno) {
+		newbuf.col = newbuf.b.LineLength(newbuf.lineno)
+	}
+	newbuf.v.SetTeleported(newbuf.lineno)
+	log.Printf("[execandreload, new buffer] %d\n", e.activebuf)
 }
 
 func (e *Editor) jumpline() {
