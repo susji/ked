@@ -355,7 +355,6 @@ func (e *Editor) jumpline() {
 	}
 	eb.lineno = lineno - 1
 	eb.col = 0
-	eb.v.SetTeleported(eb.lineno)
 }
 
 func (e *Editor) delline() {
