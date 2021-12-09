@@ -21,3 +21,5 @@ The hardcoded keyboard shortcuts are the following:
   * `Ctrl+K` deletes from cursor to the end of line; also deletes empty lines
   * `Alt+Backspace` deletes current word
   * `Ctrl+_` undos recent actions
+  * `Tab` inserts one tab character to cursor position
+  * `Shift+Tab` (`Backtab`) removes one level of tabulation from line beginning
