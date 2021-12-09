@@ -93,7 +93,6 @@ func (eb *editorBuffer) update(res buffer.ActionResult) {
 
 func (e *Editor) getactivebuf() *editorBuffer {
 	if e.activebuf > len(e.buffers)-1 {
-
 		panic("activebuf too large")
 	}
 	return &e.buffers[e.activebuf]
@@ -122,7 +121,6 @@ func (e *Editor) drawactivebuf() {
 	if len(e.buffers) == 0 {
 		return
 	}
-
 	eb := e.getactivebuf()
 	w, h := e.s.Size()
 	rend := eb.v.Render(w, h-1, eb.lineno, eb.col)
@@ -138,7 +136,6 @@ func (e *Editor) drawactivebuf() {
 			break
 
 		}
-
 	}
 	vx, vy := rend.Cursor()
 	e.s.ShowCursor(vx, vy)
@@ -481,6 +478,22 @@ func (e *Editor) drawstatusline() {
 	}
 }
 
+func (e *Editor) jumpempty(up bool) {
+	eb := e.getactivebuf()
+moveagain:
+	e.movevertical(up)
+	if strings.TrimSpace(string(eb.b.GetLine(eb.lineno))) == "" {
+		return
+	}
+	if up && eb.lineno == 0 {
+		return
+	}
+	if !up && eb.lineno >= eb.b.Lines()-1 {
+		return
+	}
+	goto moveagain
+}
+
 func (e *Editor) undo() {
 	if len(e.buffers) == 0 {
 		return
@@ -528,6 +541,10 @@ main:
 				e.delline()
 			case ev.Key() == tcell.KeyCtrlG:
 				e.jumpline()
+			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Key() == tcell.KeyUp:
+				e.jumpempty(true)
+			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Key() == tcell.KeyDown:
+				e.jumpempty(false)
 			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Key() == tcell.KeyLeft:
 				e.jumpword(true)
 			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Key() == tcell.KeyRight:
