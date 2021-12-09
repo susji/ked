@@ -449,6 +449,13 @@ func (e *Editor) drawstatusmsg(msg string) {
 	e.s.Show()
 }
 
+func (e *Editor) listbuffers() {
+	log.Println("[listbuffers]")
+	for bufnum, buf := range e.buffers {
+		log.Printf("[%03d] %#v\n", bufnum, buf)
+	}
+}
+
 func (e *Editor) drawstatusline() {
 	w, h := e.s.Size()
 	fn := "{no file}"
@@ -511,6 +518,8 @@ main:
 		case *tcell.EventKey:
 			log.Printf("[EventKey] %s (mods=%X)\n", ev.Name(), ev.Modifiers())
 			switch {
+			case ev.Key() == tcell.KeyCtrlL:
+				e.listbuffers()
 			case ev.Key() == tcell.KeyCtrlUnderscore:
 				e.undo()
 			case ev.Key() == tcell.KeyCtrlS:
