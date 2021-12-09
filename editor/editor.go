@@ -68,20 +68,22 @@ func (e *Editor) SaveHook(savehook string) *Editor {
 	return e
 }
 
-func (e *Editor) closeBuffer(bufnum int) {
+func (e *Editor) closebuffer(bufnum int) {
 	if bufnum < 0 || bufnum >= len(e.buffers) {
 		panic("closeBuffer: invalid bufnum")
 	}
+	log.Printf("[closebuffer] %d\n", bufnum)
 	// XXX Maybe ask for confirmation if buffer
 	//     has unsaved changes.
 	newbufs := make([]editorBuffer, len(e.buffers)-1)
 	left := e.buffers[:bufnum]
 	right := e.buffers[bufnum+1:]
 	copy(newbufs, left)
-	copy(newbufs[:bufnum], right)
+	copy(newbufs[bufnum:], right)
 	if e.activebuf > 0 && e.activebuf >= bufnum {
 		e.activebuf--
 	}
+	e.buffers = newbufs
 }
 
 func (eb *editorBuffer) update(res buffer.ActionResult) {
@@ -134,7 +136,9 @@ func (e *Editor) drawactivebuf() {
 		lineno++
 		if lineno == h-1 {
 			break
+
 		}
+
 	}
 	vx, vy := rend.Cursor()
 	e.s.ShowCursor(vx, vy)
@@ -304,7 +308,7 @@ func (e *Editor) execandreload(abspath, cmd string) {
 		return
 	}
 
-	e.closeBuffer(oldbufnum)
+	e.closebuffer(oldbufnum)
 
 	newbufnum := len(e.buffers) - 1
 	e.activebuf = newbufnum
@@ -323,7 +327,8 @@ func (e *Editor) execandreload(abspath, cmd string) {
 	}
 
 	newbuf.v.SetTeleported(oldviewportstart)
-	log.Printf("[execandreload, new buffer] %d\n", e.activebuf)
+	log.Printf("[execandreload, new buffer] %d -> %d -> %d\n",
+		oldbufnum, newbufnum, e.activebuf)
 }
 
 func (e *Editor) jumpline() {
