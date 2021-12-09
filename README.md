@@ -20,3 +20,4 @@ The hardcoded keyboard shortcuts are the following:
   * `PageUp` and `PageDown` move, well, a single page up or down
   * `Ctrl+K` deletes from cursor to the end of line; also deletes empty lines
   * `Alt+Backspace` deletes current word
+  * `Ctrl+_` undos recent actions
