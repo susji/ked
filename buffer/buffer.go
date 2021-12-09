@@ -74,10 +74,10 @@ func (b *Buffer) UndoModification() *ActionResult {
 		right := b.lines[lineno+1:]
 		b.lines = append(left, right...)
 		b.lines[lineno] = newline
-	case MOD_DELETERUNE:
+	case MOD_DELETERUNES:
 		lineno := mod.lineno
 		col := mod.col
-		b.lines[lineno].SetCursor(col).Insert([]rune{mod.data.(rune)})
+		b.lines[lineno].SetCursor(col).Insert(mod.data.([]rune))
 	case MOD_DELETELINE:
 		lineno := mod.lineno
 		left := b.lines[:lineno]
@@ -201,10 +201,10 @@ func (b *Buffer) backspace(act *Action) ActionResult {
 		return ActionResult{Lineno: lineno, Col: col}
 	}
 	b.modify(&modification{
-		kind:   MOD_DELETERUNE,
+		kind:   MOD_DELETERUNES,
 		lineno: lineno,
 		col:    col - 1,
-		data:   linerunes[col-1],
+		data:   []rune{linerunes[col-1]},
 	})
 	line.SetCursor(col)
 	line.Delete()
