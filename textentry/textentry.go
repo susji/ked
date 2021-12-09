@@ -61,7 +61,9 @@ func (te *TextEntry) Ask(s tcell.Screen, col, lineno int) (answer []rune, reterr
 				reterr = nil
 				return
 			case ev.Key() == tcell.KeyBackspace, ev.Key() == tcell.KeyBackspace2:
-				if len(answer) > 0 {
+				if (ev.Modifiers() & tcell.ModAlt) > 0 {
+					answer = []rune{}
+				} else if len(answer) > 0 {
 					answer = answer[:len(answer)-1]
 				}
 			}
