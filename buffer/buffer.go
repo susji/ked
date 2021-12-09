@@ -81,6 +81,13 @@ restart:
 		lineno := mod.lineno
 		col := mod.col
 		b.lines[lineno].SetCursor(col).Insert(mod.data.([]rune))
+	case MOD_MOVERUNES:
+		lineno := mod.lineno
+		data := mod.data.([]rune)
+		for i := 0; i < len(data); i++ {
+			b.lines[lineno].SetCursor(mod.col + 1).Delete()
+		}
+		b.lines[lineno+1].SetCursor(0).Insert(data)
 	case MOD_DELETELINE:
 		lineno := mod.lineno
 		left := b.lines[:lineno]
@@ -200,10 +207,18 @@ func (b *Buffer) backspace(act *Action) ActionResult {
 	lineno := act.lineno
 	col := act.col
 	if col == 0 && lineno > 0 {
-		b.Perform(NewDelLine(lineno))
 		lineup := b.lines[lineno-1]
 		lineuprunes := lineup.Get()
-		b.insertrune(NewInsert(lineno-1, len(lineuprunes), linerunes[col:]))
+
+		b.modify(&modification{
+			kind:   MOD_MOVERUNES,
+			lineno: lineno - 1,
+			col:    len(lineuprunes),
+			data:   linerunes[col:],
+		})
+		b.lines[lineno-1].SetCursor(len(lineuprunes)).Insert(linerunes[col:])
+
+		b.Perform(NewDelLine(lineno))
 		lineno--
 		col = len(lineuprunes)
 		return ActionResult{Lineno: lineno, Col: col}

@@ -7,6 +7,7 @@ const (
 	MOD_LINEFEED
 	MOD_DELETERUNES
 	MOD_DELETELINE
+	MOD_MOVERUNES
 )
 
 var kindnames = map[modificationKind]string{
@@ -14,6 +15,7 @@ var kindnames = map[modificationKind]string{
 	MOD_LINEFEED:    "MOD_LINEFEED",
 	MOD_DELETERUNES: "MOD_DELETERUNES",
 	MOD_DELETELINE:  "MOD_DELETELINE",
+	MOD_MOVERUNES:   "MOD_MOVERUNES",
 }
 
 type modificationKind int
