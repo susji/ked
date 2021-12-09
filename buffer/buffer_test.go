@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/susji/ked/buffer"
+	"github.com/susji/ked/config"
 	ta "github.com/susji/ked/internal/testutil"
 )
 
@@ -372,15 +373,31 @@ func TestUndo(t *testing.T) {
 }
 
 func TestDetabulate(t *testing.T) {
+	prefix := make([]rune, config.TABSZ)
+	for i := range prefix {
+		prefix[i] = ' '
+	}
+
 	msg := [][]rune{
 		[]rune("\t\t\tthree tabs!"),
 	}
+	msg[0] = append(prefix, msg[0]...)
 	b := buffer.New(msg)
 
-	for i := 1; i <= 3; i++ {
-		b.Perform(buffer.NewDetabulate(0, 5))
+	// First validate the regular spaces.
+	b.Perform(buffer.NewDetabulate(0, 10))
+	ta.Assert(
+		t,
+		reflect.DeepEqual(b.GetLine(0), msg[0][config.TABSZ:]),
+		"unexpected regular space removal result :%q",
+		b.GetLine(0),
+	)
+
+	// ... then the tabs.
+	for i := 0; i < 3; i++ {
+		b.Perform(buffer.NewDetabulate(0, 6))
 		got := b.GetLine(0)
-		want := msg[0][i:]
+		want := msg[0][len(prefix)+i+1:]
 		ta.Assert(
 			t,
 			reflect.DeepEqual(got, want),

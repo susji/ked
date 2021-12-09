@@ -7,8 +7,10 @@ import (
 	"io"
 	"log"
 	"os"
+	"reflect"
 	"strings"
 
+	"github.com/susji/ked/config"
 	"github.com/susji/ked/gapbuffer"
 )
 
@@ -368,6 +370,8 @@ func (b *Buffer) insertrune(act *Action) ActionResult {
 }
 
 func (b *Buffer) detabulate(act *Action) ActionResult {
+	// This many spaces is enough for everyone.
+	spaceprefix := []rune("                                                    ")
 	lineno := act.lineno
 	col := act.col
 	line := b.lines[lineno]
@@ -380,9 +384,22 @@ func (b *Buffer) detabulate(act *Action) ActionResult {
 			data:   []rune{'\t'},
 		})
 		line.SetCursor(1).Delete()
-	}
-	if col > 0 {
-		col--
+		if col > 0 {
+			col--
+		}
+		return ActionResult{Lineno: lineno, Col: col}
+	} else if len(runes) >= config.TABSZ &&
+		reflect.DeepEqual(runes[:config.TABSZ], spaceprefix[:config.TABSZ]) {
+		b.modify(&modification{
+			kind:   MOD_DELETERUNES,
+			lineno: lineno,
+			col:    0,
+			data:   []rune("    "),
+		})
+		for i := 0; i < config.TABSZ; i++ {
+			line.SetCursor(1).Delete()
+			col--
+		}
 	}
 	return ActionResult{Lineno: lineno, Col: col}
 }
