@@ -311,7 +311,7 @@ func TestJump(t *testing.T) {
 	ta.Assert(t, lineno == 0 && col == len(msg[0])-1, "unexpected jump pos: %d, %d", lineno, col)
 }
 
-func TestUndoRunes(t *testing.T) {
+func TestUndo(t *testing.T) {
 	msg := [][]rune{
 		[]rune("First line with some text and a"),
 		[]rune("second line with more runes"),
@@ -320,7 +320,9 @@ func TestUndoRunes(t *testing.T) {
 	add := []rune("UNDO")
 	b := buffer.New(msg)
 
+	//
 	// Add modification and verify it's there.
+	//
 	b.Perform(buffer.NewInsert(0, 0, add))
 	ta.Assert(
 		t,
@@ -328,7 +330,9 @@ func TestUndoRunes(t *testing.T) {
 		"unexpected after addition: %q",
 		string(b.GetLine(0)))
 
+	//
 	// Undo and verify.
+	//
 	res := b.UndoModification()
 	ta.Assert(t, res != nil, "res should not be nil")
 	ta.Assert(
@@ -336,4 +340,33 @@ func TestUndoRunes(t *testing.T) {
 		reflect.DeepEqual(b.GetLine(0), msg[0]),
 		"should return back to pre-undo state but did not: %q",
 		string(b.GetLine(0)))
+
+	//
+	// Delete first and last lines.
+	//
+	b.Perform(buffer.NewDelLineContent(2, 0))
+	b.Perform(buffer.NewDelLineContent(0, 0))
+	b.Perform(buffer.NewDelLine(2))
+	b.Perform(buffer.NewDelLine(0))
+	// Verify we have only one line.
+	ta.Assert(t, b.Lines() == 1, "wanted one line, got %d", b.Lines())
+	ta.Assert(
+		t,
+		reflect.DeepEqual(b.GetLine(0), msg[1]),
+		"unexpected last line: %q",
+		b.GetLine(0))
+
+	//
+	// Undo and verify we're back to beginning.
+	//
+	for i := 0; i < 4; i++ {
+		b.UndoModification()
+	}
+	ta.Assert(t, b.Lines() == len(msg), "wanted %d lines, got %d", len(msg), b.Lines())
+	got := bufferToRunes(b)
+	ta.Assert(
+		t,
+		reflect.DeepEqual(got, msg),
+		"unexpected contents after undo, got %q",
+		got)
 }
