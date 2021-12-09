@@ -23,3 +23,4 @@ The hardcoded keyboard shortcuts are the following:
   * `Ctrl+_` undos recent actions
   * `Tab` inserts one tab character to cursor position
   * `Shift+Tab` (`Backtab`) removes one level of tabulation from line beginning
+  * `Alt+Up` and `Alt+Down` jump to the previous or next empty line
