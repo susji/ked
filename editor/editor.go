@@ -5,6 +5,7 @@ package editor
 //     way to make those prettier.
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -298,28 +299,54 @@ func (e *Editor) search() {
 		return
 	}
 	eb := e.getactivebuf()
+
 	_, h := e.s.Size()
-	term, err := textentry.New(eb.prevsearch, "Search: ", 256).Ask(e.s, 0, h-1)
-	if err != nil {
-		log.Println("[search, error-ask] ", err)
-		e.drawstatusmsg(fmt.Sprintf("%v", err))
-		return
-	}
-	sterm := []rune{}
-	for _, r := range term {
-		sterm = append(sterm, unicode.ToLower(r))
-	}
-	limits := &buffer.SearchLimit{
-		StartLineno: eb.lineno,
-		StartCol:    eb.col,
-		EndLineno:   eb.b.Lines() - 1,
-		EndCol:      eb.b.LineLength(eb.b.Lines() - 1),
-	}
-	if lineno, col := eb.b.SearchRange(sterm, limits); lineno != -1 && col != -1 {
-		eb.lineno = lineno
-		eb.col = col
-		eb.v.SetTeleported(eb.lineno)
-		eb.prevsearch = string(term)
+	nexterr := errors.New("next term")
+	te := textentry.
+		New(eb.prevsearch, "Search: ", 256).
+		AddBinding(tcell.KeyCtrlN, nexterr)
+	looping := true
+	prevcol := eb.col
+	for looping {
+		term, err := te.Ask(e.s, 0, h-1)
+		switch {
+		case err == nil:
+			looping = false
+		case errors.Is(err, nexterr):
+			log.Printf("[search] got next for %q\n", string(term))
+		default:
+			log.Println("[search, error-ask] ", err)
+			e.drawstatusmsg(fmt.Sprintf("%v", err))
+			return
+		}
+
+		sterm := []rune{}
+		for _, r := range term {
+			sterm = append(sterm, unicode.ToLower(r))
+		}
+		limits := &buffer.SearchLimit{
+			StartLineno: eb.lineno,
+			StartCol:    prevcol,
+			EndLineno:   eb.b.Lines() - 1,
+			EndCol:      eb.b.LineLength(eb.b.Lines() - 1),
+		}
+		log.Printf("[search, limits] %#v\n", limits)
+		if lineno, col := eb.b.SearchRange(sterm, limits); lineno != -1 && col != -1 {
+			log.Printf("[search, found] (%d, %d)\n", lineno, col)
+			eb.lineno = lineno
+			eb.col = col
+			eb.v.SetTeleported(eb.lineno)
+			eb.prevsearch = string(term)
+			e.s.Clear()
+			e.drawactivebuf()
+			e.s.Show()
+
+			prevcol = eb.col + len(term)
+			linelen := eb.b.LineLength(lineno)
+			if prevcol >= linelen {
+				prevcol = linelen - 1
+			}
+		}
 	}
 }
 

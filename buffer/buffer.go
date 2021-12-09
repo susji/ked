@@ -259,10 +259,10 @@ func (b *Buffer) SearchRange(term []rune, limits *SearchLimit) (lineno, col int)
 		}
 		line = line[a:b]
 		s := strings.ToLower(string(line))
-		col := strings.Index(s, sterm) + a
+		col := strings.Index(s, sterm)
 		//log.Printf("ZZZ: %q/%q -> %d\n", sterm, s, col)
 		if col >= 0 {
-			return lineno, col
+			return lineno, col + a
 		}
 	}
 	return -1, -1
