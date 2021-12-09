@@ -229,13 +229,13 @@ func (b *Buffer) deletelinecontent(act *Action) ActionResult {
 	}
 	line := b.lines[lineno]
 	b.modify(&modification{
-		kind: MOD_DELETERUNES,
+		kind:   MOD_DELETERUNES,
 		lineno: lineno,
-		col: col,
-		data: line.Get()[col:],
+		col:    col,
+		data:   line.Get()[col:],
 	})
 	for b.LineLength(lineno) > col {
-		line.SetCursor(col+1)
+		line.SetCursor(col + 1)
 		line.Delete()
 	}
 	return ActionResult{Lineno: lineno, Col: col}
@@ -364,6 +364,26 @@ func (b *Buffer) insertrune(act *Action) ActionResult {
 	return ActionResult{Lineno: act.lineno, Col: act.col + 1}
 }
 
+func (b *Buffer) detabulate(act *Action) ActionResult {
+	lineno := act.lineno
+	col := act.col
+	line := b.lines[lineno]
+	runes := line.Get()
+	if len(runes) > 0 && runes[0] == '\t' {
+		b.modify(&modification{
+			kind:   MOD_DELETERUNES,
+			lineno: lineno,
+			col:    0,
+			data:   []rune{'\t'},
+		})
+		line.SetCursor(1).Delete()
+	}
+	if col > 0 {
+		col--
+	}
+	return ActionResult{Lineno: lineno, Col: col}
+}
+
 // Perform is our action dispatch. This should be the only way
 // for outsiders to generate changes in buffer contents. Here
 // we also handle all the relevant book-keepping for undo.
@@ -374,6 +394,7 @@ func (b *Buffer) Perform(act *Action) ActionResult {
 		ACT_LINEFEED:       b.insertlinefeed,
 		ACT_DELLINECONTENT: b.deletelinecontent,
 		ACT_DELLINE:        b.deleteline,
+		ACT_DETABULATE:     b.detabulate,
 	}
 	return dispatch[act.kind](act)
 }

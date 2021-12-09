@@ -397,6 +397,14 @@ func (e *Editor) undo() {
 	}
 }
 
+func (e *Editor) backtab() {
+	if len(e.buffers) == 0 {
+		return
+	}
+	eb := e.getactivebuf()
+	eb.update(eb.b.Perform(buffer.NewDetabulate(eb.lineno, eb.col)))
+}
+
 func (e *Editor) Run() error {
 	if err := e.initscreen(); err != nil {
 		return err
@@ -458,6 +466,8 @@ main:
 				e.movepage(false)
 			case ev.Key() == tcell.KeyTab:
 				e.insertrune('\t')
+			case ev.Key() == tcell.KeyBacktab:
+				e.backtab()
 			}
 		}
 

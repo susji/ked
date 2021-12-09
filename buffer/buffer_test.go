@@ -370,3 +370,22 @@ func TestUndo(t *testing.T) {
 		"unexpected contents after undo, got %q",
 		got)
 }
+
+func TestDetabulate(t *testing.T) {
+	msg := [][]rune{
+		[]rune("\t\t\tthree tabs!"),
+	}
+	b := buffer.New(msg)
+
+	for i := 1; i <= 3; i++ {
+		b.Perform(buffer.NewDetabulate(0, 5))
+		got := b.GetLine(0)
+		want := msg[0][i:]
+		ta.Assert(
+			t,
+			reflect.DeepEqual(got, want),
+			"unexpected detabulation result, got %q, want %q",
+			string(got),
+			string(want))
+	}
+}
