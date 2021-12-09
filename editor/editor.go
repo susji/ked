@@ -292,6 +292,7 @@ func (e *Editor) execandreload(abspath, cmd string) {
 		log.Printf("[execandreread, reopen error] %v\n", err)
 		return
 	}
+	defer f.Close()
 
 	oldbuf := e.getactivebuf()
 	oldbufnum := e.activebuf

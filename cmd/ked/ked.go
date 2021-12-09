@@ -45,6 +45,7 @@ func main() {
 		if err == nil {
 			log.Println("opening buffer for file: ", filename)
 			e.NewBufferFromFile(f)
+			f.Close()
 		} else if errors.Is(err, os.ErrNotExist) {
 			e.NewBuffer(absname, &bytes.Buffer{})
 		} else {
