@@ -381,6 +381,10 @@ func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
 	}
 }
 
+func (v *Viewport) Start() int {
+	return v.y0
+}
+
 func (v *Viewport) PageUp() int {
 	v.paged = true
 	v.y0 = v.pageup

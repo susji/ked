@@ -294,6 +294,7 @@ func (e *Editor) execandreload(abspath, cmd string) {
 
 	oldbuf := e.getactivebuf()
 	oldbufnum := e.activebuf
+	oldviewportstart := oldbuf.v.Start()
 	lineno := oldbuf.lineno
 	col := oldbuf.col
 
@@ -316,7 +317,12 @@ func (e *Editor) execandreload(abspath, cmd string) {
 	if newbuf.col > newbuf.b.LineLength(newbuf.lineno) {
 		newbuf.col = newbuf.b.LineLength(newbuf.lineno)
 	}
-	newbuf.v.SetTeleported(newbuf.lineno)
+
+	if oldviewportstart > newbuf.b.Lines()-1 {
+		oldviewportstart = newbuf.b.Lines() - 1
+	}
+
+	newbuf.v.SetTeleported(oldviewportstart)
 	log.Printf("[execandreload, new buffer] %d\n", e.activebuf)
 }
 
