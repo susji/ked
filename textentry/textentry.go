@@ -15,6 +15,7 @@ var (
 type TextEntry struct {
 	defval, prompt string
 	maxlen         int
+	binds          []bind
 }
 
 func New(defval, prompt string, maxlen int) *TextEntry {
@@ -39,6 +40,14 @@ func (te *TextEntry) draw(s tcell.Screen, what []rune, col, lineno int) {
 	s.Show()
 }
 
+func (te *TextEntry) AddBinding(key tcell.Key, reterr error) *TextEntry {
+	te.binds = append(te.binds, bind{
+		key:    key,
+		reterr: reterr,
+	})
+	return te
+}
+
 func (te *TextEntry) Ask(s tcell.Screen, col, lineno int) (answer []rune, reterr error) {
 	answer = []rune(te.defval)
 	prompt := []rune(te.prompt)
@@ -50,12 +59,14 @@ func (te *TextEntry) Ask(s tcell.Screen, col, lineno int) (answer []rune, reterr
 		switch ev := ev.(type) {
 		case *tcell.EventKey:
 			// XXX Resize not handled at all.
+			log.Printf("[text-entry, EventKey] %s (mods=%X)\n",
+				ev.Name(), ev.Modifiers())
 			switch {
 			case ev.Key() == tcell.KeyCtrlC:
 				log.Println("[savebuffer, cancel]")
 				reterr = ErrorCancelled
 				return
-			case ev.Key() == tcell.KeyRune:
+			case ev.Key() == tcell.KeyRune && ev.Modifiers() == 0:
 				answer = append(answer, ev.Rune())
 			case ev.Key() == tcell.KeyEnter:
 				reterr = nil
@@ -66,6 +77,14 @@ func (te *TextEntry) Ask(s tcell.Screen, col, lineno int) (answer []rune, reterr
 				} else if len(answer) > 0 {
 					answer = answer[:len(answer)-1]
 				}
+			default:
+				for _, bind := range te.binds {
+					if ev.Key() == bind.key {
+						log.Printf("[textentry, custom-bind] %v\n", bind.reterr)
+						reterr = bind.reterr
+						return
+					}
+				}
 			}
 
 		}
@@ -74,4 +93,9 @@ func (te *TextEntry) Ask(s tcell.Screen, col, lineno int) (answer []rune, reterr
 			return
 		}
 	}
+}
+
+type bind struct {
+	key    tcell.Key
+	reterr error
 }
