@@ -14,10 +14,6 @@ import (
 	"github.com/susji/ked/gapbuffer"
 )
 
-const (
-	WORD_DELIMS = " \t&|./(){}[]#+*%'-:?!'\""
-)
-
 type Buffer struct {
 	lines    []*gapbuffer.GapBuffer
 	filepath string
@@ -340,8 +336,8 @@ func (b *Buffer) JumpWord(lineno, col int, left bool) (newlineno, newcol int) {
 			var i int
 			for i = col - 1; i > 0; i-- {
 				pr, _ := b.PrevRune(lineno, i)
-				if strings.ContainsAny(string(pr), WORD_DELIMS) &&
-					!strings.ContainsAny(string(line[i]), WORD_DELIMS) {
+				if strings.ContainsAny(string(pr), config.WORD_DELIMS) &&
+					!strings.ContainsAny(string(line[i]), config.WORD_DELIMS) {
 					return lineno, i
 				}
 			}
@@ -355,14 +351,14 @@ func (b *Buffer) JumpWord(lineno, col int, left bool) (newlineno, newcol int) {
 		for lineno >= 0 && lineno < b.Lines() {
 			line := b.GetLine(lineno)
 			for i := col; i <= len(line)-1; i++ {
-				if strings.ContainsAny(string(line[i]), WORD_DELIMS) {
+				if strings.ContainsAny(string(line[i]), config.WORD_DELIMS) {
 					// We consider end-of-line as a delimiter.
 					if i == len(line)-1 {
 						return lineno, i + 1
 					}
 					// Skip subsequent word delimiters.
 					nr, _ := b.NextRune(lineno, i)
-					if !strings.ContainsAny(string(nr), WORD_DELIMS) {
+					if !strings.ContainsAny(string(nr), config.WORD_DELIMS) {
 						return lineno, i + 1
 					}
 				}
@@ -385,6 +381,25 @@ func (b *Buffer) insertrune(act *Action) ActionResult {
 		data:   rs,
 	})
 	return ActionResult{Lineno: act.lineno, Col: act.col + 1}
+}
+
+func (b *Buffer) delword(act *Action) ActionResult {
+	lineno := act.lineno
+	col := act.col
+
+	// This is the suboptimal version where we just
+	// leverage backspace() instead of doing string
+	// search to handle the word-deletion in one go.
+
+keepgoing:
+	res := b.backspace(NewBackspace(lineno, col))
+	lineno = res.Lineno
+	col = res.Col
+	linerunes := string(b.GetLine(lineno))
+	if col > 0 && !strings.ContainsAny(string(linerunes[col-1]), config.WORD_DELIMS) {
+		goto keepgoing
+	}
+	return res
 }
 
 func (b *Buffer) detabulate(act *Action) ActionResult {
@@ -435,6 +450,7 @@ func (b *Buffer) Perform(act *Action) ActionResult {
 		ACT_DELLINECONTENT: b.deletelinecontent,
 		ACT_DELLINE:        b.deleteline,
 		ACT_DETABULATE:     b.detabulate,
+		ACT_DELWORD:        b.delword,
 	}
 	return dispatch[act.kind](act)
 }

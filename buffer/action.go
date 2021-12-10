@@ -6,6 +6,7 @@ const (
 	ACT_LINEFEED
 	ACT_DELLINECONTENT
 	ACT_DELLINE
+	ACT_DELWORD
 	ACT_DETABULATE
 )
 
@@ -60,6 +61,14 @@ func NewDelLine(lineno int) *Action {
 		kind:   ACT_DELLINE,
 		lineno: lineno,
 		col:    0,
+	}
+}
+
+func NewDelWord(lineno, col int) *Action {
+	return &Action{
+		kind:   ACT_DELWORD,
+		lineno: lineno,
+		col:    col,
 	}
 }
 

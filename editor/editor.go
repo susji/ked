@@ -451,7 +451,14 @@ func (e *Editor) backtab() {
 	eb := e.buffers.Get(e.activebuf)
 	eb.Update(
 		eb.Buffer.Perform(
-			buffer.NewDetabulate(eb.CursorLine(), eb.CursorCol())))
+			buffer.NewDetabulate(eb.Cursor())))
+}
+
+func (e *Editor) delword() {
+	eb := e.buffers.Get(e.activebuf)
+	eb.Update(
+		eb.Buffer.Perform(
+			buffer.NewDelWord(eb.Cursor())))
 }
 
 func (e *Editor) openbuffer() {
@@ -596,7 +603,11 @@ main:
 			case ev.Key() == tcell.KeyEnter:
 				e.insertlinefeed()
 			case ev.Key() == tcell.KeyBackspace, ev.Key() == tcell.KeyBackspace2:
-				e.backspace()
+				if ev.Modifiers()&tcell.ModAlt > 0 {
+					e.delword()
+				} else {
+					e.backspace()
+				}
 			case ev.Key() == tcell.KeyUp:
 				e.movevertical(true)
 			case ev.Key() == tcell.KeyDown:

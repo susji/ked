@@ -445,3 +445,31 @@ func TestUndoBackspace(t *testing.T) {
 		msg,
 		gotundo)
 }
+
+func TestDeleteWord(t *testing.T) {
+	msg := [][]rune{
+		[]rune("first second,third:fourth-fifth"),
+	}
+	b := buffer.New(msg)
+
+	wants := []string{
+		"first second,third:fourth-",
+		"first second,third:",
+		"first second,",
+		"first ",
+	}
+
+	for _, want := range wants {
+		t.Run(want, func(t *testing.T) {
+			b.Perform(buffer.NewDelWord(0, b.LineLength(0)))
+			got := string(b.GetLine(0))
+			ta.Assert(
+				t,
+				reflect.DeepEqual(got, want),
+				"unexpected: %q, wanted: %q",
+				string(got),
+				string(want))
+
+		})
+	}
+}
