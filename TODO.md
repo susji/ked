@@ -5,7 +5,7 @@
 * [x] Mechanism to run shell commands when buffer is saved
 * [x] Jump to previous and next empty lines with `Alt+Up` and `Alt+Down`
 * [ ] Opening a file to the current buffer, fuzzily
-* [ ] Managing multiple buffers
+* [x] Managing multiple buffers
 * [ ] Configurable tabsize (now hardcoded to 4 spaces)
 * [ ] Configurable list of boldable keywords
 * [x] `Shift+Tab` should remove one tab level from line
