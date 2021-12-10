@@ -433,8 +433,15 @@ func (e *Editor) changebuffer() {
 	choices := []fuzzyselect.Entry{}
 
 	for bufnum, bufentry := range e.buffers.All() {
+		var display string
+		fp := bufentry.Buffer.Filepath()
+		if len(fp) > 0 {
+			display = fp
+		} else {
+			display = fmt.Sprintf("{buffer-%03d}", bufnum)
+		}
 		choices = append(choices, fuzzyselect.Entry{
-			Display: []rune(bufentry.Buffer.Filepath()),
+			Display: []rune(display),
 			Id:      uint32(bufnum),
 		})
 	}
