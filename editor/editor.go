@@ -18,49 +18,38 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/susji/ked/buffer"
+	"github.com/susji/ked/editor/buffers"
 	"github.com/susji/ked/textentry"
-	"github.com/susji/ked/viewport"
 )
-
-type editorBuffer struct {
-	b           *buffer.Buffer
-	v           *viewport.Viewport
-	lineno, col int
-	linesinview int
-	prevsearch  string
-}
 
 type Editor struct {
 	s         tcell.Screen
-	buffers   []editorBuffer
-	activebuf int
+	buffers   buffers.EditorBuffers
+	activebuf buffers.BufferId
 	savehook  string
-}
 
-func newEditorBuffer(b *buffer.Buffer) *editorBuffer {
-	return &editorBuffer{
-		b:      b,
-		v:      viewport.New(b),
-		lineno: 0,
-		col:    0,
-	}
+	prevsearch map[buffers.BufferId]string
 }
 
 func New() *Editor {
-	return &Editor{}
+	return &Editor{
+		prevsearch: map[buffers.BufferId]string{},
+		buffers:    buffers.New(),
+	}
 }
 
-func (e *Editor) NewBufferFromFile(f *os.File) error {
+func (e *Editor) NewBufferFromFile(f *os.File) (buffers.BufferId, error) {
 	return e.NewBuffer(f.Name(), f)
 }
 
-func (e *Editor) NewBuffer(filepath string, r io.Reader) error {
+func (e *Editor) NewBuffer(filepath string, r io.Reader) (buffers.BufferId, error) {
 	buf, err := buffer.NewFromReader(filepath, r)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	e.buffers = append(e.buffers, *newEditorBuffer(buf))
-	return nil
+	bid := e.buffers.New(buf)
+	e.activebuf = bid
+	return bid, nil
 }
 
 func (e *Editor) SaveHook(savehook string) *Editor {
@@ -68,34 +57,8 @@ func (e *Editor) SaveHook(savehook string) *Editor {
 	return e
 }
 
-func (e *Editor) closebuffer(bufnum int) {
-	if bufnum < 0 || bufnum >= len(e.buffers) {
-		panic("closeBuffer: invalid bufnum")
-	}
-	log.Printf("[closebuffer] %d\n", bufnum)
-	// XXX Maybe ask for confirmation if buffer
-	//     has unsaved changes.
-	newbufs := make([]editorBuffer, len(e.buffers)-1)
-	left := e.buffers[:bufnum]
-	right := e.buffers[bufnum+1:]
-	copy(newbufs, left)
-	copy(newbufs[bufnum:], right)
-	if e.activebuf > 0 && e.activebuf >= bufnum {
-		e.activebuf--
-	}
-	e.buffers = newbufs
-}
-
-func (eb *editorBuffer) update(res buffer.ActionResult) {
-	eb.lineno = res.Lineno
-	eb.col = res.Col
-}
-
-func (e *Editor) getactivebuf() *editorBuffer {
-	if e.activebuf > len(e.buffers)-1 {
-		panic("activebuf too large")
-	}
-	return &e.buffers[e.activebuf]
+func (e *Editor) closebuffer(bufid buffers.BufferId) {
+	e.buffers.Close(bufid)
 }
 
 func (e *Editor) initscreen() error {
@@ -110,20 +73,10 @@ func (e *Editor) initscreen() error {
 	return nil
 }
 
-func (e *Editor) logbuffer() {
-	eb := e.getactivebuf()
-	for lineno := 0; lineno < eb.b.Lines(); lineno++ {
-		log.Printf("[%d] %s\n", lineno, string(eb.b.GetLine(lineno)))
-	}
-}
-
 func (e *Editor) drawactivebuf() {
-	if len(e.buffers) == 0 {
-		return
-	}
-	eb := e.getactivebuf()
+	eb := e.buffers.Get(e.activebuf)
 	w, h := e.s.Size()
-	rend := eb.v.Render(w, h-1, eb.lineno, eb.col)
+	rend := eb.Viewport.Render(w, h-1, eb.CursorLine(), eb.CursorCol())
 	col := 0
 	lineno := 0
 	for h > 0 && rend.Scan() {
@@ -142,114 +95,92 @@ func (e *Editor) drawactivebuf() {
 }
 
 func (e *Editor) insertrune(r rune) {
-	if len(e.buffers) == 0 {
-		return
-	}
-	eb := e.getactivebuf()
-	eb.update(eb.b.Perform(buffer.NewInsert(eb.lineno, eb.col, []rune{r})))
+	eb := e.buffers.Get(e.activebuf)
+	eb.Update(
+		eb.Buffer.Perform(
+			buffer.NewInsert(eb.CursorLine(), eb.CursorCol(), []rune{r})))
 }
 
 func (e *Editor) insertlinefeed() {
-	if len(e.buffers) == 0 {
-		return
-	}
-	eb := e.getactivebuf()
-	eb.update(eb.b.Perform(buffer.NewLinefeed(eb.lineno, eb.col)))
+	eb := e.buffers.Get(e.activebuf)
+	eb.Update(
+		eb.Buffer.Perform(
+			buffer.NewLinefeed(eb.Cursor())))
 }
 
 func (e *Editor) backspace() {
-	if len(e.buffers) == 0 {
-		return
-	}
-	eb := e.getactivebuf()
-	eb.update(eb.b.Perform(buffer.NewBackspace(eb.lineno, eb.col)))
+	eb := e.buffers.Get(e.activebuf)
+	eb.Update(
+		eb.Buffer.Perform(
+			buffer.NewBackspace(eb.Cursor())))
 }
 
 func (e *Editor) movevertical(up bool) {
-	if len(e.buffers) == 0 {
-		return
-	}
-	eb := e.getactivebuf()
+	eb := e.buffers.Get(e.activebuf)
 	if up {
-		if eb.lineno == 0 {
+		if eb.CursorLine() == 0 {
 			return
 		}
-		eb.lineno--
+		eb.SetCursor(eb.CursorLine()-1, eb.CursorCol())
 	} else {
-		if eb.lineno >= eb.b.Lines()-1 {
+		if eb.CursorLine() >= eb.Buffer.Lines()-1 {
 			return
 		}
-		eb.lineno++
+		eb.SetCursor(eb.CursorLine()+1, eb.CursorCol())
 	}
-	line := eb.b.GetLine(eb.lineno)
-	if eb.col >= len(line) {
-		eb.col = len(line)
+	line := eb.Buffer.GetLine(eb.CursorLine())
+	if eb.CursorCol() >= len(line) {
+		eb.SetCursor(eb.CursorLine(), len(line))
 	}
 }
 
 func (e *Editor) movepage(up bool) {
-	if len(e.buffers) == 0 {
-		return
-	}
-	eb := e.getactivebuf()
+	eb := e.buffers.Get(e.activebuf)
 	if up {
-		eb.lineno = eb.v.PageUp()
+		eb.SetCursor(eb.Viewport.PageUp(), eb.CursorCol())
 	} else {
-		eb.lineno = eb.v.PageDown()
+		eb.SetCursor(eb.Viewport.PageDown(), eb.CursorCol())
 	}
-	eb.col = 0
+	eb.SetCursor(eb.CursorLine(), 0)
 }
 
 func (e *Editor) moveleft() {
-	if len(e.buffers) == 0 {
-		return
-	}
-	eb := e.getactivebuf()
-	if eb.col > 0 {
-		eb.col--
-	} else if eb.lineno > 0 {
-		eb.lineno--
-		eb.col = len(eb.b.GetLine(eb.lineno))
+	eb := e.buffers.Get(e.activebuf)
+	if eb.CursorCol() > 0 {
+		eb.SetCursor(eb.CursorLine(), eb.CursorCol()-1)
+	} else if eb.CursorLine() > 0 {
+		lineno := eb.CursorLine() - 1
+		eb.SetCursor(lineno, len(eb.Buffer.GetLine(lineno)))
 	}
 }
 
 func (e *Editor) moveright() {
-	if len(e.buffers) == 0 {
-		return
-	}
-	eb := e.getactivebuf()
-	line := eb.b.GetLine(eb.lineno)
-	if eb.col < len(line) {
-		eb.col++
-	} else if eb.lineno < eb.b.Lines()-1 {
-		eb.lineno++
-		eb.col = 0
+	eb := e.buffers.Get(e.activebuf)
+	line := eb.Buffer.GetLine(eb.CursorLine())
+	if eb.CursorCol() < len(line) {
+		eb.SetCursor(eb.CursorLine(), eb.CursorCol()+1)
+	} else if eb.CursorLine() < eb.Buffer.Lines()-1 {
+		eb.SetCursor(eb.CursorLine()+1, 0)
 	}
 }
 
 func (e *Editor) moveline(start bool) {
-	if len(e.buffers) == 0 {
-		return
-	}
-	eb := e.getactivebuf()
+	eb := e.buffers.Get(e.activebuf)
 	if start {
-		eb.col = 0
+		eb.SetCursor(eb.CursorLine(), 0)
 		return
 	}
-	line := eb.b.GetLine(eb.lineno)
-	eb.col = len(line)
+	line := eb.Buffer.GetLine(eb.CursorLine())
+	eb.SetCursor(eb.CursorLine(), len(line))
 }
 
 func (e *Editor) savebuffer() {
-	if len(e.buffers) == 0 {
-		return
-	}
-	eb := e.getactivebuf()
-	log.Printf("[savebuffer] %q\n", eb.b.Filepath())
+	eb := e.buffers.Get(e.activebuf)
+	log.Printf("[savebuffer] %q\n", eb.Buffer.Filepath())
 
 	_, h := e.s.Size()
 	fp, err := textentry.
-		New(eb.b.Filepath(), "Filename to save: ", 512).
+		New(eb.Buffer.Filepath(), "Filename to save: ", 512).
 		Ask(e.s, 0, h-1)
 	if err != nil {
 		log.Println("[savebuffer, error-ask] ", err)
@@ -263,8 +194,8 @@ func (e *Editor) savebuffer() {
 		return
 	}
 	log.Println("[savebuffer, abs] ", abspath)
-	eb.b.SetFilepath(abspath)
-	if err := eb.b.Save(); err != nil {
+	eb.Buffer.SetFilepath(abspath)
+	if err := eb.Buffer.Save(); err != nil {
 		log.Println("[savebuffer] failed: ", err)
 		// XXX Report error to UI somehow
 	}
@@ -294,46 +225,40 @@ func (e *Editor) execandreload(abspath, cmd string) {
 	}
 	defer f.Close()
 
-	oldbuf := e.getactivebuf()
-	oldbufnum := e.activebuf
-	oldviewportstart := oldbuf.v.Start()
-	lineno := oldbuf.lineno
-	col := oldbuf.col
+	oldbuf := e.buffers.Get(e.activebuf)
+	oldviewportstart := oldbuf.Viewport.Start()
+	oldcursorline, oldcursorcol := oldbuf.CursorLine(), oldbuf.CursorCol()
 
 	log.Println("[execandreread, reopened] ", abspath)
-	if err := e.NewBufferFromFile(f); err != nil {
+	newbid, err := e.NewBufferFromFile(f)
+	if err != nil {
 		log.Printf("[execandreread, newbuffer error] %v\n", err)
 		return
 	}
+	e.buffers.Close(oldbuf.Id())
+	newbuf := e.buffers.Get(newbid)
 
-	e.closebuffer(oldbufnum)
-
-	newbufnum := len(e.buffers) - 1
-	e.activebuf = newbufnum
-	newbuf := e.getactivebuf()
-	newbuf.lineno = lineno
-	if newbuf.lineno > newbuf.b.Lines()-1 {
-		newbuf.lineno = newbuf.b.Lines() - 1
+	//
+	// Make sure old cursor snaps into new buffer.
+	//
+	newcursorline := oldcursorline
+	newcursorcol := oldcursorcol
+	if newcursorline > newbuf.Buffer.Lines()-1 {
+		newcursorline = newbuf.Buffer.Lines() - 1
 	}
-	newbuf.col = col
-	if newbuf.col > newbuf.b.LineLength(newbuf.lineno) {
-		newbuf.col = newbuf.b.LineLength(newbuf.lineno)
+	if newcursorcol > newbuf.Buffer.LineLength(newcursorline) {
+		newcursorcol = newbuf.Buffer.LineLength(newcursorline)
+	}
+	if oldviewportstart > newbuf.Buffer.Lines()-1 {
+		oldviewportstart = newbuf.Buffer.Lines() - 1
 	}
 
-	if oldviewportstart > newbuf.b.Lines()-1 {
-		oldviewportstart = newbuf.b.Lines() - 1
-	}
-
-	newbuf.v.SetTeleported(oldviewportstart)
-	log.Printf("[execandreload, new buffer] %d -> %d -> %d\n",
-		oldbufnum, newbufnum, e.activebuf)
+	newbuf.SetCursor(newcursorline, newcursorcol)
+	newbuf.Viewport.SetTeleported(oldviewportstart)
 }
 
 func (e *Editor) jumpline() {
-	if len(e.buffers) == 0 {
-		return
-	}
-	eb := e.getactivebuf()
+	eb := e.buffers.Get(e.activebuf)
 	_, h := e.s.Size()
 	linenoraw, err := textentry.
 		New("", "Line to jump: ", 12).
@@ -351,46 +276,40 @@ func (e *Editor) jumpline() {
 		log.Println("[jumpline, invalid line] ", lineno)
 		return
 	}
-	if lineno > eb.b.Lines() {
-		lineno = eb.b.Lines()
+	if lineno > eb.Buffer.Lines() {
+		lineno = eb.Buffer.Lines()
 	}
-	eb.lineno = lineno - 1
-	eb.col = 0
+	eb.SetCursor(lineno-1, 0)
 }
 
 func (e *Editor) delline() {
-	if len(e.buffers) == 0 {
+	eb := e.buffers.Get(e.activebuf)
+	if eb.Buffer.LineLength(eb.CursorLine()) == 0 {
+		eb.Update(eb.Buffer.Perform(buffer.NewDelLine(eb.CursorLine())))
 		return
 	}
-	eb := e.getactivebuf()
-	if eb.b.LineLength(eb.lineno) == 0 {
-		eb.update(eb.b.Perform(buffer.NewDelLine(eb.lineno)))
-		return
-	}
-	eb.update(eb.b.Perform(buffer.NewDelLineContent(eb.lineno, eb.col)))
+	eb.Update(eb.Buffer.Perform(buffer.NewDelLineContent(eb.CursorLine(), eb.CursorCol())))
 }
 
 func (e *Editor) jumpword(left bool) {
-	if len(e.buffers) == 0 {
-		return
-	}
-	eb := e.getactivebuf()
-	eb.lineno, eb.col = eb.b.JumpWord(eb.lineno, eb.col, left)
+	eb := e.buffers.Get(e.activebuf)
+	eb.SetCursor(eb.Buffer.JumpWord(eb.CursorLine(), eb.CursorCol(), left))
 }
 
 func (e *Editor) search() {
-	if len(e.buffers) == 0 {
-		return
+	eb := e.buffers.Get(e.activebuf)
+
+	if _, ok := e.prevsearch[eb.Id()]; !ok {
+		e.prevsearch[eb.Id()] = ""
 	}
-	eb := e.getactivebuf()
 
 	_, h := e.s.Size()
 	nexterr := errors.New("next term")
 	te := textentry.
-		New(eb.prevsearch, "Search: ", 256).
+		New(e.prevsearch[eb.Id()], "Search: ", 256).
 		AddBinding(tcell.KeyCtrlN, nexterr)
 	looping := true
-	prevcol := eb.col
+	prevcol := eb.CursorCol()
 	for looping {
 		term, err := te.Ask(e.s, 0, h-1)
 		switch {
@@ -409,24 +328,23 @@ func (e *Editor) search() {
 			sterm = append(sterm, unicode.ToLower(r))
 		}
 		limits := &buffer.SearchLimit{
-			StartLineno: eb.lineno,
+			StartLineno: eb.CursorLine(),
 			StartCol:    prevcol,
-			EndLineno:   eb.b.Lines() - 1,
-			EndCol:      eb.b.LineLength(eb.b.Lines() - 1),
+			EndLineno:   eb.Buffer.Lines() - 1,
+			EndCol:      eb.Buffer.LineLength(eb.Buffer.Lines() - 1),
 		}
 		log.Printf("[search, limits] %#v\n", limits)
-		if lineno, col := eb.b.SearchRange(sterm, limits); lineno != -1 && col != -1 {
+		if lineno, col := eb.Buffer.SearchRange(sterm, limits); lineno != -1 && col != -1 {
 			log.Printf("[search, found] (%d, %d)\n", lineno, col)
-			eb.lineno = lineno
-			eb.col = col
-			eb.v.SetTeleported(eb.lineno)
-			eb.prevsearch = string(term)
+			eb.SetCursor(lineno, col)
+			eb.Viewport.SetTeleported(eb.CursorLine())
+			e.prevsearch[eb.Id()] = string(term)
 			e.s.Clear()
 			e.drawactivebuf()
 			e.s.Show()
 
-			prevcol = eb.col + len(term)
-			linelen := eb.b.LineLength(lineno)
+			prevcol = eb.CursorCol() + len(term)
+			linelen := eb.Buffer.LineLength(lineno)
 			if prevcol >= linelen {
 				prevcol = linelen - 1
 			}
@@ -448,7 +366,7 @@ func (e *Editor) drawstatusmsg(msg string) {
 
 func (e *Editor) listbuffers() {
 	log.Println("[listbuffers]")
-	for bufnum, buf := range e.buffers {
+	for bufnum, buf := range e.buffers.All() {
 		log.Printf("[%03d] %#v\n", bufnum, buf)
 	}
 }
@@ -458,15 +376,13 @@ func (e *Editor) drawstatusline() {
 	fn := "{no file}"
 	lineno := 0
 	col := 0
-	if len(e.buffers) > e.activebuf {
-		eb := e.getactivebuf()
-		f := eb.b.Filepath()
-		if len(f) > 0 {
-			fn = f
-		}
-		lineno = eb.lineno + 1
-		col = eb.col + 1
+	eb := e.buffers.Get(e.activebuf)
+	f := eb.Buffer.Filepath()
+	if len(f) > 0 {
+		fn = f
 	}
+	lineno = eb.CursorLine() + 1
+	col = eb.CursorCol() + 1
 	line := []rune(
 		fmt.Sprintf(
 			"[%03d] %3d, %2d:  %s", e.activebuf, lineno, col, fn))
@@ -479,42 +395,41 @@ func (e *Editor) drawstatusline() {
 }
 
 func (e *Editor) jumpempty(up bool) {
-	eb := e.getactivebuf()
+	eb := e.buffers.Get(e.activebuf)
 moveagain:
 	e.movevertical(up)
-	if strings.TrimSpace(string(eb.b.GetLine(eb.lineno))) == "" {
+	if strings.TrimSpace(string(eb.Buffer.GetLine(eb.CursorLine()))) == "" {
 		return
 	}
-	if up && eb.lineno == 0 {
+	if up && eb.CursorLine() == 0 {
 		return
 	}
-	if !up && eb.lineno >= eb.b.Lines()-1 {
+	if !up && eb.CursorLine() >= eb.Buffer.Lines()-1 {
 		return
 	}
 	goto moveagain
 }
 
 func (e *Editor) undo() {
-	if len(e.buffers) == 0 {
-		return
-	}
-	eb := e.getactivebuf()
-	if res := eb.b.UndoModification(); res != nil {
-		eb.update(*res)
+	eb := e.buffers.Get(e.activebuf)
+	if res := eb.Buffer.UndoModification(); res != nil {
+		eb.Update(*res)
 	}
 }
 
 func (e *Editor) backtab() {
-	if len(e.buffers) == 0 {
-		return
-	}
-	eb := e.getactivebuf()
-	eb.update(eb.b.Perform(buffer.NewDetabulate(eb.lineno, eb.col)))
+	eb := e.buffers.Get(e.activebuf)
+	eb.Update(
+		eb.Buffer.Perform(
+			buffer.NewDetabulate(eb.CursorLine(), eb.CursorCol())))
 }
 
 func (e *Editor) Run() error {
 	if err := e.initscreen(); err != nil {
 		return err
+	}
+	if e.buffers.Len() == 0 {
+		e.buffers.New(buffer.New(nil))
 	}
 	e.drawactivebuf()
 	e.s.Show()
