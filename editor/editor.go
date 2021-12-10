@@ -29,13 +29,15 @@ type Editor struct {
 	activebuf buffers.BufferId
 	savehook  string
 
-	prevsearch map[buffers.BufferId]string
+	prevsearch    map[buffers.BufferId]string
+	bufpopularity map[buffers.BufferId]uint64
 }
 
 func New() *Editor {
 	return &Editor{
-		prevsearch: map[buffers.BufferId]string{},
-		buffers:    buffers.New(),
+		prevsearch:    map[buffers.BufferId]string{},
+		bufpopularity: map[buffers.BufferId]uint64{},
+		buffers:       buffers.New(),
 	}
 }
 
@@ -54,16 +56,33 @@ func (e *Editor) NewBuffer(filepath string, r io.Reader) (buffers.BufferId, erro
 func (e *Editor) NewFromBuffer(buf *buffer.Buffer) (buffers.BufferId, error) {
 	bid := e.buffers.New(buf)
 	e.activebuf = bid
+	e.bufpopularity[bid] = 1
 	return bid, nil
+}
+
+func (e *Editor) closebuffer() {
+	e.buffers.Close(e.activebuf)
+	delete(e.bufpopularity, e.activebuf)
+	if e.buffers.Len() == 0 {
+		e.NewFromBuffer(buffer.New(nil))
+	}
+	e.activatepopular()
+}
+
+func (e *Editor) activatepopular() {
+	cur := buffers.BufferId(0)
+	votemax := uint64(0)
+	for bid, votes := range e.bufpopularity {
+		if votes > votemax {
+			cur = bid
+		}
+	}
+	e.activebuf = cur
 }
 
 func (e *Editor) SaveHook(savehook string) *Editor {
 	e.savehook = savehook
 	return e
-}
-
-func (e *Editor) closebuffer(bufid buffers.BufferId) {
-	e.buffers.Close(bufid)
 }
 
 func (e *Editor) initscreen() error {
@@ -478,6 +497,10 @@ main:
 		case *tcell.EventKey:
 			log.Printf("[EventKey] %s (mods=%X)\n", ev.Name(), ev.Modifiers())
 			switch {
+			case ev.Key() == tcell.KeyCtrlK:
+				e.closebuffer()
+			case ev.Key() == tcell.KeyCtrlN:
+				e.NewFromBuffer(buffer.New(nil))
 			case ev.Key() == tcell.KeyCtrlP:
 				e.changebuffer()
 			case ev.Key() == tcell.KeyCtrlL:
