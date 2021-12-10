@@ -307,7 +307,7 @@ func (e *Editor) search() {
 	nexterr := errors.New("next term")
 	te := textentry.
 		New(e.prevsearch[eb.Id()], "Search: ", 256).
-		AddBinding(tcell.KeyCtrlN, nexterr)
+		AddBinding(tcell.KeyCtrlS, nexterr)
 	looping := true
 	prevcol := eb.CursorCol()
 	for looping {
