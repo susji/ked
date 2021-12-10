@@ -102,6 +102,9 @@ func (e *Editor) initscreen() error {
 
 func (e *Editor) drawactivebuf() {
 	eb := e.buffers.Get(e.activebuf)
+	if eb == nil {
+		panic("no activebuf")
+	}
 	w, h := e.s.Size()
 	rend := eb.Viewport.Render(w, h-1, eb.CursorLine(), eb.CursorCol())
 	col := 0
