@@ -497,7 +497,7 @@ main:
 		case *tcell.EventKey:
 			log.Printf("[EventKey] %s (mods=%X)\n", ev.Name(), ev.Modifiers())
 			switch {
-			case ev.Key() == tcell.KeyCtrlK:
+			case ev.Key() == tcell.KeyCtrlB:
 				e.closebuffer()
 			case ev.Key() == tcell.KeyCtrlN:
 				e.NewFromBuffer(buffer.New(nil))
