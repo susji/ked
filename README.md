@@ -27,3 +27,22 @@ The hardcoded keyboard shortcuts are the following:
   * `Ctrl+P` displays the buffer selection dialog
   * `Ctrl+F` displays the file-open dialog
   * `Alt+F` closes the current buffer
+
+## save hooks
+
+The command-line parameter `-savehook` may be used to specify a command-line,
+which is automatically run after a buffer is saved to a file. To make the
+mechanism more useful, all references to `__ABSPATH__` in `-savehook` will be
+replaced with the current file's absolute path. Thus the final invocation will
+be like `/bin/sh -c <savehook-value-with-abspath-expansion>`. If the command
+returns successfully, `ked` will reload the buffer's contents from the file.
+
+For example, `gofmt` can be used to autoformat buffers upon saving:
+
+    $ ked -savehook 'gofmt -w __ABSPATH__'
+
+Above we assume that `gofmt` will be found in the path. Note the `-w`
+parameter to `gofmt` which asks for the formatted file to be written directly
+to the file given as an argument.
+
+
