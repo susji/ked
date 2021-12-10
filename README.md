@@ -37,12 +37,13 @@ replaced with the current file's absolute path. Thus the final invocation will
 be like `/bin/sh -c <savehook-value-with-abspath-expansion>`. If the command
 returns successfully, `ked` will reload the buffer's contents from the file.
 
-For example, `gofmt` can be used to autoformat buffers upon saving:
+For example, `gofmt` and `clang-format` may be used to autoformat buffers upon
+saving:
 
     $ ked -savehook 'gofmt -w __ABSPATH__'
+	$ ked -savehook 'clang-format -i __ABSPATH__'
 
-Above we assume that `gofmt` will be found in the path. Note the `-w`
-parameter to `gofmt` which asks for the formatted file to be written directly
-to the file given as an argument.
-
+Above we assume that `gofmt` and `clang-format` will be found in the path.
+Note the `-w` and `-i` parameters, respectively, which are used to enable
+formatting the files on disk instead of standard I/O.
 
