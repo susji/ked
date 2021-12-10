@@ -19,6 +19,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/susji/ked/buffer"
 	"github.com/susji/ked/editor/buffers"
+	"github.com/susji/ked/fuzzyselect"
 	"github.com/susji/ked/textentry"
 )
 
@@ -425,13 +426,24 @@ func (e *Editor) backtab() {
 }
 
 func (e *Editor) changebuffer() {
-	// XXX This needs to pop up a dialog with fuzzy filename searching.
-	for bufnum, _ := range e.buffers.All() {
+	choices := []fuzzyselect.Entry{}
+
+	var newactive buffers.BufferId
+	for bufnum, bufentry := range e.buffers.All() {
+		choices = append(choices, fuzzyselect.Entry{
+			Display: []rune(bufentry.Buffer.Filepath()),
+			Id:      uint32(bufnum),
+		})
 		if bufnum != e.activebuf {
-			e.activebuf = bufnum
-			return
+			newactive = bufnum
 		}
 	}
+
+	w, h := e.s.Size()
+	sel, err := fuzzyselect.New(choices).Choose(e.s, 0, 0, w, h-2)
+	_ = err
+	_ = sel
+	e.activebuf = newactive
 }
 
 func (e *Editor) Run() error {
