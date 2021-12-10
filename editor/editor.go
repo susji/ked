@@ -424,6 +424,16 @@ func (e *Editor) backtab() {
 			buffer.NewDetabulate(eb.CursorLine(), eb.CursorCol())))
 }
 
+func (e *Editor) changebuffer() {
+	// XXX This needs to pop up a dialog with fuzzy filename searching.
+	for bufnum, _ := range e.buffers.All() {
+		if bufnum != e.activebuf {
+			e.activebuf = bufnum
+			return
+		}
+	}
+}
+
 func (e *Editor) Run() error {
 	if err := e.initscreen(); err != nil {
 		return err
@@ -446,6 +456,8 @@ main:
 		case *tcell.EventKey:
 			log.Printf("[EventKey] %s (mods=%X)\n", ev.Name(), ev.Modifiers())
 			switch {
+			case ev.Key() == tcell.KeyCtrlP:
+				e.changebuffer()
 			case ev.Key() == tcell.KeyCtrlL:
 				e.listbuffers()
 			case ev.Key() == tcell.KeyCtrlUnderscore:
