@@ -62,6 +62,7 @@ func (e *Editor) NewFromBuffer(buf *buffer.Buffer) (buffers.BufferId, error) {
 }
 
 func (e *Editor) closebuffer() {
+	log.Printf("[closebuffer] Closing %d\n", e.activebuf)
 	e.buffers.Close(e.activebuf)
 	delete(e.bufpopularity, e.activebuf)
 	if e.buffers.Len() == 0 {
@@ -487,7 +488,7 @@ func (e *Editor) openbuffer() {
 	}
 	defer f.Close()
 	e.NewBufferFromFile(f)
-	log.Printf("[openbuffer, done] %#v\n", sel)
+	log.Printf("[openbuffer, done] %q\n", string(sel.Display))
 }
 
 func (e *Editor) changebuffer() {
@@ -541,8 +542,6 @@ main:
 			switch {
 			case ev.Key() == tcell.KeyCtrlF:
 				e.openbuffer()
-			case ev.Key() == tcell.KeyCtrlB:
-				e.closebuffer()
 			case ev.Key() == tcell.KeyCtrlN:
 				e.NewFromBuffer(buffer.New(nil))
 			case ev.Key() == tcell.KeyCtrlP:
@@ -557,6 +556,8 @@ main:
 				e.delline()
 			case ev.Key() == tcell.KeyCtrlG:
 				e.jumpline()
+			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Rune() == 'f':
+				e.closebuffer()
 			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Key() == tcell.KeyUp:
 				e.jumpempty(true)
 			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Key() == tcell.KeyDown:
