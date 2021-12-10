@@ -428,15 +428,11 @@ func (e *Editor) backtab() {
 func (e *Editor) changebuffer() {
 	choices := []fuzzyselect.Entry{}
 
-	var newactive buffers.BufferId
 	for bufnum, bufentry := range e.buffers.All() {
 		choices = append(choices, fuzzyselect.Entry{
 			Display: []rune(bufentry.Buffer.Filepath()),
 			Id:      uint32(bufnum),
 		})
-		if bufnum != e.activebuf {
-			newactive = bufnum
-		}
 	}
 
 	w, h := e.s.Size()
@@ -444,7 +440,6 @@ func (e *Editor) changebuffer() {
 	if err != nil {
 		// XXX Display error to user somehow.
 		log.Printf("[changebuffer, fuzzy error] %v\n", err)
-		e.activebuf = newactive // XXX
 		return
 	}
 	e.activebuf = buffers.BufferId(sel.Id)
