@@ -31,6 +31,7 @@ type Editor struct {
 	activebuf buffers.BufferId
 	savehook  string
 
+	prevopendir   string
 	prevsearch    map[buffers.BufferId]string
 	bufpopularity map[buffers.BufferId]uint64
 }
@@ -466,11 +467,18 @@ func (e *Editor) delword() {
 }
 
 func (e *Editor) openbuffer() {
-	rootdir, err := os.Getwd()
-	if err != nil {
-		rootdir, err = os.UserHomeDir()
+	var rootdir string
+
+	if len(e.prevopendir) > 0 {
+		rootdir = e.prevopendir
+	} else {
+		var err error
+		rootdir, err = os.Getwd()
 		if err != nil {
-			rootdir = "/"
+			rootdir, err = os.UserHomeDir()
+			if err != nil {
+				rootdir = "/"
+			}
 		}
 	}
 
@@ -490,6 +498,7 @@ func (e *Editor) openbuffer() {
 		e.drawstatusmsg(fmt.Sprintf("%v", err))
 		return
 	}
+	e.prevopendir = absrootdir
 
 	choices := []fuzzyselect.Entry{}
 	paths := []string{}
