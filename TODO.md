@@ -10,7 +10,7 @@
 * [ ] Configurable list of boldable keywords
 * [x] `Shift+Tab` should remove one tab level from line
 * [ ] Display status messages somehow
-* [ ] `Alt+Backspace` should remove one complete word
+* [x] `Alt+Backspace` should remove one complete word
 * [ ] Search & replace
 * [ ] `Mod+Tab` should tabulate line like the previous line
 * [ ] Make buffer opening faster (parallelize etc.)
