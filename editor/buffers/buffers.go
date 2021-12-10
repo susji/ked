@@ -1,6 +1,7 @@
 package buffers
 
 import (
+	"fmt"
 	"sync/atomic"
 
 	"github.com/susji/ked/buffer"
@@ -53,15 +54,22 @@ func (e *EditorBuffers) Len() int {
 }
 
 func (e *EditorBuffers) Get(bid BufferId) *EditorBuffer {
-	return e.buffers[bid]
+	ret, ok := e.buffers[bid]
+	if !ok {
+		panic(fmt.Sprintf("missing bid=%d (%#v)", bid, e.buffers))
+	}
+	return ret
 }
 
 func (e *EditorBuffers) All() map[BufferId]*EditorBuffer {
 	return e.buffers
 }
 
-func (e *EditorBuffers) Close(bufid BufferId) {
-	delete(e.buffers, bufid)
+func (e *EditorBuffers) Close(bid BufferId) {
+	if _, ok := e.buffers[bid]; !ok {
+		panic(fmt.Sprintf("missing bid=%d (%#v)", bid, e.buffers))
+	}
+	delete(e.buffers, bid)
 }
 
 func (eb *EditorBuffer) Update(res buffer.ActionResult) {
