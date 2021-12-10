@@ -27,6 +27,9 @@ type Buffer struct {
 func New(rawlines [][]rune) *Buffer {
 	ret := &Buffer{}
 	ret.lines = []*gapbuffer.GapBuffer{}
+	if len(rawlines) == 0 {
+		rawlines = [][]rune{[]rune("")}
+	}
 	for _, rawline := range rawlines {
 		ret.lines = append(ret.lines, gapbuffer.NewFrom(rawline))
 	}

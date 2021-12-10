@@ -46,13 +46,18 @@ laborum.
 func TestInsertDelete(t *testing.T) {
 	b := buffer.New(nil)
 
-	ta.Assert(t, b.Lines() == 0, "should have zero lines")
+	ta.Assert(t, b.Lines() == 1, "should have one line")
+	ta.Assert(
+		t,
+		reflect.DeepEqual(b.GetLine(0), []rune("")),
+		"line should be empty, but isn't: %q",
+		b.GetLine(0))
 
 	//
 	// Insert one line and keep it empty.
 	//
 	b.NewLine(0)
-	ta.Assert(t, b.Lines() == 1, "should have one line")
+	ta.Assert(t, b.Lines() == 2, "should have twoe lines")
 	want := []rune{}
 	line := b.GetLine(0)
 	ta.Assert(t, reflect.DeepEqual(line, want), "should be empty")
@@ -61,7 +66,7 @@ func TestInsertDelete(t *testing.T) {
 	// Insert some text into our line.
 	//
 	msg := []rune("these are the new line contents!")
-	wantlines := [][]rune{msg}
+	wantlines := [][]rune{msg, []rune("")}
 	b.Perform(buffer.NewInsert(0, 0, msg))
 
 	gotlines := bufferToRunes(b)
@@ -72,7 +77,7 @@ func TestInsertDelete(t *testing.T) {
 	// Insert another line of text.
 	//
 	msg2 := []rune("We have some more text incoming!")
-	wantlines2 := [][]rune{msg, msg2}
+	wantlines2 := [][]rune{msg, msg2, []rune("")}
 	b.NewLine(1)
 	b.Perform(buffer.NewInsert(1, 0, msg2))
 
@@ -84,7 +89,7 @@ func TestInsertDelete(t *testing.T) {
 	// Delete first line and make sure we have the second still.
 	//
 	b.Perform(buffer.NewDelLine(0))
-	wantlines3 := [][]rune{msg2}
+	wantlines3 := [][]rune{msg2, []rune("")}
 
 	gotlines3 := bufferToRunes(b)
 	ta.Assert(t, reflect.DeepEqual(gotlines3, wantlines3),
@@ -94,7 +99,7 @@ func TestInsertDelete(t *testing.T) {
 	// Delete second line and make sure the buffer is empty again.
 	//
 	b.Perform(buffer.NewDelLine(0))
-	wantlines4 := [][]rune{}
+	wantlines4 := [][]rune{[]rune("")}
 
 	gotlines4 := bufferToRunes(b)
 	ta.Assert(t, reflect.DeepEqual(gotlines4, wantlines4),
