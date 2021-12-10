@@ -19,6 +19,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/susji/ked/buffer"
+	"github.com/susji/ked/config"
 	"github.com/susji/ked/editor/buffers"
 	"github.com/susji/ked/fuzzyselect"
 	"github.com/susji/ked/textentry"
@@ -451,7 +452,6 @@ func (e *Editor) backtab() {
 }
 
 func (e *Editor) openbuffer() {
-	// XXX Ask for directory to show.
 	rootdir, err := os.Getwd()
 	if err != nil {
 		rootdir, err = os.UserHomeDir()
@@ -460,20 +460,38 @@ func (e *Editor) openbuffer() {
 		}
 	}
 
+	w, h := e.s.Size()
+
+	fp, err := textentry.
+		New(rootdir, "Look under directory: ", 512).
+		Ask(e.s, 0, h-1)
+	if err != nil {
+		log.Println("[openbuffer, error-ask] ", err)
+		e.drawstatusmsg(fmt.Sprintf("%v", err))
+		return
+	}
+	absrootdir, err := filepath.Abs(string(fp))
+	if err != nil {
+		log.Println("[openbuffer, error-abs] ", err)
+		e.drawstatusmsg(fmt.Sprintf("%v", err))
+		return
+	}
+
 	choices := []fuzzyselect.Entry{}
 	paths := []string{}
-	filepath.Walk(rootdir, func(path string, info fs.FileInfo, err error) error {
-		if info.IsDir() {
+	filepath.WalkDir(absrootdir, func(path string, d fs.DirEntry, err error) error {
+		if len(paths) >= config.MAXFILES {
+			return fs.SkipDir
+		}
+		if d.IsDir() {
 			return nil
 		}
-		log.Printf("[openbuffer, walk] %q\n", path)
 		id := len(paths)
 		choices = append(choices, fuzzyselect.Entry{Display: []rune(path), Id: uint32(id)})
 		paths = append(paths, path)
 		return nil
 	})
 
-	w, h := e.s.Size()
 	sel, err := fuzzyselect.New(choices).Choose(e.s, 0, 0, w, h-2)
 	if err != nil {
 		// XXX Display error to user somehow.
