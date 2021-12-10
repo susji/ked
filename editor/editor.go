@@ -48,6 +48,10 @@ func (e *Editor) NewBuffer(filepath string, r io.Reader) (buffers.BufferId, erro
 	if err != nil {
 		return 0, err
 	}
+	return e.NewFromBuffer(buf)
+}
+
+func (e *Editor) NewFromBuffer(buf *buffer.Buffer) (buffers.BufferId, error) {
 	bid := e.buffers.New(buf)
 	e.activebuf = bid
 	return bid, nil
@@ -450,7 +454,7 @@ func (e *Editor) Run() error {
 		return err
 	}
 	if e.buffers.Len() == 0 {
-		e.buffers.New(buffer.New(nil))
+		e.NewFromBuffer(buffer.New(nil))
 	}
 	e.drawactivebuf()
 	e.s.Show()
