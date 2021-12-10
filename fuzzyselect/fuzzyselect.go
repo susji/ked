@@ -31,12 +31,12 @@ func (f *FuzzySelect) filter(with string) []Entry {
 
 func (f *FuzzySelect) drawfilter(s tcell.Screen, filter string, lineno, col, w, h int) {
 	rs := []rune(filter)
-	s.SetContent(col, lineno, '>', nil, tcell.StyleDefault)
+	s.SetContent(col, lineno, '/', nil, tcell.StyleDefault.Bold(true))
 	for curcol := 0; curcol < w; curcol++ {
 		x := col + curcol + 1
 		y := lineno
 		if curcol < len(rs) {
-			s.SetContent(x, y, rs[curcol], nil, tcell.StyleDefault)
+			s.SetContent(x, y, rs[curcol], nil, tcell.StyleDefault.Bold(true))
 		} else {
 			s.SetContent(x, y, ' ', nil, tcell.StyleDefault)
 		}
@@ -51,8 +51,9 @@ func (f *FuzzySelect) drawdata(s tcell.Screen, filter string, lineno, col, w, h 
 		if nentry >= h-lineno {
 			break
 		}
+		s.SetContent(col, lineno+nentry, '>', nil, tcell.StyleDefault.Bold(true))
 		for curcol := 0; curcol < w; curcol++ {
-			x := col + curcol
+			x := col + curcol + 1
 			y := lineno + nentry
 			if curcol < len(curentry.Display) {
 				s.SetContent(x, y, curentry.Display[curcol], nil, tcell.StyleDefault)
