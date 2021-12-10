@@ -19,6 +19,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/susji/ked/buffer"
 	"github.com/susji/ked/editor/buffers"
+	"github.com/susji/ked/fuzzyselect"
 	"github.com/susji/ked/textentry"
 )
 
@@ -424,6 +425,26 @@ func (e *Editor) backtab() {
 			buffer.NewDetabulate(eb.CursorLine(), eb.CursorCol())))
 }
 
+func (e *Editor) changebuffer() {
+	choices := []fuzzyselect.Entry{}
+
+	for bufnum, bufentry := range e.buffers.All() {
+		choices = append(choices, fuzzyselect.Entry{
+			Display: []rune(bufentry.Buffer.Filepath()),
+			Id:      uint32(bufnum),
+		})
+	}
+
+	w, h := e.s.Size()
+	sel, err := fuzzyselect.New(choices).Choose(e.s, 0, 0, w, h-2)
+	if err != nil {
+		// XXX Display error to user somehow.
+		log.Printf("[changebuffer, fuzzy error] %v\n", err)
+		return
+	}
+	e.activebuf = buffers.BufferId(sel.Id)
+}
+
 func (e *Editor) Run() error {
 	if err := e.initscreen(); err != nil {
 		return err
@@ -446,6 +467,8 @@ main:
 		case *tcell.EventKey:
 			log.Printf("[EventKey] %s (mods=%X)\n", ev.Name(), ev.Modifiers())
 			switch {
+			case ev.Key() == tcell.KeyCtrlP:
+				e.changebuffer()
 			case ev.Key() == tcell.KeyCtrlL:
 				e.listbuffers()
 			case ev.Key() == tcell.KeyCtrlUnderscore:
