@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"os"
 	"os/exec"
@@ -448,6 +449,47 @@ func (e *Editor) backtab() {
 			buffer.NewDetabulate(eb.CursorLine(), eb.CursorCol())))
 }
 
+func (e *Editor) openbuffer() {
+	// XXX Ask for directory to show.
+	rootdir, err := os.Getwd()
+	if err != nil {
+		rootdir, err = os.UserHomeDir()
+		if err != nil {
+			rootdir = "/"
+		}
+	}
+
+	choices := []fuzzyselect.Entry{}
+	paths := []string{}
+	filepath.Walk(rootdir, func(path string, info fs.FileInfo, err error) error {
+		if info.IsDir() {
+			return nil
+		}
+		log.Printf("[openbuffer, walk] %q\n", path)
+		id := len(paths)
+		choices = append(choices, fuzzyselect.Entry{Display: []rune(path), Id: uint32(id)})
+		paths = append(paths, path)
+		return nil
+	})
+
+	w, h := e.s.Size()
+	sel, err := fuzzyselect.New(choices).Choose(e.s, 0, 0, w, h-2)
+	if err != nil {
+		// XXX Display error to user somehow.
+		log.Printf("[changebuffer, fuzzy error] %v\n", err)
+		return
+	}
+	f, err := os.Open(string(sel.Display))
+	if err != nil {
+		// XXX Display error to user somehow.
+		log.Printf("[changebuffer, open error] %v\n", err)
+		return
+	}
+	defer f.Close()
+	e.NewBufferFromFile(f)
+	log.Printf("[openbuffer, done] %#v\n", sel)
+}
+
 func (e *Editor) changebuffer() {
 	choices := []fuzzyselect.Entry{}
 
@@ -497,6 +539,8 @@ main:
 		case *tcell.EventKey:
 			log.Printf("[EventKey] %s (mods=%X)\n", ev.Name(), ev.Modifiers())
 			switch {
+			case ev.Key() == tcell.KeyCtrlF:
+				e.openbuffer()
 			case ev.Key() == tcell.KeyCtrlB:
 				e.closebuffer()
 			case ev.Key() == tcell.KeyCtrlN:
