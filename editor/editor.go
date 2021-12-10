@@ -441,9 +441,13 @@ func (e *Editor) changebuffer() {
 
 	w, h := e.s.Size()
 	sel, err := fuzzyselect.New(choices).Choose(e.s, 0, 0, w, h-2)
-	_ = err
-	_ = sel
-	e.activebuf = newactive
+	if err != nil {
+		// XXX Display error to user somehow.
+		log.Printf("[changebuffer, fuzzy error] %v\n", err)
+		e.activebuf = newactive // XXX
+		return
+	}
+	e.activebuf = buffers.BufferId(sel.Id)
 }
 
 func (e *Editor) Run() error {
