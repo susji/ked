@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -12,12 +13,21 @@ import (
 	"github.com/susji/ked/editor"
 )
 
+var (
+	version   = "v0.dev"
+	buildtime = "<no buildtime>"
+)
+
 func main() {
 	var debugfile, savehook string
 
 	flag.StringVar(&debugfile, "debugfile", "", "File for appending debug log")
 	flag.StringVar(&savehook, "savehook", "",
 		"Command to run when a file is saved. __ABSPATH__ is expanded to filepath.")
+	flag.Usage = func() {
+		fmt.Fprintf(flag.CommandLine.Output(), "ked %s (%s)\n", version, buildtime)
+		flag.PrintDefaults()
+	}
 	flag.Parse()
 
 	if len(debugfile) > 0 {
@@ -31,6 +41,7 @@ func main() {
 	} else {
 		log.SetOutput(io.Discard)
 	}
+	log.Printf("ked %s (%s)\n", version, buildtime)
 
 	// Initial editor context consists of a canvas and an optional
 	// list file-backed buffers.
