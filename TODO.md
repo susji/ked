@@ -6,7 +6,7 @@
 * [x] Jump to previous and next empty lines with `Alt+Up` and `Alt+Down`
 * [x] Opening a file to the current buffer, fuzzily
 * [x] Managing multiple buffers
-* [ ] Fuzzy searching should be fuzzier, ie. support matching multiple words
+* [x] Fuzzy searching should be fuzzier, ie. support matching multiple words
 * [ ] Configurable tabsize (now hardcoded to 4 spaces)
 * [x] `Shift+Tab` should remove one tab level from line
 * [ ] Display status messages somehow

@@ -3,6 +3,7 @@ package fuzzyselect
 import (
 	"errors"
 	"log"
+	"regexp"
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
@@ -11,6 +12,8 @@ import (
 var (
 	ErrorCancelled = errors.New("fuzzyselect cancelled")
 	ErrorNoMatch   = errors.New("no matches to return")
+
+	splitter = regexp.MustCompile(" +")
 )
 
 type Entry struct {
@@ -27,12 +30,19 @@ func New(choices []Entry) *FuzzySelect {
 	return &FuzzySelect{choices}
 }
 
-func (f *FuzzySelect) filter(with []rune) []Entry {
+func (f *FuzzySelect) filter(with string) []Entry {
+	filters := splitter.Split(strings.ToLower(with), -1)
 	ret := []Entry{}
 	for _, entry := range f.choices {
 		text := strings.ToLower(string(entry.Display))
-		want := strings.ToLower(string(with))
-		if strings.Contains(text, want) {
+
+		count := 0
+		for _, f := range filters {
+			if strings.Contains(text, f) {
+				count++
+			}
+		}
+		if count == len(filters) {
 			ret = append(ret, entry)
 		}
 	}
@@ -78,7 +88,7 @@ func (f *FuzzySelect) drawdata(s tcell.Screen, data []Entry, choice, lineno, col
 }
 
 func (f *FuzzySelect) Choose(s tcell.Screen, lineno, col, w, h int) (*Entry, error) {
-	filter := []rune("")
+	filter := ""
 	choice := 0
 	for {
 		s.Clear()
@@ -111,13 +121,13 @@ func (f *FuzzySelect) Choose(s tcell.Screen, lineno, col, w, h int) (*Entry, err
 				return entry, nil
 			case ev.Key() == tcell.KeyBackspace, ev.Key() == tcell.KeyBackspace2:
 				if (ev.Modifiers() & tcell.ModAlt) > 0 {
-					filter = []rune{}
+					filter = ""
 				} else if len(filter) > 0 {
 					filter = filter[:len(filter)-1]
 				}
 				choice = 0
 			case ev.Key() == tcell.KeyRune && ev.Modifiers() == 0:
-				filter = append(filter, ev.Rune())
+				filter += string(ev.Rune())
 				choice = 0
 			}
 		}
