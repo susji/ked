@@ -72,24 +72,27 @@ func (e *Editor) NewFromBuffer(buf *buffer.Buffer) (buffers.BufferId, error) {
 	return bid, nil
 }
 
-func (e *Editor) closebuffer() {
-	log.Printf("[closebuffer] %d\n", e.activebuf)
-	e.buffers.Close(e.activebuf)
-	delete(e.bufpopularity, e.activebuf)
+func (e *Editor) closeactivebuffer() {
+	e.closebuffer(e.activebuf)
+	// Now that the current buffer is closed, choose the
+	// new active buffer based on its popularity.
+	popbid := buffers.BufferId(0)
+	votemax := uint64(0)
+	for curbid, votes := range e.bufpopularity {
+		if votes > votemax {
+			popbid = curbid
+		}
+	}
+	e.setactivebuf(popbid)
+}
+
+func (e *Editor) closebuffer(bid buffers.BufferId) {
+	log.Printf("[closebuffer] %d\n", bid)
+	e.buffers.Close(bid)
+	delete(e.bufpopularity, bid)
 	if e.buffers.Len() == 0 {
 		e.NewFromBuffer(buffer.New(nil))
 	}
-
-	// Now that the current buffer is closed, choose the
-	// new active buffer based on its popularity.
-	cur := buffers.BufferId(0)
-	votemax := uint64(0)
-	for bid, votes := range e.bufpopularity {
-		if votes > votemax {
-			cur = bid
-		}
-	}
-	e.setactivebuf(cur)
 }
 
 func (e *Editor) SaveHook(savehook string) *Editor {
@@ -278,9 +281,12 @@ func (e *Editor) execandreload(abspath, cmd string) {
 		log.Printf("[execandreread, newbuffer error] %v\n", err)
 		return
 	}
-	e.buffers.Close(oldbuf.Id())
-	newbuf := e.buffers.Get(newbid)
+	// Now that the new buffer was opened successfully, we can get
+	// rid of the old one.
+	e.closebuffer(oldbuf.Id())
+	e.setactivebuf(newbid)
 
+	newbuf := e.buffers.Get(newbid)
 	//
 	// Make sure old cursor snaps into new buffer.
 	//
@@ -607,7 +613,7 @@ main:
 			case ev.Key() == tcell.KeyCtrlG:
 				e.jumpline()
 			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Rune() == 'f':
-				e.closebuffer()
+				e.closeactivebuffer()
 			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Key() == tcell.KeyUp:
 				e.jumpempty(true)
 			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Key() == tcell.KeyDown:
