@@ -56,24 +56,32 @@ func (e *Editor) NewBuffer(filepath string, r io.Reader) (buffers.BufferId, erro
 	return e.NewFromBuffer(buf)
 }
 
+func (e *Editor) setactivebuf(bid buffers.BufferId) {
+	log.Println("[setactivebuf] ", bid)
+	if _, ok := e.bufpopularity[bid]; !ok {
+		e.bufpopularity[bid] = 1
+	} else {
+		e.bufpopularity[bid]++
+	}
+	e.activebuf = bid
+}
+
 func (e *Editor) NewFromBuffer(buf *buffer.Buffer) (buffers.BufferId, error) {
 	bid := e.buffers.New(buf)
-	e.activebuf = bid
-	e.bufpopularity[bid] = 1
+	e.setactivebuf(bid)
 	return bid, nil
 }
 
 func (e *Editor) closebuffer() {
-	log.Printf("[closebuffer] Closing %d\n", e.activebuf)
+	log.Printf("[closebuffer] %d\n", e.activebuf)
 	e.buffers.Close(e.activebuf)
 	delete(e.bufpopularity, e.activebuf)
 	if e.buffers.Len() == 0 {
 		e.NewFromBuffer(buffer.New(nil))
 	}
-	e.activatepopular()
-}
 
-func (e *Editor) activatepopular() {
+	// Now that the current buffer is closed, choose the
+	// new active buffer based on its popularity.
 	cur := buffers.BufferId(0)
 	votemax := uint64(0)
 	for bid, votes := range e.bufpopularity {
@@ -81,7 +89,7 @@ func (e *Editor) activatepopular() {
 			cur = bid
 		}
 	}
-	e.activebuf = cur
+	e.setactivebuf(cur)
 }
 
 func (e *Editor) SaveHook(savehook string) *Editor {
@@ -556,7 +564,7 @@ func (e *Editor) changebuffer() {
 		log.Printf("[changebuffer, fuzzy error] %v\n", err)
 		return
 	}
-	e.activebuf = buffers.BufferId(sel.Id)
+	e.setactivebuf(buffers.BufferId(sel.Id))
 }
 
 func (e *Editor) Run() error {
@@ -566,6 +574,7 @@ func (e *Editor) Run() error {
 	if e.buffers.Len() == 0 {
 		e.NewFromBuffer(buffer.New(nil))
 	}
+	e.s.Clear()
 	e.drawactivebuf()
 	e.s.Show()
 main:
