@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/susji/ked/config"
 	"github.com/susji/ked/editor"
 )
 
@@ -24,6 +25,7 @@ func main() {
 	flag.StringVar(&debugfile, "debugfile", "", "File for appending debug log")
 	flag.StringVar(&savehook, "savehook", "",
 		"Command to run when a file is saved. __ABSPATH__ is expanded to filepath.")
+	flag.IntVar(&config.TABSZ, "tabsize", config.TABSZ, "Tab size")
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "ked %s (%s)\n", version, buildtime)
 		flag.PrintDefaults()
