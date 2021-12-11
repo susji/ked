@@ -15,3 +15,4 @@
 * [ ] `Mod+Tab` should tabulate line like the previous line
 * [ ] Make buffer opening faster (parallelize etc.)
 * [ ] Editor should indicate whether a buffer was changed since last saving
+* [ ] Savehook execution should have a timeout
