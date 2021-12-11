@@ -13,6 +13,7 @@
 * [x] `Alt+Backspace` should remove one complete word
 * [ ] Search & replace
 * [ ] `Mod+Tab` should tabulate line like the previous line
-* [ ] Make buffer opening faster (parallelize etc.)
-* [ ] Editor should indicate whether a buffer was changed since last saving
+* [ ] Make file browsing/buffer opening nonblocking & faster (parallelize etc.)
+* [ ] Editor should indicate whether a buffer was changed since last saving
+* [ ] Implement simple syntax highlighting
 * [ ] Savehook execution should have a timeout

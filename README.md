@@ -1,7 +1,13 @@
 # ked
 
 `ked` is a text editor for the terminal. It is purpose-built for myself
-as a code editor embedded in `tmux`.
+as a code editor embedded in `tmux`. It is not supported software and I
+advise against using it for real. There are probably a lot of edgecases and
+weird crashes that will happen. [I may make](TODO.md) minor bug fixes,
+modifications, and improvements, but `ked` will never be much more than
+it is now. Presently it works well enough that after bootstrapping the
+project with another editor, `ked` itself has mostly been with developed
+with `ked`.
 
 ## shortcuts
 
