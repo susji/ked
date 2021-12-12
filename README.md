@@ -12,7 +12,7 @@ lose your buffer modifications irrevocably. [I may make](TODO.md) minor
 bug fixes, modifications, and improvements, but `ked` will never be much
 more than it is now. Presently it works well enough that after
 bootstrapping the project with another editor, `ked` itself has mostly
-been with developed with `ked` using MacOS and GNU/Linux.
+been with developed with `ked` using macOS and GNU/Linux.
 
 ## shortcuts
 
@@ -49,8 +49,8 @@ Depending your terminal settings, `Alt` may be mapped to `Esc`.
 We have a very minimalistic approach to buffer handling. You can open
 new buffers, close them, save their contents to a file, and change
 between them. A single buffer always occupies the available screen
-space. I use it within `tmux`, and I need to see more than a single
-buffer at a time, I will open two panes for it.
+space. I use it within `tmux`, and if I need to see more than a single
+buffer at a time, I will open several panes for that purpose.
 
 Opening files into new buffers is based on the idea of first selecting a
 root directory and then fuzzily finding filenames matching your filter.

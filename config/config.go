@@ -8,12 +8,13 @@ import (
 
 var SAVEHOOKS = map[string][]string{}
 var TABSZ = 4
-var MAXFILES = 1_000_000
+var MAXFILES = 50_000
 var WORD_DELIMS = " \t&|,./(){}[]#+*%'-:?!'\""
 var IGNOREDIRS = map[string]bool{
 	".git":         true,
 	"node_modules": true,
 	"__pycache__":  true,
+	".cache":       true,
 }
 
 func SetIgnoreDirs(rawdirs string) {
