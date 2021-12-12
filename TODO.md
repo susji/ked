@@ -17,3 +17,4 @@
 * [ ] Editor should indicate whether a buffer was changed since last saving
 * [ ] Implement simple syntax highlighting
 * [ ] Savehook execution should have a timeout
+* [ ] File browsing should maybe follow symlinks
