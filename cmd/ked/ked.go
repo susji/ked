@@ -20,11 +20,12 @@ var (
 )
 
 func main() {
-	var debugfile, savehook, ignoredirs string
+	var debugfile, savehooks, ignoredirs string
 
 	flag.StringVar(&debugfile, "debugfile", "", "File for appending debug log")
-	flag.StringVar(&savehook, "savehook", "",
-		"Command to run when a file is saved. __ABSPATH__ is expanded to filepath.")
+	flag.StringVar(&savehooks, "savehooks", "",
+		"Command to run when a file is saved. __ABSPATH__ is expanded to filepath."+
+			"Use comma-separated specifiers like '<filename-glob>=<command-to-run>'.")
 	flag.IntVar(&config.TABSZ, "tabsize", config.TABSZ, "Tab size")
 	flag.StringVar(
 		&ignoredirs,
@@ -37,6 +38,10 @@ func main() {
 	}
 	flag.Parse()
 	config.SetIgnoreDirs(ignoredirs)
+	if err := config.SetSaveHooks(savehooks); err != nil {
+		fmt.Fprintf(os.Stderr, "%v", err)
+		os.Exit(10)
+	}
 
 	if len(debugfile) > 0 {
 		f, err := os.OpenFile(debugfile, os.O_CREATE|os.O_APPEND|os.O_WRONLY,
@@ -53,7 +58,7 @@ func main() {
 
 	// Initial editor context consists of a canvas and an optional
 	// list file-backed buffers.
-	e := editor.New().SaveHook(savehook)
+	e := editor.New()
 	filenames := flag.Args()
 	for _, filename := range filenames {
 		absname, err := filepath.Abs(filename)

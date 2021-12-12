@@ -29,7 +29,6 @@ type Editor struct {
 	s         tcell.Screen
 	buffers   buffers.EditorBuffers
 	activebuf buffers.BufferId
-	savehook  string
 
 	prevopendir   string
 	prevsearch    map[buffers.BufferId]string
@@ -95,11 +94,6 @@ func (e *Editor) closebuffer(bid buffers.BufferId) {
 	if e.buffers.Len() == 0 {
 		e.NewFromBuffer(buffer.New(nil))
 	}
-}
-
-func (e *Editor) SaveHook(savehook string) *Editor {
-	e.savehook = savehook
-	return e
 }
 
 func (e *Editor) initscreen() error {
@@ -257,10 +251,23 @@ func (e *Editor) savebuffer() {
 	}
 	e.setnonsaved(false)
 
-	if len(e.savehook) > 0 {
-		sh := strings.ReplaceAll(e.savehook, "__ABSPATH__", abspath)
-		log.Printf("[savebuffer, hook] %q -> %q\n", e.savehook, sh)
+	for pattern, command := range config.SAVEHOOKS {
+		log.Printf("[savebuffer, pattern] %q %q\n", pattern, command)
+		matched, err := filepath.Match(pattern, filepath.Base(abspath))
+		if err != nil {
+			// XXX Display error to user somehow.
+			log.Printf("[savebuffer, hook match] %v\n", err)
+			return
+		}
+		if !matched {
+			log.Println("[savebuffer, pattern-no-match]")
+			continue
+		}
+		sh := strings.ReplaceAll(command, "__ABSPATH__", abspath)
+		log.Printf("[savebuffer, hook] %q -> %q\n", command, sh)
 		e.execandreload(abspath, sh)
+		// We will not break here. This means a file may be
+		// processed by multiple savehooks!
 	}
 }
 
