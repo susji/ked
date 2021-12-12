@@ -19,3 +19,4 @@
 * [ ] Savehook execution should have a timeout
 * [ ] File browsing should maybe follow symlinks
 * [ ] Extend undo beyond buffer saves
+* [ ] Savehooks should be specified with glob patterns
