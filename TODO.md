@@ -14,7 +14,7 @@
 * [ ] Search & replace
 * [ ] `Mod+Tab` should tabulate line like the previous line
 * [ ] Make file browsing/buffer opening nonblocking & faster (parallelize etc.)
-* [ ] Editor should indicate whether a buffer was changed since last saving
+* [x] Editor should indicate whether a buffer was changed since last saving
 * [ ] Implement simple syntax highlighting
 * [ ] Savehook execution should have a timeout
 * [ ] File browsing should maybe follow symlinks
