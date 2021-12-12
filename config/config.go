@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-var SAVEHOOKS = map[string]string{}
+var SAVEHOOKS = map[string][]string{}
 var TABSZ = 4
 var MAXFILES = 1_000_000
 var WORD_DELIMS = " \t&|,./(){}[]#+*%'-:?!'\""
@@ -32,13 +32,13 @@ func GetIgnoreDirsFlat() string {
 }
 
 func SetSaveHooks(rawsavehooks string) error {
-	SAVEHOOKS = map[string]string{}
+	SAVEHOOKS = map[string][]string{}
 	for _, rawhook := range regexp.MustCompile(" *,+ *").Split(rawsavehooks, -1) {
 		parts := strings.SplitN(rawhook, "=", 2)
 		if len(parts) != 2 {
 			return fmt.Errorf("unexpected savehook given: %q", rawhook)
 		}
-		SAVEHOOKS[parts[0]] = parts[1]
+		SAVEHOOKS[parts[0]] = regexp.MustCompile(" +").Split(parts[1], -1)
 	}
 	return nil
 }

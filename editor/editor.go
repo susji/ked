@@ -263,28 +263,34 @@ func (e *Editor) savebuffer() {
 			log.Println("[savebuffer, pattern-no-match]")
 			continue
 		}
-		sh := strings.ReplaceAll(command, "__ABSPATH__", abspath)
-		log.Printf("[savebuffer, hook] %q -> %q\n", command, sh)
-		e.execandreload(abspath, sh)
+
+		rcommand := []string{}
+		for _, part := range command {
+			rcommand = append(
+				rcommand, strings.ReplaceAll(part, "__ABSPATH__", abspath))
+		}
+		log.Printf("[savebuffer, hook] %#v -> %#v\n", command, rcommand)
+		e.execandreload(abspath, rcommand)
+
 		// We will not break here. This means a file may be
 		// processed by multiple savehooks!
 	}
 }
 
-func (e *Editor) execandreload(abspath, cmd string) {
-	args := []string{"-c", cmd}
-	c := exec.Command("/bin/sh", args...)
+func (e *Editor) execandreload(abspath string, cmd []string) {
+	c := exec.Command(cmd[0], cmd[1:]...)
+	log.Printf("[execandreload, command] %#v\n", c)
 	out, err := c.Output()
-	log.Println("[execandreread, output] ", out)
+	log.Printf("[execandreload, output] %q\n", out)
 	if err != nil {
 		// XXX Display error to user somehow.
-		log.Printf("[execandreread, exec error] %v\n", err)
+		log.Printf("[execandreload, exec error] %v\n", err)
 		return
 	}
 	f, err := os.Open(abspath)
 	if err != nil {
 		// XXX Display error to use somehow.
-		log.Printf("[execandreread, reopen error] %v\n", err)
+		log.Printf("[execandreload, reopen error] %v\n", err)
 		return
 	}
 	defer f.Close()
@@ -293,10 +299,10 @@ func (e *Editor) execandreload(abspath, cmd string) {
 	oldviewportstart := oldbuf.Viewport.Start()
 	oldcursorline, oldcursorcol := oldbuf.CursorLine(), oldbuf.CursorCol()
 
-	log.Println("[execandreread, reopened] ", abspath)
+	log.Println("[execandreload, reopened] ", abspath)
 	newbid, err := e.NewBufferFromFile(f)
 	if err != nil {
-		log.Printf("[execandreread, newbuffer error] %v\n", err)
+		log.Printf("[execandreload, newbuffer error] %v\n", err)
 		return
 	}
 	// Now that the new buffer was opened successfully, we can get

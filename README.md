@@ -66,12 +66,8 @@ file. Each hook consists of a match pattern and the command itself.
 
 To make the mechanism more useful, all references to `__ABSPATH__` in
 the command-line will be replaced with the current buffer's absolute
-path. Thus the final invocation will be like
-
-    /bin/sh -c <savehook-value-with-abspath-expansion>`
-
-If the command returns successfully, `ked` will reload the buffer's
-contents from the file.
+path. If the command returns successfully, `ked` will reload the
+buffer's contents from the file.
 
 For example, `gofmt` and `clang-format` may be used to autoformat
 buffers upon saving:
