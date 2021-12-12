@@ -304,7 +304,7 @@ func (b *Buffer) Search(term []rune) (lineno, col int) {
 }
 
 func (b *Buffer) SearchRange(term []rune, limits *SearchLimit) (lineno, col int) {
-	sterm := string(term)
+	sterm := strings.ToLower(string(term))
 	for lineno := limits.StartLineno; lineno <= limits.EndLineno; lineno++ {
 		line := b.GetLine(lineno)
 		if len(line) == 0 {

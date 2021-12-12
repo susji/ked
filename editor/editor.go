@@ -15,7 +15,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"unicode"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/susji/ked/buffer"
@@ -430,10 +429,6 @@ func (e *Editor) search() {
 			return
 		}
 
-		sterm := []rune{}
-		for _, r := range term {
-			sterm = append(sterm, unicode.ToLower(r))
-		}
 		limits := &buffer.SearchLimit{
 			StartLineno: eb.CursorLine(),
 			StartCol:    prevcol,
@@ -441,7 +436,7 @@ func (e *Editor) search() {
 			EndCol:      eb.Buffer.LineLength(eb.Buffer.Lines() - 1),
 		}
 		log.Printf("[search, limits] %#v\n", limits)
-		if lineno, col := eb.Buffer.SearchRange(sterm, limits); lineno != -1 && col != -1 {
+		if lineno, col := eb.Buffer.SearchRange(term, limits); lineno != -1 && col != -1 {
 			log.Printf("[search, found] (%d, %d)\n", lineno, col)
 			eb.SetCursor(lineno, col)
 			eb.Viewport.SetTeleported(eb.CursorLine())
