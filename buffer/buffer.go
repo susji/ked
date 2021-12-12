@@ -275,6 +275,7 @@ func (b *Buffer) Replace(what, with []rune) (lineno, col int) {
 
 func (b *Buffer) ReplaceRange(what, with []rune, limits *SearchLimit) (lineno, col int) {
 
+	return 0, 0
 }
 
 func (b *Buffer) Search(term []rune) (lineno, col int) {

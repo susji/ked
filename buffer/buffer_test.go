@@ -473,3 +473,15 @@ func TestDeleteWord(t *testing.T) {
 		})
 	}
 }
+
+func TestReplace(t *testing.T) {
+	b := buffer.New([][]rune{
+		[]rune("First line has some text."),
+		[]rune("Second line has plenty runes, too."),
+	})
+
+	b.Replace([]rune("some"), []rune("much"))
+	want := "First line has much text."
+	got := string(b.GetLine(0))
+	ta.Assert(t, got == want, "unexpected: %q, wanted: %q", got, want)
+}
