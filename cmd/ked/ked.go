@@ -20,17 +20,23 @@ var (
 )
 
 func main() {
-	var debugfile, savehook string
+	var debugfile, savehook, ignoredirs string
 
 	flag.StringVar(&debugfile, "debugfile", "", "File for appending debug log")
 	flag.StringVar(&savehook, "savehook", "",
 		"Command to run when a file is saved. __ABSPATH__ is expanded to filepath.")
 	flag.IntVar(&config.TABSZ, "tabsize", config.TABSZ, "Tab size")
+	flag.StringVar(
+		&ignoredirs,
+		"ignoredirs",
+		config.GetIgnoreDirsFlat(),
+		"Directories to ignore when doing buffer opens")
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "ked %s (%s)\n", version, buildtime)
 		flag.PrintDefaults()
 	}
 	flag.Parse()
+	config.SetIgnoreDirs(ignoredirs)
 
 	if len(debugfile) > 0 {
 		f, err := os.OpenFile(debugfile, os.O_CREATE|os.O_APPEND|os.O_WRONLY,

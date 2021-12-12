@@ -517,12 +517,16 @@ func (e *Editor) openbuffer() {
 	choices := []fuzzyselect.Entry{}
 	paths := []string{}
 	filepath.WalkDir(absrootdir, func(path string, d fs.DirEntry, err error) error {
+		if d.IsDir() {
+			if _, ok := config.IGNOREDIRS[filepath.Base(path)]; ok {
+				return fs.SkipDir
+			}
+			return nil
+		}
 		if len(paths) >= config.MAXFILES {
 			return fs.SkipDir
 		}
-		if d.IsDir() {
-			return nil
-		}
+
 		id := len(paths)
 		choices = append(choices, fuzzyselect.Entry{Display: []rune(path), Id: uint32(id)})
 		paths = append(paths, path)
