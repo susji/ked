@@ -12,7 +12,7 @@ lose your buffer modifications irrevocably. [I may make](TODO.md) minor
 bug fixes, modifications, and improvements, but `ked` will never be much
 more than it is now. Presently it works well enough that after
 bootstrapping the project with another editor, `ked` itself has mostly
-been with developed with `ked`.
+been with developed with `ked` using MacOS and GNU/Linux.
 
 ## shortcuts
 
