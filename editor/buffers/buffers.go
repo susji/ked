@@ -26,7 +26,6 @@ type EditorBuffer struct {
 	Viewport              *viewport.Viewport
 	bid                   uint32
 	cursorline, cursorcol int
-	linesinview           int
 	prevsearch            string
 }
 
