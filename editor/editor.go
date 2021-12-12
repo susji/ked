@@ -34,6 +34,7 @@ type Editor struct {
 	prevopendir   string
 	prevsearch    map[buffers.BufferId]string
 	bufpopularity map[buffers.BufferId]uint64
+	nonsaved      map[buffers.BufferId]bool
 }
 
 func New() *Editor {
@@ -41,6 +42,7 @@ func New() *Editor {
 		prevsearch:    map[buffers.BufferId]string{},
 		bufpopularity: map[buffers.BufferId]uint64{},
 		buffers:       buffers.New(),
+		nonsaved:      map[buffers.BufferId]bool{},
 	}
 }
 
@@ -220,6 +222,14 @@ func (e *Editor) moveline(start bool) {
 	eb.SetCursor(eb.CursorLine(), len(line))
 }
 
+func (e *Editor) setnonsaved(status bool) {
+	e.nonsaved[e.activebuf] = status
+}
+
+func (e *Editor) isnonsaved() bool {
+	return e.nonsaved[e.activebuf]
+}
+
 func (e *Editor) savebuffer() {
 	eb := e.buffers.Get(e.activebuf)
 	log.Printf("[savebuffer] %q\n", eb.Buffer.Filepath())
@@ -245,6 +255,7 @@ func (e *Editor) savebuffer() {
 		log.Println("[savebuffer] failed: ", err)
 		// XXX Report error to UI somehow
 	}
+	e.setnonsaved(false)
 
 	if len(e.savehook) > 0 {
 		sh := strings.ReplaceAll(e.savehook, "__ABSPATH__", abspath)
@@ -432,9 +443,15 @@ func (e *Editor) drawstatusline() {
 	}
 	lineno = eb.CursorLine() + 1
 	col = eb.CursorCol() + 1
+	var nonsaved rune
+	if e.isnonsaved() {
+		nonsaved = '*'
+	} else {
+		nonsaved = ' '
+	}
 	line := []rune(
 		fmt.Sprintf(
-			"[%03d] %3d, %2d:  %s", e.activebuf, lineno, col, fn))
+			"[%03d] %3d, %2d: %c %s", e.activebuf, lineno, col, nonsaved, fn))
 	for i, r := range line {
 		e.s.SetContent(i, h-1, r, nil, tcell.StyleDefault)
 		if i > w {
@@ -463,6 +480,9 @@ func (e *Editor) undo() {
 	eb := e.buffers.Get(e.activebuf)
 	if res := eb.Buffer.UndoModification(); res != nil {
 		eb.Update(*res)
+	}
+	if !eb.Buffer.Modified() {
+		e.setnonsaved(false)
 	}
 }
 
@@ -613,6 +633,7 @@ main:
 			case ev.Key() == tcell.KeyCtrlS:
 				e.search()
 			case ev.Key() == tcell.KeyCtrlK:
+				e.setnonsaved(true)
 				e.delline()
 			case ev.Key() == tcell.KeyCtrlG:
 				e.jumpline()
@@ -631,10 +652,13 @@ main:
 				e.s.Fini()
 				break main
 			case ev.Key() == tcell.KeyRune:
+				e.setnonsaved(true)
 				e.insertrune(ev.Rune())
 			case ev.Key() == tcell.KeyEnter:
+				e.setnonsaved(true)
 				e.insertlinefeed()
 			case ev.Key() == tcell.KeyBackspace, ev.Key() == tcell.KeyBackspace2:
+				e.setnonsaved(true)
 				if ev.Modifiers()&tcell.ModAlt > 0 {
 					e.delword()
 				} else {

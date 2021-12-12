@@ -326,6 +326,10 @@ func (b *Buffer) PrevRune(lineno, col int) (rune, error) {
 	return prevline[len(prevline)-1], nil
 }
 
+func (b *Buffer) Modified() bool {
+	return len(b.mods) > 0
+}
+
 func (b *Buffer) JumpWord(lineno, col int, left bool) (newlineno, newcol int) {
 	origlineno := lineno
 	origcol := col
