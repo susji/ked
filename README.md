@@ -69,8 +69,8 @@ the command-line will be replaced with the current buffer's absolute
 path. If the command returns successfully, `ked` will reload the
 buffer's contents from the file.
 
-For example, `gofmt` and `clang-format` may be used to autoformat
-buffers upon saving:
+For example, `gofmt`, `clang-format`, and `pandoc` may be used to
+autoformat buffers upon saving:
 
     $ ked -savehooks '*.go=gofmt -w __ABSPATH__,*.c=clang-format -i __ABSPATH__'
     $ ked -savehooks '*.md=pandoc -f markdown -t markdown -o __ABSPATH__ __ABSPATH__'
