@@ -1,13 +1,17 @@
 # ked
 
-`ked` is a text editor for the terminal. It is purpose-built for myself
-as a code editor embedded in `tmux`. It is not supported software and I
-advise against using it for real. There are probably a lot of edgecases and
-weird crashes that will happen. [I may make](TODO.md) minor bug fixes,
-modifications, and improvements, but `ked` will never be much more than
-it is now. Presently it works well enough that after bootstrapping the
-project with another editor, `ked` itself has mostly been with developed
-with `ked`.
+`ked` is a text editor. It is purpose-built for myself as a code editor for
+use within a terminal multiplexer.
+
+## disclaimer
+
+`ked` is unsupported software and I advise against using it for real. There
+are probably a lot of edgecases I have yet to find. You may encounter bugs,
+which will cause `ked` to crash, which will cause you to lose your buffer
+modifications irrevocably. [I may make](TODO.md) minor bug fixes,
+modifications, and improvements, but `ked` will never be much more than it is
+now. Presently it works well enough that after bootstrapping the project with
+another editor, `ked` itself has mostly been with developed with `ked`.
 
 ## shortcuts
 
@@ -33,6 +37,21 @@ The hardcoded keyboard shortcuts are the following:
   * `Ctrl+P` displays the buffer selection dialog
   * `Ctrl+F` displays the file-open dialog
   * `Alt+F` closes the current buffer
+
+Depending your terminal settings, `Alt` may be mapped to `Esc`.
+
+## buffer management
+
+We have a very minimalistic approach to buffer handling. You can open new
+buffers, close them, save their contents to a file, and change between them.
+A single buffer always occupies the available screen space. I use it within
+`tmux`, and I need to see more than a single buffer at a time, I will open
+two panes for it.
+
+Opening files into new buffers is based on the idea of first selecting a root
+directory and then fuzzily finding filenames matching your filter. By default,
+we ignore certain directories like `.git` and `node_modules`. You may specify
+these exactly with the `-ignoredirs` argument.
 
 ## save hooks
 
