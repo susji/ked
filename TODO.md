@@ -13,7 +13,7 @@
 -   [x] `Shift+Tab` should remove one tab level from line
 -   [ ] Display status messages somehow
 -   [x] `Alt+Backspace` should remove one complete word
--   [ ] Search & replace
+-   [x] Search & replace
 -   [ ] `Mod+Tab` should tabulate line like the previous line
 -   [ ] Make file browsing/buffer opening nonblocking & faster
     (parallelize etc.)
