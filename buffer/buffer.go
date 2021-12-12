@@ -274,8 +274,25 @@ func (b *Buffer) Replace(what, with []rune) (lineno, col int) {
 }
 
 func (b *Buffer) ReplaceRange(what, with []rune, limits *SearchLimit) (lineno, col int) {
+	lastlineno, lastcol := -1, -1
+	for {
+		lineno, col = b.SearchRange(what, limits)
+		if lineno == -1 || col == -1 {
+			break
+		}
 
-	return 0, 0
+		lastlineno = lineno
+		lastcol = col
+
+		for n := 0; n < len(what); n++ {
+			b.Perform(NewBackspace(lineno, col+1))
+		}
+		b.Perform(NewInsert(lineno, col, with))
+
+		limits.StartLineno = lineno
+		limits.StartCol = col + len(with)
+	}
+	return lastlineno, lastcol
 }
 
 func (b *Buffer) Search(term []rune) (lineno, col int) {

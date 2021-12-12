@@ -484,4 +484,17 @@ func TestReplace(t *testing.T) {
 	want := "First line has much text."
 	got := string(b.GetLine(0))
 	ta.Assert(t, got == want, "unexpected: %q, wanted: %q", got, want)
+
+	b.Replace([]rune("line"), []rune("FILA"))
+	want2 := [][]rune{
+		[]rune("First FILA has much text."),
+		[]rune("Second FILA has plenty runes, too."),
+	}
+	got2 := bufferToRunes(b)
+	ta.Assert(
+		t,
+		reflect.DeepEqual(got2, want2),
+		"unexpected: %#v, want: %#v",
+		got,
+		want)
 }
