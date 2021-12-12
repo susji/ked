@@ -18,3 +18,4 @@
 * [ ] Implement simple syntax highlighting
 * [ ] Savehook execution should have a timeout
 * [ ] File browsing should maybe follow symlinks
+* [ ] Extend undo beyond buffer saves
