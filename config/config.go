@@ -33,6 +33,9 @@ func GetIgnoreDirsFlat() string {
 
 func SetSaveHooks(rawsavehooks string) error {
 	SAVEHOOKS = map[string][]string{}
+	if len(rawsavehooks) == 0 {
+		return nil
+	}
 	for _, rawhook := range regexp.MustCompile(" *,+ *").Split(rawsavehooks, -1) {
 		parts := strings.SplitN(rawhook, "=", 2)
 		if len(parts) != 2 {
