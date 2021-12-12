@@ -22,5 +22,5 @@
 -   [ ] Implement simple syntax highlighting
 -   [ ] Savehook execution should have a timeout
 -   [ ] File browsing should maybe follow symlinks
--   [ ] Extend undo beyond buffer saves
+-   [ ] Extend undo to work with savehooks
 -   [x] Savehooks should be specified with glob patterns
