@@ -76,6 +76,10 @@ autoformat buffers upon saving:
     $ ked -savehooks '*.md=pandoc -f markdown -t markdown -o __ABSPATH__ __ABSPATH__'
 
 Above we assume that `gofmt`, `clang-format`, and `pandoc` will be found
-in the path. Note the `-w`, `-i`, and `-o` parameters, respectively,
-which are used to enable formatting the files on disk instead of
-standard I/O.
+in the path. Note the `-w`, `-i`, and `-o` parameters, respectively, are
+used to enable formatting the files on disk instead of standard I/O.
+
+Note that the mechanism is fairly limited: We generate the savehook
+command by splitting the command-line with spaces. The result is also
+not shell-expanded. For more complex invocations, use a wrapper script
+like `*.filetype=$HOME/bin/wrapper.sh __ABSPATH__`.
