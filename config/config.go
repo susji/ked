@@ -6,7 +6,7 @@ import (
 )
 
 var TABSZ = 4
-var MAXFILES = 4294967296
+var MAXFILES = 1_000_000
 var WORD_DELIMS = " \t&|,./(){}[]#+*%'-:?!'\""
 var IGNOREDIRS = map[string]bool{
 	".git":         true,
