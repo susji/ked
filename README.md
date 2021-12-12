@@ -79,6 +79,7 @@ buffers upon saving:
     $ ked -savehooks '*.go=gofmt -w __ABSPATH__,*.c=clang-format -i __ABSPATH__'
     $ ked -savehooks '*.md=pandoc -f markdown -t markdown -o __ABSPATH__ __ABSPATH__'
 
-Above we assume that `gofmt` and `clang-format` will be found in the
-path. Note the `-w` and `-i` parameters, respectively, which are used to
-enable formatting the files on disk instead of standard I/O.
+Above we assume that `gofmt`, `clang-format`, and `pandoc` will be found
+in the path. Note the `-w`, `-i`, and `-o` parameters, respectively,
+which are used to enable formatting the files on disk instead of
+standard I/O.
