@@ -387,6 +387,20 @@ func (e *Editor) replace() {
 	}
 
 	log.Printf("[replace] %q -> %q\n", string(from), string(to))
+	limits := &buffer.SearchLimit{
+		StartLineno: eb.CursorLine(),
+		StartCol:    eb.CursorCol(),
+		EndLineno:   eb.Buffer.Lines() - 1,
+		EndCol:      eb.Buffer.LineLength(eb.Buffer.Lines() - 1),
+	}
+	log.Printf("[search, limits] %#v\n", limits)
+	if lineno, col := eb.Buffer.ReplaceRange(from, to, limits); lineno != -1 && col != -1 {
+		log.Printf("[replace, found] (%d, %d)\n", lineno, col)
+		eb.SetCursor(lineno, col)
+		eb.Viewport.SetTeleported(eb.CursorLine())
+
+	}
+
 }
 
 func (e *Editor) search() {
