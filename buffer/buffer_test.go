@@ -11,7 +11,7 @@ import (
 	ta "github.com/susji/ked/internal/testutil"
 )
 
-func bufferToRunes(buf *buffer.Buffer) [][]rune {
+func buffertorunes(buf *buffer.Buffer) [][]rune {
 	ret := [][]rune{}
 	for lineno := 0; lineno < buf.Lines(); lineno++ {
 		ret = append(ret, buf.GetLine(lineno))
@@ -69,7 +69,7 @@ func TestInsertDelete(t *testing.T) {
 	wantlines := [][]rune{msg, []rune("")}
 	b.Perform(buffer.NewInsert(0, 0, msg))
 
-	gotlines := bufferToRunes(b)
+	gotlines := buffertorunes(b)
 	ta.Assert(t, reflect.DeepEqual(gotlines, wantlines),
 		"should have updated contents, got %q", gotlines)
 
@@ -81,7 +81,7 @@ func TestInsertDelete(t *testing.T) {
 	b.NewLine(1)
 	b.Perform(buffer.NewInsert(1, 0, msg2))
 
-	gotlines2 := bufferToRunes(b)
+	gotlines2 := buffertorunes(b)
 	ta.Assert(t, reflect.DeepEqual(gotlines2, wantlines2),
 		"unexpected line contents: %q", gotlines2)
 
@@ -91,7 +91,7 @@ func TestInsertDelete(t *testing.T) {
 	b.Perform(buffer.NewDelLine(0))
 	wantlines3 := [][]rune{msg2, []rune("")}
 
-	gotlines3 := bufferToRunes(b)
+	gotlines3 := buffertorunes(b)
 	ta.Assert(t, reflect.DeepEqual(gotlines3, wantlines3),
 		"unexpected line contents: %q", gotlines3)
 
@@ -101,7 +101,7 @@ func TestInsertDelete(t *testing.T) {
 	b.Perform(buffer.NewDelLine(0))
 	wantlines4 := [][]rune{[]rune("")}
 
-	gotlines4 := bufferToRunes(b)
+	gotlines4 := buffertorunes(b)
 	ta.Assert(t, reflect.DeepEqual(gotlines4, wantlines4),
 		"should be empty, got %q", gotlines4)
 }
@@ -369,7 +369,7 @@ func TestUndo(t *testing.T) {
 		b.UndoModification()
 	}
 	ta.Assert(t, b.Lines() == len(msg), "wanted %d lines, got %d", len(msg), b.Lines())
-	got := bufferToRunes(b)
+	got := buffertorunes(b)
 	ta.Assert(
 		t,
 		reflect.DeepEqual(got, msg),
@@ -437,7 +437,7 @@ func TestUndoBackspace(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		b.UndoModification()
 	}
-	gotundo := bufferToRunes(b)
+	gotundo := buffertorunes(b)
 	ta.Assert(
 		t,
 		reflect.DeepEqual(msg, gotundo),
@@ -472,4 +472,29 @@ func TestDeleteWord(t *testing.T) {
 
 		})
 	}
+}
+
+func TestReplace(t *testing.T) {
+	b := buffer.New([][]rune{
+		[]rune("First line has some text."),
+		[]rune("Second line has plenty runes, too."),
+	})
+
+	b.Replace([]rune("some"), []rune("much"))
+	want := "First line has much text."
+	got := string(b.GetLine(0))
+	ta.Assert(t, got == want, "unexpected: %q, wanted: %q", got, want)
+
+	b.Replace([]rune("line"), []rune("FILA"))
+	want2 := [][]rune{
+		[]rune("First FILA has much text."),
+		[]rune("Second FILA has plenty runes, too."),
+	}
+	got2 := buffertorunes(b)
+	ta.Assert(
+		t,
+		reflect.DeepEqual(got2, want2),
+		"unexpected: %#v, want: %#v",
+		got,
+		want)
 }

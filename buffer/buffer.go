@@ -265,12 +265,40 @@ type SearchLimit struct {
 	EndLineno, EndCol     int
 }
 
+func (b *Buffer) Replace(what, with []rune) (lineno, col int) {
+	limits := &SearchLimit{
+		EndLineno: b.Lines() - 1,
+		EndCol:    b.LineLength(b.Lines() - 1),
+	}
+	return b.ReplaceRange(what, with, limits)
+}
+
+func (b *Buffer) ReplaceRange(what, with []rune, limits *SearchLimit) (lineno, col int) {
+	lastlineno, lastcol := -1, -1
+	for {
+		lineno, col = b.SearchRange(what, limits)
+		if lineno == -1 || col == -1 {
+			break
+		}
+
+		lastlineno = lineno
+		lastcol = col
+
+		for n := 0; n < len(what); n++ {
+			b.Perform(NewBackspace(lineno, col+1))
+		}
+		b.Perform(NewInsert(lineno, col, with))
+
+		limits.StartLineno = lineno
+		limits.StartCol = col + len(with)
+	}
+	return lastlineno, lastcol
+}
+
 func (b *Buffer) Search(term []rune) (lineno, col int) {
 	limits := &SearchLimit{
-		StartLineno: 0,
-		StartCol:    0,
-		EndLineno:   b.Lines() - 1,
-		EndCol:      b.LineLength(b.Lines() - 1),
+		EndLineno: b.Lines() - 1,
+		EndCol:    b.LineLength(b.Lines() - 1),
 	}
 	return b.SearchRange(term, limits)
 }

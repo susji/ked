@@ -369,6 +369,40 @@ func (e *Editor) jumpword(left bool) {
 	eb.SetCursor(eb.Buffer.JumpWord(eb.CursorLine(), eb.CursorCol(), left))
 }
 
+func (e *Editor) replace() {
+	eb := e.buffers.Get(e.activebuf)
+	_, h := e.s.Size()
+	from, err := textentry.
+		New(e.prevsearch[eb.Id()], "Replace the following: ", 256).
+		Ask(e.s, 0, h-1)
+	if err != nil || len(from) == 0 {
+		return
+	}
+
+	to, err := textentry.
+		New(e.prevsearch[eb.Id()], "Replace with: ", 256).
+		Ask(e.s, 0, h-1)
+	if err != nil {
+		return
+	}
+
+	log.Printf("[replace] %q -> %q\n", string(from), string(to))
+	limits := &buffer.SearchLimit{
+		StartLineno: eb.CursorLine(),
+		StartCol:    eb.CursorCol(),
+		EndLineno:   eb.Buffer.Lines() - 1,
+		EndCol:      eb.Buffer.LineLength(eb.Buffer.Lines() - 1),
+	}
+	log.Printf("[search, limits] %#v\n", limits)
+	if lineno, col := eb.Buffer.ReplaceRange(from, to, limits); lineno != -1 && col != -1 {
+		log.Printf("[replace, found] (%d, %d)\n", lineno, col)
+		eb.SetCursor(lineno, col)
+		eb.Viewport.SetTeleported(eb.CursorLine())
+
+	}
+
+}
+
 func (e *Editor) search() {
 	eb := e.buffers.Get(e.activebuf)
 
@@ -643,6 +677,8 @@ main:
 				e.listbuffers()
 			case ev.Key() == tcell.KeyCtrlUnderscore:
 				e.undo()
+			case ev.Key() == tcell.KeyCtrlR:
+				e.replace()
 			case ev.Key() == tcell.KeyCtrlS:
 				e.search()
 			case ev.Key() == tcell.KeyCtrlK:
