@@ -230,7 +230,7 @@ func TestSearch(t *testing.T) {
 		[]rune("Third line."),
 	})
 
-	lineno, col := b.Search([]rune(strings.ToLower("First")))
+	lineno, col := b.Search([]rune("First"))
 	ta.Assert(t, lineno == 0 && col == 0, "unexpected lineno & col: %d, %d", lineno, col)
 
 	lineno, col = b.Search([]rune(" line."))
@@ -485,7 +485,7 @@ func TestReplace(t *testing.T) {
 	got := string(b.GetLine(0))
 	ta.Assert(t, got == want, "unexpected: %q, wanted: %q", got, want)
 
-	b.Replace([]rune("line"), []rune("FILA"))
+	b.Replace([]rune("LIne"), []rune("FILA"))
 	want2 := [][]rune{
 		[]rune("First FILA has much text."),
 		[]rune("Second FILA has plenty runes, too."),
