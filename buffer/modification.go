@@ -8,14 +8,16 @@ const (
 	MOD_DELETERUNES
 	MOD_DELETELINE
 	MOD_MOVERUNES
+	MOD_REPLACERUNES
 )
 
 var kindnames = map[modificationKind]string{
-	MOD_INSERTRUNES: "MOD_INSERTRUNES",
-	MOD_LINEFEED:    "MOD_LINEFEED",
-	MOD_DELETERUNES: "MOD_DELETERUNES",
-	MOD_DELETELINE:  "MOD_DELETELINE",
-	MOD_MOVERUNES:   "MOD_MOVERUNES",
+	MOD_INSERTRUNES:  "MOD_INSERTRUNES",
+	MOD_LINEFEED:     "MOD_LINEFEED",
+	MOD_DELETERUNES:  "MOD_DELETERUNES",
+	MOD_DELETELINE:   "MOD_DELETELINE",
+	MOD_MOVERUNES:    "MOD_MOVERUNES",
+	MOD_REPLACERUNES: "MOD_REPLACERUNES",
 }
 
 type modificationKind int
@@ -30,4 +32,8 @@ func (m *modification) String() string {
 	return fmt.Sprintf(
 		"Modification{kind=%s, position=(%d, %d), data=%v}",
 		kindnames[m.kind], m.lineno, m.col, m.data)
+}
+
+type replacedata struct {
+	from, to []rune
 }

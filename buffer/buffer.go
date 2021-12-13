@@ -284,10 +284,18 @@ func (b *Buffer) ReplaceRange(what, with []rune, limits *SearchLimit) (lineno, c
 		lastlineno = lineno
 		lastcol = col
 
+		b.modify(&modification{
+			lineno: lineno,
+			col:    col,
+			data: &replacedata{
+				from: what,
+				to:   with,
+			},
+		})
 		for n := 0; n < len(what); n++ {
-			b.Perform(NewBackspace(lineno, col+1))
+			b.lines[lineno].SetCursor(col + 1).Delete()
 		}
-		b.Perform(NewInsert(lineno, col, with))
+		b.lines[lineno].SetCursor(col).Insert(with)
 
 		limits.StartLineno = lineno
 		limits.StartCol = col + len(with)
