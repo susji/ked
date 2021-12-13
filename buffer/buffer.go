@@ -97,6 +97,14 @@ restart:
 		newlines[len(left)] = newline
 		copy(newlines[len(left)+1:], right)
 		b.lines = newlines
+	case MOD_REPLACERUNES:
+		rep := mod.data.(*replacedata)
+		lineno := mod.lineno
+		col := mod.col
+		for i := 0; i < len(rep.to); i++ {
+			b.lines[lineno].SetCursor(col + 1).Delete()
+		}
+		b.lines[lineno].SetCursor(col).Insert(rep.from)
 	}
 	// Execute all sequential modifications of the same kind.
 	if len(b.mods) > 0 && mod.kind == b.mods[len(b.mods)-1].kind {
@@ -283,12 +291,14 @@ func (b *Buffer) ReplaceRange(what, with []rune, limits *SearchLimit) (lineno, c
 
 		lastlineno = lineno
 		lastcol = col
+		rep := b.lines[lineno].Get()[col : col+len(what)]
 
 		b.modify(&modification{
+			kind:   MOD_REPLACERUNES,
 			lineno: lineno,
 			col:    col,
 			data: &replacedata{
-				from: what,
+				from: rep,
 				to:   with,
 			},
 		})

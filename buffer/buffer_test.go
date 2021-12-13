@@ -475,10 +475,11 @@ func TestDeleteWord(t *testing.T) {
 }
 
 func TestReplace(t *testing.T) {
-	b := buffer.New([][]rune{
+	msg := [][]rune{
 		[]rune("First line has some text."),
 		[]rune("Second line has plenty runes, too."),
-	})
+	}
+	b := buffer.New(msg)
 
 	b.Replace([]rune("some"), []rune("much"))
 	want := "First line has much text."
@@ -495,6 +496,17 @@ func TestReplace(t *testing.T) {
 		t,
 		reflect.DeepEqual(got2, want2),
 		"unexpected: %#v, want: %#v",
-		got,
-		want)
+		got2,
+		want2)
+
+	// Undo and verify.
+	b.UndoModification()
+	got3 := buffertorunes(b)
+	ta.Assert(
+		t,
+		reflect.DeepEqual(got3, msg),
+		"unexpected: %+v, want: %+v",
+		got3,
+		msg)
+	t.Log(string(got3[0]), string(got3[1]))
 }
