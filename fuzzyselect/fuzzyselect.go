@@ -53,7 +53,7 @@ func (f *FuzzySelect) filter(with string) []Entry {
 func (f *FuzzySelect) drawfilter(s tcell.Screen, filter string, lineno, col, w, h int) {
 	rs := []rune(filter)
 	s.SetContent(col, lineno, '/', nil, tcell.StyleDefault.Bold(true))
-	rs = util.TruncateLine(rs, w-1)
+	rs = util.TruncateLine(rs, w-1, '|')
 	for curcol, r := range rs {
 		x := col + curcol + 1
 		y := lineno
@@ -78,7 +78,7 @@ func (f *FuzzySelect) drawdata(s tcell.Screen, data []Entry, choice, lineno, col
 			r = '>'
 		}
 		s.SetContent(col, lineno+nentry, r, nil, st)
-		rs := util.TruncateLine(curentry.Display, w-1)
+		rs := util.TruncateLine(curentry.Display, w-1, '|')
 		for curcol, r := range rs {
 			x := col + curcol + 1
 			y := lineno + nentry
