@@ -22,6 +22,7 @@ import (
 	"github.com/susji/ked/editor/buffers"
 	"github.com/susji/ked/fuzzyselect"
 	"github.com/susji/ked/textentry"
+	"github.com/susji/ked/util"
 )
 
 type Editor struct {
@@ -229,7 +230,7 @@ func (e *Editor) savebuffer() {
 
 	_, h := e.s.Size()
 	fp, err := textentry.
-		New(eb.Buffer.Filepath(), "Filename to save: ", 512).
+		New(eb.Buffer.Filepath(), "Save: ", 512).
 		Ask(e.s, 0, h-1)
 	if err != nil {
 		log.Println("[savebuffer, error-ask] ", err)
@@ -333,7 +334,7 @@ func (e *Editor) jumpline() {
 	eb := e.buffers.Get(e.activebuf)
 	_, h := e.s.Size()
 	linenoraw, err := textentry.
-		New("", "Line to jump: ", 12).
+		New("", "Line: ", 12).
 		Ask(e.s, 0, h-1)
 	if err != nil {
 		log.Println("[jumpline, error-ask] ", err)
@@ -372,14 +373,14 @@ func (e *Editor) replace() {
 	eb := e.buffers.Get(e.activebuf)
 	_, h := e.s.Size()
 	from, err := textentry.
-		New(e.prevsearch[eb.Id()], "Replace the following: ", 256).
+		New(e.prevsearch[eb.Id()], "Replace: ", 256).
 		Ask(e.s, 0, h-1)
 	if err != nil || len(from) == 0 {
 		return
 	}
 
 	to, err := textentry.
-		New(e.prevsearch[eb.Id()], "Replace with: ", 256).
+		New(e.prevsearch[eb.Id()], "... with: ", 256).
 		Ask(e.s, 0, h-1)
 	if err != nil {
 		return
@@ -485,12 +486,15 @@ func (e *Editor) drawstatusline() {
 	}
 	lineno = eb.CursorLine() + 1
 	col = eb.CursorCol() + 1
+
 	var nonsaved rune
 	if e.isnonsaved() {
 		nonsaved = '*'
 	} else {
 		nonsaved = ' '
 	}
+
+	fn = string(util.TruncateLine([]rune(fn), w-20, ':'))
 	line := []rune(
 		fmt.Sprintf(
 			"[%03d] %3d, %2d: %c %s", e.activebuf, lineno, col, nonsaved, fn))
@@ -561,7 +565,7 @@ func (e *Editor) openbuffer() {
 	w, h := e.s.Size()
 
 	fp, err := textentry.
-		New(rootdir, "Look under directory: ", 512).
+		New(rootdir, "Directory: ", 512).
 		Ask(e.s, 0, h-1)
 	if err != nil {
 		log.Println("[openbuffer, error-ask] ", err)
