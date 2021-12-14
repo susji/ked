@@ -574,11 +574,22 @@ func (e *Editor) openbuffer() {
 		e.drawstatusmsg(fmt.Sprintf("%v", err))
 		return
 	}
+	if fi, err := os.Stat(absrootdir); err != nil {
+		log.Printf("[openbuffer, stat] %q: %v\n", absrootdir, err)
+		return
+	} else if !fi.IsDir() {
+		log.Printf("[openbuffer, notdir] %q\n", absrootdir)
+		return
+	}
+
 	e.prevopendir = absrootdir
 
 	choices := []fuzzyselect.Entry{}
 	paths := []string{}
 	filepath.WalkDir(absrootdir, func(path string, d fs.DirEntry, err error) error {
+		if d == nil {
+			return fs.SkipDir
+		}
 		if d.IsDir() {
 			if _, ok := config.IGNOREDIRS[filepath.Base(path)]; ok {
 				return fs.SkipDir
