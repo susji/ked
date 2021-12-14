@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/susji/ked/util"
 )
 
 var (
@@ -26,17 +27,19 @@ func New(defval, prompt string, maxlen int) *TextEntry {
 	}
 }
 
-func (te *TextEntry) draw(s tcell.Screen, what []rune, col, lineno int) {
+func (te *TextEntry) draw(s tcell.Screen, prompt, answer []rune, col, lineno int) {
 	// Yes, this is pretty hacky but in practice it will be robust
 	// enough.
 	w, _ := s.Size()
+	answer = util.TruncateLine(answer, w-col-len(prompt), ':')
+	all := append(prompt, answer...)
 	for i := col; i < w; i++ {
 		s.SetContent(i, lineno, ' ', nil, tcell.StyleDefault)
 	}
-	for i, r := range what {
+	for i, r := range all {
 		s.SetContent(col+i, lineno, r, nil, tcell.StyleDefault)
 	}
-	s.ShowCursor(col+len(what), lineno)
+	s.ShowCursor(col+len(all), lineno)
 	s.Show()
 }
 
@@ -52,8 +55,7 @@ func (te *TextEntry) Ask(s tcell.Screen, col, lineno int) (answer []rune, reterr
 	answer = []rune(te.defval)
 	prompt := []rune(te.prompt)
 	for {
-		all := append(prompt, answer...)
-		te.draw(s, all, col, lineno)
+		te.draw(s, prompt, answer, col, lineno)
 
 		ev := s.PollEvent()
 		switch ev := ev.(type) {
