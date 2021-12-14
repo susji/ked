@@ -561,7 +561,7 @@ func (e *Editor) openbuffer() {
 	w, h := e.s.Size()
 
 	fp, err := textentry.
-		New(rootdir, "Look under directory: ", 512).
+		New(rootdir, "Directory: ", 512).
 		Ask(e.s, 0, h-1)
 	if err != nil {
 		log.Println("[openbuffer, error-ask] ", err)
