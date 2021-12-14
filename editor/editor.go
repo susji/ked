@@ -398,7 +398,7 @@ func (e *Editor) replace() {
 		log.Printf("[replace, found] (%d, %d)\n", lineno, col)
 		eb.SetCursor(lineno, col)
 		eb.Viewport.SetTeleported(eb.CursorLine())
-
+		e.setnonsaved(true)
 	}
 
 }
@@ -534,9 +534,13 @@ func (e *Editor) undo() {
 
 func (e *Editor) backtab() {
 	eb := e.buffers.Get(e.activebuf)
+	len0 := eb.Buffer.LineLength(eb.CursorLine())
 	eb.Update(
 		eb.Buffer.Perform(
 			buffer.NewDetabulate(eb.Cursor())))
+	if len0 != eb.Buffer.LineLength(eb.CursorLine()) {
+		e.setnonsaved(true)
+	}
 }
 
 func (e *Editor) delword() {
@@ -742,6 +746,7 @@ main:
 			case ev.Key() == tcell.KeyPgDn:
 				e.movepage(false)
 			case ev.Key() == tcell.KeyTab:
+				e.setnonsaved(true)
 				e.insertrune('\t')
 			case ev.Key() == tcell.KeyBacktab:
 				e.backtab()
