@@ -37,11 +37,16 @@ type Editor struct {
 }
 
 func New() *Editor {
+	return NewWithScreen(nil)
+}
+
+func NewWithScreen(s tcell.Screen) *Editor {
 	return &Editor{
 		prevsearch:    map[buffers.BufferId]string{},
 		bufpopularity: map[buffers.BufferId]uint64{},
 		buffers:       buffers.New(),
 		nonsaved:      map[buffers.BufferId]bool{},
+		s:             s,
 	}
 }
 
@@ -659,8 +664,10 @@ func (e *Editor) changebuffer() {
 }
 
 func (e *Editor) Run() error {
-	if err := e.initscreen(); err != nil {
-		return err
+	if e.s == nil {
+		if err := e.initscreen(); err != nil {
+			return err
+		}
 	}
 	if e.buffers.Len() == 0 {
 		e.NewFromBuffer(buffer.New(nil))
