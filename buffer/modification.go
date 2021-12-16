@@ -9,6 +9,7 @@ const (
 	MOD_DELETELINE
 	MOD_MOVERUNES
 	MOD_REPLACERUNES
+	MOD_BREAKPOINT
 )
 
 var kindnames = map[modificationKind]string{
@@ -18,6 +19,7 @@ var kindnames = map[modificationKind]string{
 	MOD_DELETELINE:   "MOD_DELETELINE",
 	MOD_MOVERUNES:    "MOD_MOVERUNES",
 	MOD_REPLACERUNES: "MOD_REPLACERUNES",
+	MOD_BREAKPOINT:   "MOD_BREAKPOINT",
 }
 
 type modificationKind int

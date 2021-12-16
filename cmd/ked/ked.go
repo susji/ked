@@ -71,7 +71,7 @@ func main() {
 		f, err := os.Open(absname)
 		if err == nil {
 			log.Println("opening buffer for file: ", filename)
-			e.NewBufferFromFile(f)
+			e.NewBuffer(absname, f)
 			f.Close()
 		} else if errors.Is(err, os.ErrNotExist) {
 			e.NewBuffer(absname, &bytes.Buffer{})

@@ -50,16 +50,12 @@ func NewWithScreen(s tcell.Screen) *Editor {
 	}
 }
 
-func (e *Editor) NewBufferFromFile(f *os.File) (buffers.BufferId, error) {
-	return e.NewBuffer(f.Name(), f)
-}
-
 func (e *Editor) NewBuffer(filepath string, r io.Reader) (buffers.BufferId, error) {
-	buf, err := buffer.NewFromReader(filepath, r)
+	buf, err := buffer.NewFromReader(r)
 	if err != nil {
 		return 0, err
 	}
-	return e.NewFromBuffer(buf)
+	return e.NewFromBuffer(filepath, buf)
 }
 
 func (e *Editor) setactivebuf(bid buffers.BufferId) {
@@ -72,8 +68,8 @@ func (e *Editor) setactivebuf(bid buffers.BufferId) {
 	e.activebuf = bid
 }
 
-func (e *Editor) NewFromBuffer(buf *buffer.Buffer) (buffers.BufferId, error) {
-	bid := e.buffers.New(buf)
+func (e *Editor) NewFromBuffer(filepath string, buf *buffer.Buffer) (buffers.BufferId, error) {
+	bid := e.buffers.New(filepath, buf)
 	e.setactivebuf(bid)
 	return bid, nil
 }
@@ -97,7 +93,7 @@ func (e *Editor) closebuffer(bid buffers.BufferId) {
 	e.buffers.Close(bid)
 	delete(e.bufpopularity, bid)
 	if e.buffers.Len() == 0 {
-		e.NewFromBuffer(buffer.New(nil))
+		e.NewFromBuffer("", buffer.New(nil))
 	}
 }
 
@@ -231,29 +227,42 @@ func (e *Editor) isnonsaved() bool {
 
 func (e *Editor) savebuffer() {
 	eb := e.buffers.Get(e.activebuf)
-	log.Printf("[savebuffer] %q\n", eb.Buffer.Filepath())
+	log.Printf("[savebuffer] %q\n", eb.Filepath)
 
 	_, h := e.s.Size()
 	fp, err := textentry.
-		New(eb.Buffer.Filepath(), "Save: ", 512).
+		New(eb.Filepath, "Save: ", 512).
 		Ask(e.s, 0, h-1)
 	if err != nil {
 		log.Println("[savebuffer, error-ask] ", err)
 		e.drawstatusmsg(fmt.Sprintf("%v", err))
 		return
 	}
+	if len(fp) == 0 {
+		return
+	}
+
 	abspath, err := filepath.Abs(string(fp))
 	if err != nil {
 		log.Println("[savebuffer, error-abs] ", err)
 		e.drawstatusmsg(fmt.Sprintf("%v", err))
 		return
 	}
+	if fi, err := os.Stat(string(fp)); err == nil {
+		if fi.IsDir() {
+			log.Println("[savebuffer, is-dir]")
+			e.drawstatusmsg(fmt.Sprintf("Cannot save, it's a directory: %s", abspath))
+			return
+		}
+	}
+
 	log.Println("[savebuffer, abs] ", abspath)
-	eb.Buffer.SetFilepath(abspath)
-	if err := eb.Buffer.Save(); err != nil {
+	if err := eb.Buffer.Save(abspath); err != nil {
 		log.Println("[savebuffer] failed: ", err)
 		// XXX Report error to UI somehow
+		return
 	}
+	eb.Filepath = abspath
 	e.setnonsaved(false)
 
 	for pattern, command := range config.SAVEHOOKS {
@@ -305,7 +314,7 @@ func (e *Editor) execandreload(abspath string, cmd []string) {
 	oldcursorline, oldcursorcol := oldbuf.CursorLine(), oldbuf.CursorCol()
 
 	log.Println("[execandreload, reopened] ", abspath)
-	newbid, err := e.NewBufferFromFile(f)
+	newbid, err := e.NewBuffer(abspath, f)
 	if err != nil {
 		log.Printf("[execandreload, newbuffer error] %v\n", err)
 		return
@@ -485,7 +494,7 @@ func (e *Editor) drawstatusline() {
 	lineno := 0
 	col := 0
 	eb := e.buffers.Get(e.activebuf)
-	f := eb.Buffer.Filepath()
+	f := eb.Filepath
 	if len(f) > 0 {
 		fn = f
 	}
@@ -625,15 +634,16 @@ func (e *Editor) openbuffer() {
 		log.Printf("[changebuffer, fuzzy error] %v\n", err)
 		return
 	}
-	f, err := os.Open(string(sel.Display))
+	fn := string(sel.Display)
+	f, err := os.Open(fn)
 	if err != nil {
 		// XXX Display error to user somehow.
 		log.Printf("[changebuffer, open error] %v\n", err)
 		return
 	}
 	defer f.Close()
-	e.NewBufferFromFile(f)
-	log.Printf("[openbuffer, done] %q\n", string(sel.Display))
+	e.NewBuffer(fn, f)
+	log.Printf("[openbuffer, done] %q\n", fn)
 }
 
 func (e *Editor) changebuffer() {
@@ -641,7 +651,7 @@ func (e *Editor) changebuffer() {
 
 	for bufnum, bufentry := range e.buffers.All() {
 		var display string
-		fp := bufentry.Buffer.Filepath()
+		fp := bufentry.Filepath
 		if len(fp) > 0 {
 			display = fp
 		} else {
@@ -670,7 +680,7 @@ func (e *Editor) Run() error {
 		}
 	}
 	if e.buffers.Len() == 0 {
-		e.NewFromBuffer(buffer.New(nil))
+		e.NewFromBuffer("", buffer.New(nil))
 	}
 	e.s.Clear()
 	e.drawactivebuf()
@@ -691,7 +701,7 @@ main:
 			case ev.Key() == tcell.KeyCtrlF:
 				e.openbuffer()
 			case ev.Key() == tcell.KeyCtrlN:
-				e.NewFromBuffer(buffer.New(nil))
+				e.NewFromBuffer("", buffer.New(nil))
 			case ev.Key() == tcell.KeyCtrlP:
 				e.changebuffer()
 			case ev.Key() == tcell.KeyCtrlL:

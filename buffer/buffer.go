@@ -15,9 +15,8 @@ import (
 )
 
 type Buffer struct {
-	lines    []*gapbuffer.GapBuffer
-	filepath string
-	mods     []*modification
+	lines []*gapbuffer.GapBuffer
+	mods  []*modification
 }
 
 func New(rawlines [][]rune) *Buffer {
@@ -32,7 +31,7 @@ func New(rawlines [][]rune) *Buffer {
 	return ret
 }
 
-func NewFromReader(filepath string, r io.Reader) (*Buffer, error) {
+func NewFromReader(r io.Reader) (*Buffer, error) {
 	lines := []*gapbuffer.GapBuffer{}
 	s := bufio.NewScanner(r)
 	for s.Scan() {
@@ -45,8 +44,7 @@ func NewFromReader(filepath string, r io.Reader) (*Buffer, error) {
 		lines = append(lines, gapbuffer.New(gapbuffer.DEFAULTSZ))
 	}
 	return &Buffer{
-		lines:    lines,
-		filepath: filepath,
+		lines: lines,
 	}, nil
 }
 
@@ -105,6 +103,8 @@ restart:
 			b.lines[lineno].SetCursor(col + 1).Delete()
 		}
 		b.lines[lineno].SetCursor(col).Insert(rep.from)
+	case MOD_BREAKPOINT:
+		// Breakpoint is used to break the chaining of undo actions.
 	}
 	// Execute all sequential modifications of the same kind.
 	if len(b.mods) > 0 && mod.kind == b.mods[len(b.mods)-1].kind {
@@ -118,16 +118,8 @@ func (b *Buffer) modify(mod *modification) {
 	b.mods = append(b.mods, mod)
 }
 
-func (b *Buffer) Filepath() string {
-	return b.filepath
-}
-
-func (b *Buffer) SetFilepath(filepath string) {
-	b.filepath = filepath
-}
-
-func (b *Buffer) Save() error {
-	if len(b.filepath) == 0 {
+func (b *Buffer) Save(filepath string) error {
+	if len(filepath) == 0 {
 		panic("Save: no file backing this buffer")
 	}
 	data := []byte{}
@@ -136,7 +128,11 @@ func (b *Buffer) Save() error {
 		linedata = append(linedata, '\n')
 		data = append(data, linedata...)
 	}
-	return os.WriteFile(b.filepath, data, 0644)
+	if err := os.WriteFile(filepath, data, 0644); err != nil {
+		return err
+	}
+	b.modify(&modification{kind: MOD_BREAKPOINT})
+	return nil
 }
 
 func (b *Buffer) NewLine(pos int) *gapbuffer.GapBuffer {
