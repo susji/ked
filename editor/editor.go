@@ -242,6 +242,10 @@ func (e *Editor) savebuffer() {
 		e.drawstatusmsg(fmt.Sprintf("%v", err))
 		return
 	}
+	if len(fp) == 0 {
+		return
+	}
+
 	abspath, err := filepath.Abs(string(fp))
 	if err != nil {
 		log.Println("[savebuffer, error-abs] ", err)
