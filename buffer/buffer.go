@@ -105,6 +105,8 @@ restart:
 			b.lines[lineno].SetCursor(col + 1).Delete()
 		}
 		b.lines[lineno].SetCursor(col).Insert(rep.from)
+	case MOD_BREAKPOINT:
+		// Breakpoint is used to break the chaining of undo actions.
 	}
 	// Execute all sequential modifications of the same kind.
 	if len(b.mods) > 0 && mod.kind == b.mods[len(b.mods)-1].kind {
@@ -136,7 +138,11 @@ func (b *Buffer) Save() error {
 		linedata = append(linedata, '\n')
 		data = append(data, linedata...)
 	}
-	return os.WriteFile(b.filepath, data, 0644)
+	if err := os.WriteFile(filepath, data, 0644); err != nil {
+		return err
+	}
+	b.modify(&modification{kind: MOD_BREAKPOINT})
+	return nil
 }
 
 func (b *Buffer) NewLine(pos int) *gapbuffer.GapBuffer {
