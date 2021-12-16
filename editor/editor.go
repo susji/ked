@@ -257,6 +257,7 @@ func (e *Editor) savebuffer() {
 	if err := eb.Buffer.Save(); err != nil {
 		log.Println("[savebuffer] failed: ", err)
 		// XXX Report error to UI somehow
+		return
 	}
 	e.setnonsaved(false)
 
