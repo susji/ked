@@ -24,6 +24,7 @@ type EditorBuffers struct {
 type EditorBuffer struct {
 	Buffer                *buffer.Buffer
 	Viewport              *viewport.Viewport
+	Filepath              string
 	bid                   uint32
 	cursorline, cursorcol int
 	prevsearch            string
@@ -35,11 +36,12 @@ func New() EditorBuffers {
 	}
 }
 
-func (e *EditorBuffers) New(b *buffer.Buffer) BufferId {
+func (e *EditorBuffers) New(filepath string, b *buffer.Buffer) BufferId {
 	bid := newbid()
 	neb := &EditorBuffer{
 		Buffer:     b,
 		Viewport:   viewport.New(b),
+		Filepath:   filepath,
 		cursorline: 0,
 		cursorcol:  0,
 		bid:        bid,

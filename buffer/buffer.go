@@ -15,9 +15,8 @@ import (
 )
 
 type Buffer struct {
-	lines    []*gapbuffer.GapBuffer
-	filepath string
-	mods     []*modification
+	lines []*gapbuffer.GapBuffer
+	mods  []*modification
 }
 
 func New(rawlines [][]rune) *Buffer {
@@ -32,7 +31,7 @@ func New(rawlines [][]rune) *Buffer {
 	return ret
 }
 
-func NewFromReader(filepath string, r io.Reader) (*Buffer, error) {
+func NewFromReader(r io.Reader) (*Buffer, error) {
 	lines := []*gapbuffer.GapBuffer{}
 	s := bufio.NewScanner(r)
 	for s.Scan() {
@@ -45,8 +44,7 @@ func NewFromReader(filepath string, r io.Reader) (*Buffer, error) {
 		lines = append(lines, gapbuffer.New(gapbuffer.DEFAULTSZ))
 	}
 	return &Buffer{
-		lines:    lines,
-		filepath: filepath,
+		lines: lines,
 	}, nil
 }
 
@@ -120,16 +118,8 @@ func (b *Buffer) modify(mod *modification) {
 	b.mods = append(b.mods, mod)
 }
 
-func (b *Buffer) Filepath() string {
-	return b.filepath
-}
-
-func (b *Buffer) SetFilepath(filepath string) {
-	b.filepath = filepath
-}
-
-func (b *Buffer) Save() error {
-	if len(b.filepath) == 0 {
+func (b *Buffer) Save(filepath string) error {
+	if len(filepath) == 0 {
 		panic("Save: no file backing this buffer")
 	}
 	data := []byte{}
