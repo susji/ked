@@ -252,6 +252,14 @@ func (e *Editor) savebuffer() {
 		e.drawstatusmsg(fmt.Sprintf("%v", err))
 		return
 	}
+	if fi, err := os.Stat(string(fp)); err == nil {
+		if fi.IsDir() {
+			log.Println("[savebuffer, is-dir]")
+			e.drawstatusmsg(fmt.Sprintf("Cannot save, it's a directory: %s", abspath))
+			return
+		}
+	}
+
 	log.Println("[savebuffer, abs] ", abspath)
 	eb.Buffer.SetFilepath(abspath)
 	if err := eb.Buffer.Save(); err != nil {
