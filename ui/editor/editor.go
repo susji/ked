@@ -19,6 +19,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/susji/ked/buffer"
 	"github.com/susji/ked/config"
+	"github.com/susji/ked/ui/dialog"
 	"github.com/susji/ked/ui/editor/buffers"
 	"github.com/susji/ked/ui/fuzzyselect"
 	"github.com/susji/ked/ui/textentry"
@@ -673,6 +674,25 @@ func (e *Editor) changebuffer() {
 	e.setactivebuf(buffers.BufferId(sel.Id))
 }
 
+func (e *Editor) quit() bool {
+	d := dialog.New("Quit [y/n]?")
+	_, h := e.s.Size()
+
+	for {
+		key, r := d.Ask(e.s, 0, h-1)
+		log.Printf("[quit, gotkey] %s %c\n", tcell.KeyNames[key], r)
+		if key != tcell.KeyRune {
+			continue
+		}
+		switch r {
+		case 'y', 'Y':
+			return true
+		case 'n', 'N':
+			return false
+		}
+	}
+}
+
 func (e *Editor) Run() error {
 	if e.s == nil {
 		if err := e.initscreen(); err != nil {
@@ -728,9 +748,10 @@ main:
 			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Key() == tcell.KeyRight:
 				e.jumpword(false)
 			case ev.Key() == tcell.KeyCtrlC:
-				log.Println("[quit]")
-				e.s.Fini()
-				break main
+				if e.quit() {
+					e.s.Fini()
+					break main
+				}
 			case ev.Key() == tcell.KeyRune:
 				e.setnonsaved(true)
 				e.insertrune(ev.Rune())
