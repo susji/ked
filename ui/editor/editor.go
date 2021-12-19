@@ -261,7 +261,7 @@ func (e *Editor) savebuffer() {
 		Ask(e.s, 0, h-1)
 	if err != nil {
 		log.Println("[savebuffer, error-ask] ", err)
-		e.drawstatusmsg(fmt.Sprintf("%v", err))
+		e.statusmsg(fmt.Sprintf("%v", err))
 		return
 	}
 	if len(fp) == 0 {
@@ -271,13 +271,13 @@ func (e *Editor) savebuffer() {
 	abspath, err := filepath.Abs(string(fp))
 	if err != nil {
 		log.Println("[savebuffer, error-abs] ", err)
-		e.drawstatusmsg(fmt.Sprintf("%v", err))
+		e.statusmsg(fmt.Sprintf("%v", err))
 		return
 	}
 	if fi, err := os.Stat(string(fp)); err == nil {
 		if fi.IsDir() {
 			log.Println("[savebuffer, is-dir]")
-			e.drawstatusmsg(fmt.Sprintf("Cannot save, it's a directory: %s", abspath))
+			e.statusmsg(fmt.Sprintf("Cannot save, it's a directory: %s", abspath))
 			return
 		}
 	}
@@ -466,7 +466,7 @@ func (e *Editor) search() {
 			log.Printf("[search] got next for %q\n", string(term))
 		default:
 			log.Println("[search, error-ask] ", err)
-			e.drawstatusmsg(fmt.Sprintf("%v", err))
+			e.statusmsg(fmt.Sprintf("%v", err))
 			return
 		}
 
@@ -495,7 +495,7 @@ func (e *Editor) search() {
 	}
 }
 
-func (e *Editor) drawstatusmsg(msg string) {
+func (e *Editor) statusmsg(msg string) {
 	log.Println("[drawstatusmsg] ", msg)
 	w, h := e.s.Size()
 	m := []rune(fmt.Sprintf("<> %s [*]", msg))
@@ -610,13 +610,13 @@ func (e *Editor) openbuffer() {
 		Ask(e.s, 0, h-1)
 	if err != nil {
 		log.Println("[openbuffer, error-ask] ", err)
-		e.drawstatusmsg(fmt.Sprintf("%v", err))
+		e.statusmsg(fmt.Sprintf("%v", err))
 		return
 	}
 	absrootdir, err := filepath.Abs(string(fp))
 	if err != nil {
 		log.Println("[openbuffer, error-abs] ", err)
-		e.drawstatusmsg(fmt.Sprintf("%v", err))
+		e.statusmsg(fmt.Sprintf("%v", err))
 		return
 	}
 	if fi, err := os.Stat(absrootdir); err != nil {
