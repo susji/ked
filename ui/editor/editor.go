@@ -75,8 +75,8 @@ func (e *Editor) NewFromBuffer(filepath string, buf *buffer.Buffer) (buffers.Buf
 	return bid, nil
 }
 
-func (e *Editor) closeactivebuffer() {
-	if e.isnonsaved() {
+func (e *Editor) closeactivebuffer(force bool) bool {
+	if e.isnonsaved() && !force {
 		d := dialog.New("Unchanged saves to buffer, close [y/n]?")
 		_, h := e.s.Size()
 	out:
@@ -90,12 +90,12 @@ func (e *Editor) closeactivebuffer() {
 			case 'y', 'Y':
 				break out
 			case 'n', 'N':
-				return
+				return false
 			}
 		}
 	}
 
-	e.closebuffer(e.activebuf)
+	waslast := e.closebuffer(e.activebuf)
 	// Now that the current buffer is closed, choose the
 	// new active buffer based on its popularity.
 	popbid := buffers.BufferId(0)
@@ -106,15 +106,18 @@ func (e *Editor) closeactivebuffer() {
 		}
 	}
 	e.setactivebuf(popbid)
+	return waslast
 }
 
-func (e *Editor) closebuffer(bid buffers.BufferId) {
+func (e *Editor) closebuffer(bid buffers.BufferId) bool {
 	log.Printf("[closebuffer] %d\n", bid)
 	e.buffers.Close(bid)
 	delete(e.bufpopularity, bid)
-	if e.buffers.Len() == 0 {
+	waslast := e.buffers.Len() == 0
+	if waslast {
 		e.NewFromBuffer("", buffer.New(nil))
 	}
+	return waslast
 }
 
 func (e *Editor) initscreen() error {
@@ -697,6 +700,7 @@ func (e *Editor) quit() bool {
 	d := dialog.New("Quit [y/n]?")
 	_, h := e.s.Size()
 
+out:
 	for {
 		key, r := d.Ask(e.s, 0, h-1)
 		log.Printf("[quit, gotkey] %s %c\n", tcell.KeyNames[key], r)
@@ -705,11 +709,25 @@ func (e *Editor) quit() bool {
 		}
 		switch r {
 		case 'y', 'Y':
-			return true
+			break out
 		case 'n', 'N':
 			return false
 		}
 	}
+
+	for {
+		e.s.Clear()
+		e.drawactivebuf()
+		e.s.Show()
+		if e.isnonsaved() {
+			e.savebuffer()
+		}
+		waslast := e.closeactivebuffer(true)
+		if waslast {
+			break
+		}
+	}
+	return true
 }
 
 func (e *Editor) Run() error {
@@ -757,7 +775,7 @@ main:
 			case ev.Key() == tcell.KeyCtrlG:
 				e.jumpline()
 			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Rune() == 'f':
-				e.closeactivebuffer()
+				e.closeactivebuffer(false)
 			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Key() == tcell.KeyUp:
 				e.jumpempty(true)
 			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Key() == tcell.KeyDown:
