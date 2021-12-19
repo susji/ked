@@ -83,13 +83,11 @@ func (e *Editor) closeactivebuffer(force bool) bool {
 		for {
 			key, r := d.Ask(e.s, 0, h-1)
 			log.Printf("[closeactivebuffer, gotkey] %s %c\n", tcell.KeyNames[key], r)
-			if key != tcell.KeyRune {
-				continue
-			}
-			switch r {
-			case 'y', 'Y':
+			switch {
+			case key == tcell.KeyRune && (r == 'y' || r == 'Y'):
 				break out
-			case 'n', 'N':
+			case (key == tcell.KeyRune && (r == 'n' || r == 'N')) ||
+				key == tcell.KeyCtrlC:
 				return false
 			}
 		}
@@ -704,13 +702,11 @@ out:
 	for {
 		key, r := d.Ask(e.s, 0, h-1)
 		log.Printf("[quit, gotkey] %s %c\n", tcell.KeyNames[key], r)
-		if key != tcell.KeyRune {
-			continue
-		}
-		switch r {
-		case 'y', 'Y':
+		switch {
+		case key == tcell.KeyRune && (r == 'y' || r == 'Y'):
 			break out
-		case 'n', 'N':
+		case (key == tcell.KeyRune && (r == 'n' || r == 'N')) ||
+			key == tcell.KeyCtrlC:
 			return false
 		}
 	}
