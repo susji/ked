@@ -19,9 +19,9 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/susji/ked/buffer"
 	"github.com/susji/ked/config"
-	"github.com/susji/ked/editor/buffers"
-	"github.com/susji/ked/fuzzyselect"
-	"github.com/susji/ked/textentry"
+	"github.com/susji/ked/ui/editor/buffers"
+	"github.com/susji/ked/ui/fuzzyselect"
+	"github.com/susji/ked/ui/textentry"
 	"github.com/susji/ked/util"
 )
 
