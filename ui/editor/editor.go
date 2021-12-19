@@ -75,21 +75,26 @@ func (e *Editor) NewFromBuffer(filepath string, buf *buffer.Buffer) (buffers.Buf
 	return bid, nil
 }
 
+func (e *Editor) askyesno(prompt string) bool {
+	d := dialog.New(prompt)
+	_, h := e.s.Size()
+	for {
+		key, r := d.Ask(e.s, 0, h-1)
+		log.Printf("[closeactivebuffer, gotkey] %s %c\n", tcell.KeyNames[key], r)
+		switch {
+		case key == tcell.KeyRune && (r == 'y' || r == 'Y'):
+			return true
+		case (key == tcell.KeyRune && (r == 'n' || r == 'N')) ||
+			key == tcell.KeyCtrlC:
+			return false
+		}
+	}
+}
+
 func (e *Editor) closeactivebuffer(force bool) bool {
 	if e.isnonsaved() && !force {
-		d := dialog.New("Unchanged saves to buffer, close [y/n]?")
-		_, h := e.s.Size()
-	out:
-		for {
-			key, r := d.Ask(e.s, 0, h-1)
-			log.Printf("[closeactivebuffer, gotkey] %s %c\n", tcell.KeyNames[key], r)
-			switch {
-			case key == tcell.KeyRune && (r == 'y' || r == 'Y'):
-				break out
-			case (key == tcell.KeyRune && (r == 'n' || r == 'N')) ||
-				key == tcell.KeyCtrlC:
-				return false
-			}
+		if !e.askyesno("Unchanged saves to buffer, close [y/n]?") {
+			return false
 		}
 	}
 
@@ -695,22 +700,9 @@ func (e *Editor) changebuffer() {
 }
 
 func (e *Editor) quit() bool {
-	d := dialog.New("Quit [y/n]?")
-	_, h := e.s.Size()
-
-out:
-	for {
-		key, r := d.Ask(e.s, 0, h-1)
-		log.Printf("[quit, gotkey] %s %c\n", tcell.KeyNames[key], r)
-		switch {
-		case key == tcell.KeyRune && (r == 'y' || r == 'Y'):
-			break out
-		case (key == tcell.KeyRune && (r == 'n' || r == 'N')) ||
-			key == tcell.KeyCtrlC:
-			return false
-		}
+	if !e.askyesno("Quit [y/n]?") {
+		return false
 	}
-
 	for {
 		e.s.Clear()
 		e.drawactivebuf()
