@@ -80,7 +80,7 @@ func (e *Editor) askyesno(prompt string) bool {
 	_, h := e.s.Size()
 	for {
 		key, r := d.Ask(e.s, 0, h-1)
-		log.Printf("[closeactivebuffer, gotkey] %s %c\n", tcell.KeyNames[key], r)
+		log.Printf("[askyesno] %s %c\n", tcell.KeyNames[key], r)
 		switch {
 		case key == tcell.KeyRune && (r == 'y' || r == 'Y'):
 			return true
