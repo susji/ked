@@ -24,3 +24,4 @@
 -   [ ] File browsing should maybe follow symlinks
 -   [ ] Extend undo to work with savehooks
 -   [x] Savehooks should be specified with glob patterns
+-   [ ] Implement an UI dialog for asking single-key answers
