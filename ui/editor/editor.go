@@ -497,9 +497,11 @@ func (e *Editor) search() {
 
 func (e *Editor) drawstatusmsg(msg string) {
 	log.Println("[drawstatusmsg] ", msg)
-	_, h := e.s.Size()
-	m := fmt.Sprintf("<> %s [*]", msg)
-	dialog.New(m).Ask(e.s, 0, h-1)
+	w, h := e.s.Size()
+	m := []rune(fmt.Sprintf("<> %s [*]", msg))
+	for _, msgpart := range util.SplitRunesOnWidth(m, w) {
+		dialog.New(string(msgpart)).Ask(e.s, 0, h-1)
+	}
 }
 
 func (e *Editor) listbuffers() {
