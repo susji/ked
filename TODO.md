@@ -11,7 +11,7 @@
     words
 -   [x] Configurable tabsize (now hardcoded to 4 spaces)
 -   [x] `Shift+Tab` should remove one tab level from line
--   [ ] Display status messages somehow
+-   [x] Display status messages somehow
 -   [x] `Alt+Backspace` should remove one complete word
 -   [x] Search & replace
 -   [ ] `Mod+Tab` should tabulate line like the previous line

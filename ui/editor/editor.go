@@ -80,7 +80,7 @@ func (e *Editor) askyesno(prompt string) bool {
 	_, h := e.s.Size()
 	for {
 		key, r := d.Ask(e.s, 0, h-1)
-		log.Printf("[closeactivebuffer, gotkey] %s %c\n", tcell.KeyNames[key], r)
+		log.Printf("[askyesno] %s %c\n", tcell.KeyNames[key], r)
 		switch {
 		case key == tcell.KeyRune && (r == 'y' || r == 'Y'):
 			return true
@@ -261,7 +261,7 @@ func (e *Editor) savebuffer() {
 		Ask(e.s, 0, h-1)
 	if err != nil {
 		log.Println("[savebuffer, error-ask] ", err)
-		e.drawstatusmsg(fmt.Sprintf("%v", err))
+		e.statusmsg(fmt.Sprintf("%v", err))
 		return
 	}
 	if len(fp) == 0 {
@@ -271,13 +271,13 @@ func (e *Editor) savebuffer() {
 	abspath, err := filepath.Abs(string(fp))
 	if err != nil {
 		log.Println("[savebuffer, error-abs] ", err)
-		e.drawstatusmsg(fmt.Sprintf("%v", err))
+		e.statusmsg(fmt.Sprintf("%v", err))
 		return
 	}
 	if fi, err := os.Stat(string(fp)); err == nil {
 		if fi.IsDir() {
 			log.Println("[savebuffer, is-dir]")
-			e.drawstatusmsg(fmt.Sprintf("Cannot save, it's a directory: %s", abspath))
+			e.statusmsg(fmt.Sprintf("Cannot save, it's a directory: %s", abspath))
 			return
 		}
 	}
@@ -285,7 +285,7 @@ func (e *Editor) savebuffer() {
 	log.Println("[savebuffer, abs] ", abspath)
 	if err := eb.Buffer.Save(abspath); err != nil {
 		log.Println("[savebuffer] failed: ", err)
-		// XXX Report error to UI somehow
+		e.statusmsg(fmt.Sprintf("Cannot save buffer: %v", err))
 		return
 	}
 	eb.Filepath = abspath
@@ -295,8 +295,8 @@ func (e *Editor) savebuffer() {
 		log.Printf("[savebuffer, pattern] %q %q\n", pattern, command)
 		matched, err := filepath.Match(pattern, filepath.Base(abspath))
 		if err != nil {
-			// XXX Display error to user somehow.
 			log.Printf("[savebuffer, hook match] %v\n", err)
+			e.statusmsg(fmt.Sprintf("Hook match error: %v", err))
 			return
 		}
 		if !matched {
@@ -323,14 +323,14 @@ func (e *Editor) execandreload(abspath string, cmd []string) {
 	out, err := c.Output()
 	log.Printf("[execandreload, output] %q\n", out)
 	if err != nil {
-		// XXX Display error to user somehow.
 		log.Printf("[execandreload, exec error] %v\n", err)
+		e.statusmsg(fmt.Sprintf("Hook execution failed: %v", err))
 		return
 	}
 	f, err := os.Open(abspath)
 	if err != nil {
-		// XXX Display error to use somehow.
 		log.Printf("[execandreload, reopen error] %v\n", err)
+		e.statusmsg(fmt.Sprintf("Reopening buffer failed: %v", err))
 		return
 	}
 	defer f.Close()
@@ -466,7 +466,7 @@ func (e *Editor) search() {
 			log.Printf("[search] got next for %q\n", string(term))
 		default:
 			log.Println("[search, error-ask] ", err)
-			e.drawstatusmsg(fmt.Sprintf("%v", err))
+			e.statusmsg(fmt.Sprintf("%v", err))
 			return
 		}
 
@@ -495,16 +495,13 @@ func (e *Editor) search() {
 	}
 }
 
-func (e *Editor) drawstatusmsg(msg string) {
+func (e *Editor) statusmsg(msg string) {
 	log.Println("[drawstatusmsg] ", msg)
 	w, h := e.s.Size()
-	for i, r := range []rune(msg) {
-		e.s.SetContent(i, h-1, r, nil, tcell.StyleDefault)
-		if i > w {
-			break
-		}
+	m := []rune(fmt.Sprintf("<> %s [*]", msg))
+	for _, msgpart := range util.SplitRunesOnWidth(m, w) {
+		dialog.New(string(msgpart)).Ask(e.s, 0, h-1)
 	}
-	e.s.Show()
 }
 
 func (e *Editor) listbuffers() {
@@ -613,13 +610,13 @@ func (e *Editor) openbuffer() {
 		Ask(e.s, 0, h-1)
 	if err != nil {
 		log.Println("[openbuffer, error-ask] ", err)
-		e.drawstatusmsg(fmt.Sprintf("%v", err))
+		e.statusmsg(fmt.Sprintf("%v", err))
 		return
 	}
 	absrootdir, err := filepath.Abs(string(fp))
 	if err != nil {
 		log.Println("[openbuffer, error-abs] ", err)
-		e.drawstatusmsg(fmt.Sprintf("%v", err))
+		e.statusmsg(fmt.Sprintf("%v", err))
 		return
 	}
 	if fi, err := os.Stat(absrootdir); err != nil {
@@ -656,15 +653,15 @@ func (e *Editor) openbuffer() {
 
 	sel, err := fuzzyselect.New(choices).Choose(e.s, 0, 0, w, h-2)
 	if err != nil {
-		// XXX Display error to user somehow.
 		log.Printf("[changebuffer, fuzzy error] %v\n", err)
+		e.statusmsg(fmt.Sprintf("Choosing file failed: %v", err))
 		return
 	}
 	fn := string(sel.Display)
 	f, err := os.Open(fn)
 	if err != nil {
-		// XXX Display error to user somehow.
 		log.Printf("[changebuffer, open error] %v\n", err)
+		e.statusmsg(fmt.Sprintf("Opening file failed: %v", err))
 		return
 	}
 	defer f.Close()
@@ -692,8 +689,8 @@ func (e *Editor) changebuffer() {
 	w, h := e.s.Size()
 	sel, err := fuzzyselect.New(choices).Choose(e.s, 0, 0, w, h-2)
 	if err != nil {
-		// XXX Display error to user somehow.
 		log.Printf("[changebuffer, fuzzy error] %v\n", err)
+		e.statusmsg(fmt.Sprintf("Selecting active buffer failed: %v", err))
 		return
 	}
 	e.setactivebuf(buffers.BufferId(sel.Id))
