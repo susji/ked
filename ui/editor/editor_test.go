@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/susji/ked/editor"
+	"github.com/susji/ked/ui/editor"
 )
 
 func dumpcells(t *testing.T, s tcell.SimulationScreen) {

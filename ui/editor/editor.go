@@ -19,9 +19,10 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/susji/ked/buffer"
 	"github.com/susji/ked/config"
-	"github.com/susji/ked/editor/buffers"
-	"github.com/susji/ked/fuzzyselect"
-	"github.com/susji/ked/textentry"
+	"github.com/susji/ked/ui/dialog"
+	"github.com/susji/ked/ui/editor/buffers"
+	"github.com/susji/ked/ui/fuzzyselect"
+	"github.com/susji/ked/ui/textentry"
 	"github.com/susji/ked/util"
 )
 
@@ -74,8 +75,30 @@ func (e *Editor) NewFromBuffer(filepath string, buf *buffer.Buffer) (buffers.Buf
 	return bid, nil
 }
 
-func (e *Editor) closeactivebuffer() {
-	e.closebuffer(e.activebuf)
+func (e *Editor) askyesno(prompt string) bool {
+	d := dialog.New(prompt)
+	_, h := e.s.Size()
+	for {
+		key, r := d.Ask(e.s, 0, h-1)
+		log.Printf("[closeactivebuffer, gotkey] %s %c\n", tcell.KeyNames[key], r)
+		switch {
+		case key == tcell.KeyRune && (r == 'y' || r == 'Y'):
+			return true
+		case (key == tcell.KeyRune && (r == 'n' || r == 'N')) ||
+			key == tcell.KeyCtrlC:
+			return false
+		}
+	}
+}
+
+func (e *Editor) closeactivebuffer(force bool) bool {
+	if e.isnonsaved() && !force {
+		if !e.askyesno("Unchanged saves to buffer, close [y/n]?") {
+			return false
+		}
+	}
+
+	waslast := e.closebuffer(e.activebuf)
 	// Now that the current buffer is closed, choose the
 	// new active buffer based on its popularity.
 	popbid := buffers.BufferId(0)
@@ -86,15 +109,18 @@ func (e *Editor) closeactivebuffer() {
 		}
 	}
 	e.setactivebuf(popbid)
+	return waslast
 }
 
-func (e *Editor) closebuffer(bid buffers.BufferId) {
+func (e *Editor) closebuffer(bid buffers.BufferId) bool {
 	log.Printf("[closebuffer] %d\n", bid)
 	e.buffers.Close(bid)
 	delete(e.bufpopularity, bid)
-	if e.buffers.Len() == 0 {
+	waslast := e.buffers.Len() == 0
+	if waslast {
 		e.NewFromBuffer("", buffer.New(nil))
 	}
+	return waslast
 }
 
 func (e *Editor) initscreen() error {
@@ -673,6 +699,25 @@ func (e *Editor) changebuffer() {
 	e.setactivebuf(buffers.BufferId(sel.Id))
 }
 
+func (e *Editor) quit() bool {
+	if !e.askyesno("Quit [y/n]?") {
+		return false
+	}
+	for {
+		e.s.Clear()
+		e.drawactivebuf()
+		e.s.Show()
+		if e.isnonsaved() {
+			e.savebuffer()
+		}
+		waslast := e.closeactivebuffer(true)
+		if waslast {
+			break
+		}
+	}
+	return true
+}
+
 func (e *Editor) Run() error {
 	if e.s == nil {
 		if err := e.initscreen(); err != nil {
@@ -718,7 +763,7 @@ main:
 			case ev.Key() == tcell.KeyCtrlG:
 				e.jumpline()
 			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Rune() == 'f':
-				e.closeactivebuffer()
+				e.closeactivebuffer(false)
 			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Key() == tcell.KeyUp:
 				e.jumpempty(true)
 			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Key() == tcell.KeyDown:
@@ -728,9 +773,10 @@ main:
 			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Key() == tcell.KeyRight:
 				e.jumpword(false)
 			case ev.Key() == tcell.KeyCtrlC:
-				log.Println("[quit]")
-				e.s.Fini()
-				break main
+				if e.quit() {
+					e.s.Fini()
+					break main
+				}
 			case ev.Key() == tcell.KeyRune:
 				e.setnonsaved(true)
 				e.insertrune(ev.Rune())

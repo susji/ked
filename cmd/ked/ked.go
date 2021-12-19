@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/susji/ked/config"
-	"github.com/susji/ked/editor"
+	"github.com/susji/ked/ui/editor"
 )
 
 var (
