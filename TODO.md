@@ -25,3 +25,4 @@
 -   [ ] Extend undo to work with savehooks
 -   [x] Savehooks should be specified with glob patterns
 -   [x] Implement an UI dialog for asking single-key answers
+-   [x] Confirmation dialogs for quitting & closing nonsaved buffers
