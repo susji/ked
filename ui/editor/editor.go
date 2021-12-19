@@ -285,7 +285,7 @@ func (e *Editor) savebuffer() {
 	log.Println("[savebuffer, abs] ", abspath)
 	if err := eb.Buffer.Save(abspath); err != nil {
 		log.Println("[savebuffer] failed: ", err)
-		// XXX Report error to UI somehow
+		e.statusmsg(fmt.Sprintf("Cannot save buffer: %v", err))
 		return
 	}
 	eb.Filepath = abspath
@@ -295,8 +295,8 @@ func (e *Editor) savebuffer() {
 		log.Printf("[savebuffer, pattern] %q %q\n", pattern, command)
 		matched, err := filepath.Match(pattern, filepath.Base(abspath))
 		if err != nil {
-			// XXX Display error to user somehow.
 			log.Printf("[savebuffer, hook match] %v\n", err)
+			e.statusmsg(fmt.Sprintf("Hook match error: %v", err))
 			return
 		}
 		if !matched {
@@ -323,14 +323,14 @@ func (e *Editor) execandreload(abspath string, cmd []string) {
 	out, err := c.Output()
 	log.Printf("[execandreload, output] %q\n", out)
 	if err != nil {
-		// XXX Display error to user somehow.
 		log.Printf("[execandreload, exec error] %v\n", err)
+		e.statusmsg(fmt.Sprintf("Hook execution failed: %v", err))
 		return
 	}
 	f, err := os.Open(abspath)
 	if err != nil {
-		// XXX Display error to use somehow.
 		log.Printf("[execandreload, reopen error] %v\n", err)
+		e.statusmsg(fmt.Sprintf("Reopening buffer failed: %v", err))
 		return
 	}
 	defer f.Close()
@@ -653,15 +653,15 @@ func (e *Editor) openbuffer() {
 
 	sel, err := fuzzyselect.New(choices).Choose(e.s, 0, 0, w, h-2)
 	if err != nil {
-		// XXX Display error to user somehow.
 		log.Printf("[changebuffer, fuzzy error] %v\n", err)
+		e.statusmsg(fmt.Sprintf("Choosing file failed: %v", err))
 		return
 	}
 	fn := string(sel.Display)
 	f, err := os.Open(fn)
 	if err != nil {
-		// XXX Display error to user somehow.
 		log.Printf("[changebuffer, open error] %v\n", err)
+		e.statusmsg(fmt.Sprintf("Opening file failed: %v", err))
 		return
 	}
 	defer f.Close()
@@ -689,8 +689,8 @@ func (e *Editor) changebuffer() {
 	w, h := e.s.Size()
 	sel, err := fuzzyselect.New(choices).Choose(e.s, 0, 0, w, h-2)
 	if err != nil {
-		// XXX Display error to user somehow.
 		log.Printf("[changebuffer, fuzzy error] %v\n", err)
+		e.statusmsg(fmt.Sprintf("Selecting active buffer failed: %v", err))
 		return
 	}
 	e.setactivebuf(buffers.BufferId(sel.Id))
