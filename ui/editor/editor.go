@@ -76,6 +76,25 @@ func (e *Editor) NewFromBuffer(filepath string, buf *buffer.Buffer) (buffers.Buf
 }
 
 func (e *Editor) closeactivebuffer() {
+	if e.isnonsaved() {
+		d := dialog.New("Unchanged saves to buffer, close [y/n]?")
+		_, h := e.s.Size()
+	out:
+		for {
+			key, r := d.Ask(e.s, 0, h-1)
+			log.Printf("[closeactivebuffer, gotkey] %s %c\n", tcell.KeyNames[key], r)
+			if key != tcell.KeyRune {
+				continue
+			}
+			switch r {
+			case 'y', 'Y':
+				break out
+			case 'n', 'N':
+				return
+			}
+		}
+	}
+
 	e.closebuffer(e.activebuf)
 	// Now that the current buffer is closed, choose the
 	// new active buffer based on its popularity.
