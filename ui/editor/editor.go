@@ -653,18 +653,32 @@ func (e *Editor) openbuffer() {
 
 	sel, err := fuzzyselect.New(choices).Choose(e.s, 0, 0, w, h-2)
 	if err != nil {
-		log.Printf("[changebuffer, fuzzy error] %v\n", err)
+		log.Printf("[openbuffer, fuzzy error] %v\n", err)
 		e.statusmsg(fmt.Sprintf("Choosing file failed: %v", err))
 		return
 	}
 	fn := string(sel.Display)
 	f, err := os.Open(fn)
 	if err != nil {
-		log.Printf("[changebuffer, open error] %v\n", err)
+		log.Printf("[openbuffer, open error] %v\n", err)
 		e.statusmsg(fmt.Sprintf("Opening file failed: %v", err))
 		return
 	}
 	defer f.Close()
+	if fi, err := f.Stat(); err != nil {
+		log.Printf("[openbuffer, stat error] %v\n", err)
+		e.statusmsg(fmt.Sprintf("Stat failed: %v", err))
+		// This does not have to be a hard failure. We can
+		// proceed cautiously if we managed to open the file
+		// regardless of Stat failing.
+	} else if fi.Size() > config.WARNFILESZ {
+		log.Printf("[openbuffer, too large]: %d\n", fi.Size())
+		if !e.askyesno(fmt.Sprintf(
+			"%q is %d MB, do you really want to open it? [y/n]",
+			fi.Name(), fi.Size()/1024/1024)) {
+			return
+		}
+	}
 	e.NewBuffer(fn, f)
 	log.Printf("[openbuffer, done] %q\n", fn)
 }
