@@ -665,6 +665,20 @@ func (e *Editor) openbuffer() {
 		return
 	}
 	defer f.Close()
+	if fi, err := f.Stat(); err != nil {
+		log.Printf("[openbuffer, stat error] %v\n", err)
+		e.statusmsg(fmt.Sprintf("Stat failed: %v", err))
+		// This does not have to be a hard failure. We can
+		// proceed cautiously if we managed to open the file
+		// regardless of Stat failing.
+	} else if fi.Size() > config.WARNFILESZ {
+		log.Printf("[openbuffer, too large]: %d\n", fi.Size())
+		if !e.askyesno(fmt.Sprintf(
+			"%q is %d MB, do you really want to open it? [y/n]",
+			fi.Name(), fi.Size()/1024/1024)) {
+			return
+		}
+	}
 	e.NewBuffer(fn, f)
 	log.Printf("[openbuffer, done] %q\n", fn)
 }
