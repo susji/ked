@@ -653,14 +653,14 @@ func (e *Editor) openbuffer() {
 
 	sel, err := fuzzyselect.New(choices).Choose(e.s, 0, 0, w, h-2)
 	if err != nil {
-		log.Printf("[changebuffer, fuzzy error] %v\n", err)
+		log.Printf("[openbuffer, fuzzy error] %v\n", err)
 		e.statusmsg(fmt.Sprintf("Choosing file failed: %v", err))
 		return
 	}
 	fn := string(sel.Display)
 	f, err := os.Open(fn)
 	if err != nil {
-		log.Printf("[changebuffer, open error] %v\n", err)
+		log.Printf("[openbuffer, open error] %v\n", err)
 		e.statusmsg(fmt.Sprintf("Opening file failed: %v", err))
 		return
 	}
