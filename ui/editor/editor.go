@@ -19,6 +19,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/susji/ked/buffer"
 	"github.com/susji/ked/config"
+	"github.com/susji/ked/highlighting"
 	"github.com/susji/ked/ui/dialog"
 	"github.com/susji/ked/ui/editor/buffers"
 	"github.com/susji/ked/ui/fuzzyselect"
@@ -71,7 +72,14 @@ func (e *Editor) setactivebuf(bid buffers.BufferId) {
 
 func (e *Editor) NewFromBuffer(filepath string, buf *buffer.Buffer) (buffers.BufferId, error) {
 	bid := e.buffers.New(filepath, buf)
+	b := e.buffers.Get(bid)
 	e.setactivebuf(bid)
+	hl := highlighting.New(b.Buffer.ToRunes()).
+		Mapping("func", tcell.StyleDefault.Bold(true)).
+		Mapping("return", tcell.StyleDefault.Underline(true)).
+		Mapping("//.+", tcell.StyleDefault.Bold(true)).
+		Analyze()
+	e.buffers.Get(bid).SetHighlighting(hl)
 	return bid, nil
 }
 
@@ -137,6 +145,14 @@ func (e *Editor) initscreen() error {
 
 func (e *Editor) drawactivebuf() {
 	eb := e.buffers.Get(e.activebuf)
+
+	getstyle := func(lineno, col int) tcell.Style {
+		if eb.Hilite == nil {
+			return tcell.StyleDefault
+		}
+		return eb.Hilite.Get(lineno, col)
+	}
+
 	if eb == nil {
 		panic(fmt.Sprintf(
 			"no activebuf when drawing, got %d -> %#v [%#v]",
@@ -151,12 +167,11 @@ func (e *Editor) drawactivebuf() {
 	for h > 0 && rend.Scan() {
 		rl := rend.Line()
 		for i, r := range rl.Content {
-			e.s.SetContent(col+i, lineno, r, nil, tcell.StyleDefault)
+			e.s.SetContent(col+i, lineno, r, nil, getstyle(rl.LineBuffer, i))
 		}
 		lineno++
 		if lineno == h-1 {
 			break
-
 		}
 	}
 	vx, vy := rend.Cursor()

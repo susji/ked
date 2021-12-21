@@ -500,3 +500,11 @@ func (b *Buffer) Perform(act *Action) ActionResult {
 	}
 	return dispatch[act.kind](act)
 }
+
+func (b *Buffer) ToRunes() [][]rune {
+	ret := [][]rune{}
+	for _, line := range b.lines {
+		ret = append(ret, line.Get())
+	}
+	return ret
+}
