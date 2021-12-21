@@ -261,7 +261,6 @@ func (e *Editor) savebuffer() {
 		Ask(e.s, 0, h-1)
 	if err != nil {
 		log.Println("[savebuffer, error-ask] ", err)
-		e.statusmsg(fmt.Sprintf("%v", err))
 		return
 	}
 	if len(fp) == 0 {
@@ -324,7 +323,7 @@ func (e *Editor) execandreload(abspath string, cmd []string) {
 	log.Printf("[execandreload, output] %q\n", out)
 	if err != nil {
 		log.Printf("[execandreload, exec error] %v\n", err)
-		e.statusmsg(fmt.Sprintf("Hook execution failed: %v", err))
+		e.statusmsg(fmt.Sprintf("Hook failed: %v", err))
 		return
 	}
 	f, err := os.Open(abspath)
@@ -464,6 +463,8 @@ func (e *Editor) search() {
 			looping = false
 		case errors.Is(err, nexterr):
 			log.Printf("[search] got next for %q\n", string(term))
+		case errors.Is(err, textentry.ErrorCancelled):
+			return
 		default:
 			log.Println("[search, error-ask] ", err)
 			e.statusmsg(fmt.Sprintf("%v", err))
@@ -610,7 +611,6 @@ func (e *Editor) openbuffer() {
 		Ask(e.s, 0, h-1)
 	if err != nil {
 		log.Println("[openbuffer, error-ask] ", err)
-		e.statusmsg(fmt.Sprintf("%v", err))
 		return
 	}
 	absrootdir, err := filepath.Abs(string(fp))
@@ -654,7 +654,6 @@ func (e *Editor) openbuffer() {
 	sel, err := fuzzyselect.New(choices).Choose(e.s, 0, 0, w, h-2)
 	if err != nil {
 		log.Printf("[openbuffer, fuzzy error] %v\n", err)
-		e.statusmsg(fmt.Sprintf("Choosing file failed: %v", err))
 		return
 	}
 	fn := string(sel.Display)
@@ -704,7 +703,6 @@ func (e *Editor) changebuffer() {
 	sel, err := fuzzyselect.New(choices).Choose(e.s, 0, 0, w, h-2)
 	if err != nil {
 		log.Printf("[changebuffer, fuzzy error] %v\n", err)
-		e.statusmsg(fmt.Sprintf("Selecting active buffer failed: %v", err))
 		return
 	}
 	e.setactivebuf(buffers.BufferId(sel.Id))
