@@ -3,6 +3,7 @@ package highlighting
 import (
 	"fmt"
 	"regexp"
+	"unicode/utf8"
 
 	"github.com/gdamore/tcell/v2"
 )
@@ -33,9 +34,12 @@ func (h *Highlighting) Analyze() *Highlighting {
 	for lineno, line := range h.source {
 		h.styles = append(h.styles, make([]tcell.Style, len(line)))
 		for _, mapping := range h.mappings {
-			aix := mapping.pattern.FindAllStringSubmatchIndex(string(line), -1)
+			l := string(line)
+			aix := mapping.pattern.FindAllStringSubmatchIndex(l, -1)
 			for _, ix := range aix {
-				for col := ix[4]; col < ix[5]; col++ {
+				left := utf8.RuneCountInString(l[:ix[4]])
+				right := utf8.RuneCountInString(l[:ix[5]])
+				for col := left; col < right; col++ {
 					h.styles[lineno][col] = mapping.style
 				}
 			}
