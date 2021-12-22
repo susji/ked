@@ -34,3 +34,22 @@ func TestBasic(t *testing.T) {
 	tu.Assert(t, s2 == g2, "got %x, want %x", g2, s2)
 	tu.Assert(t, s3 == g3, "got %x, want %x", g3, s3)
 }
+
+func TestSequential(t *testing.T) {
+	msg := [][]rune{
+		[]rune("func func func"),
+	}
+	s := tcell.StyleDefault.Bold(true)
+	h := highlighting.New(msg).
+		Mapping("func", s).
+		Analyze()
+
+	g1 := h.Get(0, 0)
+	g2 := h.Get(0, len("func fu")-1)
+	g3 := h.Get(0, len("func func fu")-1)
+
+	tu.Assert(t, s == g1, "got %x, want %x", g1, s)
+	tu.Assert(t, s == g2, "got %x, want %x", g2, s)
+	tu.Assert(t, s == g3, "got %x, want %x", g3, s)
+
+}

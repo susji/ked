@@ -24,7 +24,7 @@ func New(source [][]rune) *Highlighting {
 }
 
 func (h *Highlighting) Mapping(pattern string, style tcell.Style) *Highlighting {
-	pat := regexp.MustCompile(fmt.Sprintf(`(\s+|^)(%s)(\s+|$)`, pattern))
+	pat := regexp.MustCompile(fmt.Sprintf(`(\s*|^)(%s)(\s*|$)`, pattern))
 	h.mappings = append(h.mappings, Mapping{pat, style})
 	return h
 }
