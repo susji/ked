@@ -146,13 +146,6 @@ func (e *Editor) initscreen() error {
 func (e *Editor) drawactivebuf() {
 	eb := e.buffers.Get(e.activebuf)
 
-	getstyle := func(lineno, col int) tcell.Style {
-		if eb.Hilite == nil {
-			return tcell.StyleDefault
-		}
-		return eb.Hilite.Get(lineno, col)
-	}
-
 	if eb == nil {
 		panic(fmt.Sprintf(
 			"no activebuf when drawing, got %d -> %#v [%#v]",
@@ -161,13 +154,13 @@ func (e *Editor) drawactivebuf() {
 			e.buffers.All()))
 	}
 	w, h := e.s.Size()
-	rend := eb.Viewport.Render(w, h-1, eb.CursorLine(), eb.CursorCol())
+	rend := eb.Viewport.Render(w, h-1, eb.CursorLine(), eb.CursorCol(), eb.Hilite)
 	col := 0
 	lineno := 0
 	for h > 0 && rend.Scan() {
 		rl := rend.Line()
 		for i, r := range rl.Content {
-			e.s.SetContent(col+i, lineno, r, nil, getstyle(rl.LineBuffer, i))
+			e.s.SetContent(col+i, lineno, r, nil, rl.GetStyle(i))
 		}
 		lineno++
 		if lineno == h-1 {

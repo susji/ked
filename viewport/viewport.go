@@ -4,8 +4,10 @@ import (
 	"errors"
 	"math"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/susji/ked/buffer"
 	"github.com/susji/ked/config"
+	"github.com/susji/ked/highlighting"
 )
 
 type Viewport struct {
@@ -36,6 +38,7 @@ type Viewport struct {
 type RenderLine struct {
 	Content                 []rune
 	LineLogical, LineBuffer int
+	styles                  []tcell.Style
 }
 
 // Rendering essentially represents a double buffer in the graphics
@@ -47,6 +50,11 @@ type Rendering struct {
 	scanned          int
 	lineno           int
 	cursorx, cursory int
+}
+
+type renderedLine struct {
+	content []rune
+	styles  []tcell.Style
 }
 
 func (r *Rendering) Cursor() (int, int) {
@@ -76,6 +84,13 @@ func (r *Rendering) Line() *RenderLine {
 	return r.cur
 }
 
+func (rl *RenderLine) GetStyle(col int) tcell.Style {
+	if len(rl.styles) <= col {
+		return tcell.StyleDefault
+	}
+	return rl.styles[col]
+}
+
 func New(buffer *buffer.Buffer) *Viewport {
 	return &Viewport{
 		buffer: buffer,
@@ -93,32 +108,41 @@ func getpadding(howmuch int) []rune {
 	return ret
 }
 
-func tabexpand(what []rune, tabsz int) ([]rune, []int) {
+func tabexpand(
+	lineno int, what []rune, tabsz int, hilite *highlighting.Highlighting) (
+	[]rune, []int, []tcell.Style) {
+
 	exp := []rune("                                        ")
 	new := make([]rune, 0, len(what))
 	tabbedlen := make([]int, 0, len(what)+1)
 	tabbedlen = append(tabbedlen, 0)
+	styles := make([]tcell.Style, 0, len(what)+1)
 	ntabs := 0
-	for _, r := range what {
+	for col, r := range what {
+		st := hilite.Get(lineno, col)
 		if r != '\t' {
 			new = append(new, r)
+			styles = append(styles, st)
 		} else {
 			new = append(new, exp[:tabsz]...)
 			ntabs++
+			for i := 0; i < tabsz; i++ {
+				styles = append(styles, st)
+			}
 		}
 		tabbedlen = append(tabbedlen, ntabs*(tabsz-1))
 	}
-	return new, tabbedlen
+	return new, tabbedlen, styles
 }
 
 func (v *Viewport) doRenderWrapped(
-	w, cursorlineno, cursorcol, linenobuf, linenodrawn int, line []rune) ([][]rune, int, int) {
+	w, cursorlineno, cursorcol, linenobuf, linenodrawn int, line []rune,
+	hilite *highlighting.Highlighting) (
+	[]renderedLine, int, int) {
 
-	ret := [][]rune{}
-	line, tabbedlen := tabexpand(line, config.TABSZ)
+	ret := []renderedLine{}
+	line, tabbedlen, styles := tabexpand(linenobuf, line, config.TABSZ, hilite)
 	nlinefrag := int(math.Ceil(float64(len(line)) / float64(w)))
-	//log.Printf("[doRenderWrapped]: w=%d  h=%d  linenobuf=%d  lenline=%d   linefrags=%d\n",
-	//	w, h, linenobuf, len(line), nlinefrag)
 
 	// As we're wrapping the display, long lines need to split
 	// into line fragments, which are rendered on their own
@@ -131,8 +155,8 @@ func (v *Viewport) doRenderWrapped(
 		endraw := (i + 1) * w
 		end := int(math.Min(float64(endraw), float64(len(line))))
 		drawfrag := line[start:end]
-		//log.Printf("[doRenderWrapped] line[%d:%d]=%q\n",
-		//	start, end, string(drawfrag))
+		stylefrag := styles[start:end]
+
 		if endraw > end {
 			// Add some padding to the last fragment to
 			// have cleaner render. This could be
@@ -140,20 +164,24 @@ func (v *Viewport) doRenderWrapped(
 			// static padding buffer.
 			drawfrag = append(drawfrag, getpadding(endraw-end)...)
 		}
-		ret = append(ret, drawfrag)
-		//log.Printf("[linefrag] linenobuf=%d  cursorcol=%d tabbedlen[%d]=%v\n",
-		//	linenobuf, cursorcol, len(tabbedlen), tabbedlen)
+		ret = append(ret, renderedLine{
+			content: drawfrag,
+			styles:  stylefrag,
+		})
+
 		if linenobuf == cursorlineno &&
 			(cursorcol+tabbedlen[cursorcol]) >= start &&
 			(cursorcol+tabbedlen[cursorcol]) <= end {
 			cx = cursorcol - start + tabbedlen[cursorcol]
 			cy = linenodrawn + i
-			//log.Printf("[cursor] cx=%d  cy=%d\n", cx, cy)
 		}
 	}
 	// Zero fragments means one line still.
 	if nlinefrag == 0 {
-		ret = append(ret, getpadding(w))
+		ret = append(ret, renderedLine{
+			content: getpadding(w),
+			styles:  nil,
+		})
 		if linenobuf == cursorlineno {
 			cx = 0
 			cy = linenodrawn
@@ -192,7 +220,9 @@ func (v *Viewport) checktranslation(cursorlineno int) {
 	}
 }
 
-func (v *Viewport) Render(w, h, cursorlineno, cursorcol int) *Rendering {
+func (v *Viewport) Render(
+	w, h, cursorlineno, cursorcol int,
+	hilite *highlighting.Highlighting) *Rendering {
 rescroll:
 	if v.paged {
 		v.paged = false
@@ -281,9 +311,8 @@ rescroll:
 	for ; n < lastbufline; n++ {
 		line := v.buffer.GetLine(n)
 		//log.Printf("[Render=%d] line=%q\n", linenobuf, string(line))
-		newlines, _cx, _cy := v.doRenderWrapped(
-			w, cursorlineno, cursorcol,
-			n, linenodrawn, line)
+		renderedlines, _cx, _cy := v.doRenderWrapped(
+			w, cursorlineno, cursorcol, n, linenodrawn, line, hilite)
 
 		if n >= v.y0 && !inview && !viewed {
 			// Arrived into visible viewport.
@@ -311,8 +340,8 @@ rescroll:
 			// lines we need to scroll half a page
 			// upwards. This matches when we are still
 			// upwards from our viewport.
-			hss.Push(len(newlines))
-			linesdrawnpreview += len(newlines)
+			hss.Push(len(renderedlines))
+			linesdrawnpreview += len(renderedlines)
 		} else if inview && !viewed && !downscrollfound {
 			// Similar to the case of counting
 			// logical/wrapped lines before entering the
@@ -342,22 +371,23 @@ rescroll:
 			// impossible. Thus we calculate some decent
 			// values for `v.scrolldown` and `v.limitdown`.
 			v.limitdown = n
-			for ri, linecontent := range newlines {
+			for ri, renderedline := range renderedlines {
 				rl := &RenderLine{
-					Content:     linecontent,
+					Content:     renderedline.content,
+					styles:      renderedline.styles,
 					LineLogical: linenodrawn + ri,
 					LineBuffer:  n,
 				}
 				renderlines = append(renderlines, rl)
 			}
 			linesbufinview++
-			linesdrawninview += len(newlines)
+			linesdrawninview += len(renderedlines)
 			if _cx != -1 && _cy != -1 {
 				cx = _cx
 				cy = _cy - linesdrawnpreview
 			}
 		}
-		linenodrawn += len(newlines)
+		linenodrawn += len(renderedlines)
 	}
 	// It may be we have only a partial viewport to render. In
 	// that case, we do not have scanned values for down-limits
