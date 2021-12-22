@@ -70,16 +70,19 @@ func (e *Editor) setactivebuf(bid buffers.BufferId) {
 	e.activebuf = bid
 }
 
-func (e *Editor) NewFromBuffer(filepath string, buf *buffer.Buffer) (buffers.BufferId, error) {
-	bid := e.buffers.New(filepath, buf)
-	b := e.buffers.Get(bid)
-	e.setactivebuf(bid)
-	hl := highlighting.New(b.Buffer.ToRunes()).
+func (e *Editor) sethighlighting() {
+	eb := e.buffers.Get(e.activebuf)
+	eb.SetHighlighting(highlighting.New(eb.Buffer.ToRunes()).
 		Mapping("func", tcell.StyleDefault.Bold(true)).
 		Mapping("return", tcell.StyleDefault.Underline(true)).
 		Mapping("//.+", tcell.StyleDefault.Bold(true)).
-		Analyze()
-	e.buffers.Get(bid).SetHighlighting(hl)
+		Analyze())
+}
+
+func (e *Editor) NewFromBuffer(filepath string, buf *buffer.Buffer) (buffers.BufferId, error) {
+	bid := e.buffers.New(filepath, buf)
+	e.setactivebuf(bid)
+	e.sethighlighting()
 	return bid, nil
 }
 
@@ -778,8 +781,8 @@ main:
 			case ev.Key() == tcell.KeyCtrlS:
 				e.search()
 			case ev.Key() == tcell.KeyCtrlK:
-				e.setmodified(true)
 				e.delline()
+				e.setmodified(true)
 			case ev.Key() == tcell.KeyCtrlG:
 				e.jumpline()
 			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Rune() == 'f':
@@ -798,18 +801,18 @@ main:
 					break main
 				}
 			case ev.Key() == tcell.KeyRune:
-				e.setmodified(true)
 				e.insertrune(ev.Rune())
+				e.setmodified(true)
 			case ev.Key() == tcell.KeyEnter:
-				e.setmodified(true)
 				e.insertlinefeed()
-			case ev.Key() == tcell.KeyBackspace, ev.Key() == tcell.KeyBackspace2:
 				e.setmodified(true)
+			case ev.Key() == tcell.KeyBackspace, ev.Key() == tcell.KeyBackspace2:
 				if ev.Modifiers()&tcell.ModAlt > 0 {
 					e.delword()
 				} else {
 					e.backspace()
 				}
+				e.setmodified(true)
 			case ev.Key() == tcell.KeyUp:
 				e.movevertical(true)
 			case ev.Key() == tcell.KeyDown:
@@ -829,8 +832,8 @@ main:
 			case ev.Key() == tcell.KeyPgDn:
 				e.movepage(false)
 			case ev.Key() == tcell.KeyTab:
-				e.setmodified(true)
 				e.insertrune('\t')
+				e.setmodified(true)
 			case ev.Key() == tcell.KeyBacktab:
 				e.backtab()
 			}
