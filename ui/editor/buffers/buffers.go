@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 
 	"github.com/susji/ked/buffer"
+	"github.com/susji/ked/highlighting"
 	"github.com/susji/ked/viewport"
 )
 
@@ -25,6 +26,7 @@ type EditorBuffer struct {
 	Buffer                *buffer.Buffer
 	Viewport              *viewport.Viewport
 	Filepath              string
+	Hilite                *highlighting.Highlighting
 	bid                   uint32
 	cursorline, cursorcol int
 	prevsearch            string
@@ -97,4 +99,8 @@ func (eb *EditorBuffer) SetCursor(lineno, col int) {
 
 func (eb *EditorBuffer) Id() BufferId {
 	return BufferId(eb.bid)
+}
+
+func (eb *EditorBuffer) SetHighlighting(hi *highlighting.Highlighting) {
+	eb.Hilite = hi
 }

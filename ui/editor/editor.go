@@ -19,6 +19,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/susji/ked/buffer"
 	"github.com/susji/ked/config"
+	"github.com/susji/ked/highlighting"
 	"github.com/susji/ked/ui/dialog"
 	"github.com/susji/ked/ui/editor/buffers"
 	"github.com/susji/ked/ui/fuzzyselect"
@@ -34,7 +35,7 @@ type Editor struct {
 	prevopendir   string
 	prevsearch    map[buffers.BufferId]string
 	bufpopularity map[buffers.BufferId]uint64
-	nonsaved      map[buffers.BufferId]bool
+	modified      map[buffers.BufferId]bool
 }
 
 func New() *Editor {
@@ -46,7 +47,7 @@ func NewWithScreen(s tcell.Screen) *Editor {
 		prevsearch:    map[buffers.BufferId]string{},
 		bufpopularity: map[buffers.BufferId]uint64{},
 		buffers:       buffers.New(),
-		nonsaved:      map[buffers.BufferId]bool{},
+		modified:      map[buffers.BufferId]bool{},
 		s:             s,
 	}
 }
@@ -69,9 +70,19 @@ func (e *Editor) setactivebuf(bid buffers.BufferId) {
 	e.activebuf = bid
 }
 
+func (e *Editor) sethighlighting() {
+	eb := e.buffers.Get(e.activebuf)
+	eb.SetHighlighting(highlighting.New(eb.Buffer.ToRunes()).
+		Mapping("func", tcell.StyleDefault.Bold(true)).
+		Mapping("return", tcell.StyleDefault.Underline(true)).
+		Mapping("//.+", tcell.StyleDefault.Bold(true)).
+		Analyze())
+}
+
 func (e *Editor) NewFromBuffer(filepath string, buf *buffer.Buffer) (buffers.BufferId, error) {
 	bid := e.buffers.New(filepath, buf)
 	e.setactivebuf(bid)
+	e.sethighlighting()
 	return bid, nil
 }
 
@@ -92,7 +103,7 @@ func (e *Editor) askyesno(prompt string) bool {
 }
 
 func (e *Editor) closeactivebuffer(force bool) bool {
-	if e.isnonsaved() && !force {
+	if e.ismodified() && !force {
 		if !e.askyesno("Unchanged saves to buffer, close [y/n]?") {
 			return false
 		}
@@ -137,6 +148,7 @@ func (e *Editor) initscreen() error {
 
 func (e *Editor) drawactivebuf() {
 	eb := e.buffers.Get(e.activebuf)
+
 	if eb == nil {
 		panic(fmt.Sprintf(
 			"no activebuf when drawing, got %d -> %#v [%#v]",
@@ -145,18 +157,17 @@ func (e *Editor) drawactivebuf() {
 			e.buffers.All()))
 	}
 	w, h := e.s.Size()
-	rend := eb.Viewport.Render(w, h-1, eb.CursorLine(), eb.CursorCol())
+	rend := eb.Viewport.Render(w, h-1, eb.CursorLine(), eb.CursorCol(), eb.Hilite)
 	col := 0
 	lineno := 0
 	for h > 0 && rend.Scan() {
 		rl := rend.Line()
 		for i, r := range rl.Content {
-			e.s.SetContent(col+i, lineno, r, nil, tcell.StyleDefault)
+			e.s.SetContent(col+i, lineno, r, nil, rl.GetStyle(i))
 		}
 		lineno++
 		if lineno == h-1 {
 			break
-
 		}
 	}
 	vx, vy := rend.Cursor()
@@ -243,12 +254,15 @@ func (e *Editor) moveline(start bool) {
 	eb.SetCursor(eb.CursorLine(), len(line))
 }
 
-func (e *Editor) setnonsaved(status bool) {
-	e.nonsaved[e.activebuf] = status
+func (e *Editor) setmodified(status bool) {
+	e.modified[e.activebuf] = status
+	if status {
+		e.sethighlighting()
+	}
 }
 
-func (e *Editor) isnonsaved() bool {
-	return e.nonsaved[e.activebuf]
+func (e *Editor) ismodified() bool {
+	return e.modified[e.activebuf]
 }
 
 func (e *Editor) savebuffer() {
@@ -288,7 +302,7 @@ func (e *Editor) savebuffer() {
 		return
 	}
 	eb.Filepath = abspath
-	e.setnonsaved(false)
+	e.setmodified(false)
 
 	for pattern, command := range config.SAVEHOOKS {
 		log.Printf("[savebuffer, pattern] %q %q\n", pattern, command)
@@ -437,7 +451,7 @@ func (e *Editor) replace() {
 		log.Printf("[replace, found] (%d, %d)\n", lineno, col)
 		eb.SetCursor(lineno, col)
 		eb.Viewport.SetTeleported(eb.CursorLine())
-		e.setnonsaved(true)
+		e.setmodified(true)
 	}
 
 }
@@ -525,17 +539,17 @@ func (e *Editor) drawstatusline() {
 	lineno = eb.CursorLine() + 1
 	col = eb.CursorCol() + 1
 
-	var nonsaved rune
-	if e.isnonsaved() {
-		nonsaved = '*'
+	var modified rune
+	if e.ismodified() {
+		modified = '*'
 	} else {
-		nonsaved = ' '
+		modified = ' '
 	}
 
 	fn = string(util.TruncateLine([]rune(fn), w-20, ':'))
 	line := []rune(
 		fmt.Sprintf(
-			"[%03d] %3d, %2d: %c %s", e.activebuf, lineno, col, nonsaved, fn))
+			"[%03d] %3d, %2d: %c %s", e.activebuf, lineno, col, modified, fn))
 	for i, r := range line {
 		e.s.SetContent(i, h-1, r, nil, tcell.StyleDefault)
 		if i > w {
@@ -566,7 +580,7 @@ func (e *Editor) undo() {
 		eb.Update(*res)
 	}
 	if !eb.Buffer.Modified() {
-		e.setnonsaved(false)
+		e.setmodified(false)
 	}
 }
 
@@ -577,7 +591,7 @@ func (e *Editor) backtab() {
 		eb.Buffer.Perform(
 			buffer.NewDetabulate(eb.Cursor())))
 	if len0 != eb.Buffer.LineLength(eb.CursorLine()) {
-		e.setnonsaved(true)
+		e.setmodified(true)
 	}
 }
 
@@ -716,7 +730,7 @@ func (e *Editor) quit() bool {
 		e.s.Clear()
 		e.drawactivebuf()
 		e.s.Show()
-		if e.isnonsaved() {
+		if e.ismodified() {
 			e.savebuffer()
 		}
 		waslast := e.closeactivebuffer(true)
@@ -767,8 +781,8 @@ main:
 			case ev.Key() == tcell.KeyCtrlS:
 				e.search()
 			case ev.Key() == tcell.KeyCtrlK:
-				e.setnonsaved(true)
 				e.delline()
+				e.setmodified(true)
 			case ev.Key() == tcell.KeyCtrlG:
 				e.jumpline()
 			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Rune() == 'f':
@@ -787,18 +801,18 @@ main:
 					break main
 				}
 			case ev.Key() == tcell.KeyRune:
-				e.setnonsaved(true)
 				e.insertrune(ev.Rune())
+				e.setmodified(true)
 			case ev.Key() == tcell.KeyEnter:
-				e.setnonsaved(true)
 				e.insertlinefeed()
+				e.setmodified(true)
 			case ev.Key() == tcell.KeyBackspace, ev.Key() == tcell.KeyBackspace2:
-				e.setnonsaved(true)
 				if ev.Modifiers()&tcell.ModAlt > 0 {
 					e.delword()
 				} else {
 					e.backspace()
 				}
+				e.setmodified(true)
 			case ev.Key() == tcell.KeyUp:
 				e.movevertical(true)
 			case ev.Key() == tcell.KeyDown:
@@ -818,8 +832,8 @@ main:
 			case ev.Key() == tcell.KeyPgDn:
 				e.movepage(false)
 			case ev.Key() == tcell.KeyTab:
-				e.setnonsaved(true)
 				e.insertrune('\t')
+				e.setmodified(true)
 			case ev.Key() == tcell.KeyBacktab:
 				e.backtab()
 			}
