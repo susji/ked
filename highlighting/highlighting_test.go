@@ -18,10 +18,10 @@ func TestBasic(t *testing.T) {
 	s3 := tcell.StyleDefault.StrikeThrough(true)
 
 	h := highlighting.New(msg).
-		Mapping("of", s1).
-		Mapping("words", s2).
-		Mapping("notexist", sz).
-		Mapping("//.+", s3).
+		Keyword("of", s1).
+		Keyword("words", s2).
+		Keyword("notexist", sz).
+		Pattern("(//.+)", 0, 1, s3).
 		Analyze()
 
 	g0 := h.Get(0, 0)
@@ -37,19 +37,42 @@ func TestBasic(t *testing.T) {
 
 func TestSequential(t *testing.T) {
 	msg := [][]rune{
-		[]rune("func func func"),
+		[]rune("func func func notfunc"),
 	}
+	s0 := tcell.StyleDefault
 	s := tcell.StyleDefault.Bold(true)
 	h := highlighting.New(msg).
-		Mapping("func", s).
+		Keyword(`func`, s).
 		Analyze()
 
 	g1 := h.Get(0, 0)
 	g2 := h.Get(0, len("func fu")-1)
 	g3 := h.Get(0, len("func func fu")-1)
+	g4 := h.Get(0, len("func func func notfu")-1)
 
 	tu.Assert(t, s == g1, "got %x, want %x", g1, s)
 	tu.Assert(t, s == g2, "got %x, want %x", g2, s)
 	tu.Assert(t, s == g3, "got %x, want %x", g3, s)
+	tu.Assert(t, s0 == g4, "got %x, want %x", g4, s0)
+}
 
+func TestNoSeparation(t *testing.T) {
+	msg := [][]rune{
+		[]rune("func funcfuncfunc func"),
+	}
+	s0 := tcell.StyleDefault
+	s := tcell.StyleDefault.Bold(true)
+	h := highlighting.New(msg).
+		Keyword(`func`, s).
+		Analyze()
+
+	g1 := h.Get(0, len("fu")-1)
+	g2 := h.Get(0, len("func fu")-1)
+	g3 := h.Get(0, len("func funcfu")-1)
+	g4 := h.Get(0, len("func funcfuncfunc fun")-1)
+
+	tu.Assert(t, s == g1, "got %x, want %x", g1, s)
+	tu.Assert(t, s0 == g2, "got %x, want %x", g2, s0)
+	tu.Assert(t, s0 == g3, "got %x, want %x", g3, s0)
+	tu.Assert(t, s == g4, "got %x, want %x", g4, s)
 }
