@@ -729,10 +729,10 @@ func (e *Editor) quit() bool {
 		return false
 	}
 	for {
-		e.s.Clear()
-		e.drawactivebuf()
-		e.s.Show()
 		if e.ismodified() {
+			e.s.Clear()
+			e.drawactivebuf()
+			e.s.Show()
 			e.savebuffer()
 		}
 		waslast := e.closeactivebuffer(true)
