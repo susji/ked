@@ -15,17 +15,34 @@ type Highlighting struct {
 }
 
 type Mapping struct {
-	pattern *regexp.Regexp
-	style   tcell.Style
+	pattern       *regexp.Regexp
+	style         tcell.Style
+	lefti, righti int
 }
 
 func New(source [][]rune) *Highlighting {
 	return &Highlighting{source: source}
 }
 
-func (h *Highlighting) Mapping(pattern string, style tcell.Style) *Highlighting {
-	pat := regexp.MustCompile(fmt.Sprintf(`(\s*|^)(%s)(\s*|$)`, pattern))
-	h.mappings = append(h.mappings, Mapping{pat, style})
+func (h *Highlighting) Pattern(pattern string, lefti, righti int, style tcell.Style) *Highlighting {
+	pat := regexp.MustCompile(pattern)
+	h.mappings = append(h.mappings, Mapping{
+		pattern: pat,
+		style:   style,
+		lefti:   lefti,
+		righti:  righti,
+	})
+	return h
+}
+
+func (h *Highlighting) Keyword(keyword string, style tcell.Style) *Highlighting {
+	pat := regexp.MustCompile(fmt.Sprintf(`([^\w]|^)(%s)([^\w]|$)`, keyword))
+	h.mappings = append(h.mappings, Mapping{
+		pattern: pat,
+		style:   style,
+		lefti:   4,
+		righti:  5,
+	})
 	return h
 }
 
@@ -35,13 +52,19 @@ func (h *Highlighting) Analyze() *Highlighting {
 		h.styles = append(h.styles, make([]tcell.Style, len(line)))
 		for _, mapping := range h.mappings {
 			l := string(line)
-			aix := mapping.pattern.FindAllStringSubmatchIndex(l, -1)
-			for _, ix := range aix {
-				left := utf8.RuneCountInString(l[:ix[4]])
-				right := utf8.RuneCountInString(l[:ix[5]])
-				for col := left; col < right; col++ {
+			acc := 0
+			for len(l) > 0 {
+				ix := mapping.pattern.FindStringSubmatchIndex(l)
+				if ix == nil {
+					break
+				}
+				left := utf8.RuneCountInString(l[:ix[mapping.lefti]])
+				right := utf8.RuneCountInString(l[:ix[mapping.righti]])
+				for col := acc + left; col < acc+right; col++ {
 					h.styles[lineno][col] = mapping.style
 				}
+				acc += right
+				l = l[right:]
 			}
 		}
 	}
