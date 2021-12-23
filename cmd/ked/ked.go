@@ -22,6 +22,11 @@ var (
 func main() {
 	var debugfile, savehooks, ignoredirs string
 
+	flag.BoolVar(
+		&config.TABSSPACES,
+		"tabspaces",
+		config.TABSSPACES,
+		"Emit spaces with tab")
 	flag.StringVar(&debugfile, "debugfile", "", "File for appending debug log")
 	flag.StringVar(
 		&savehooks,

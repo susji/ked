@@ -832,7 +832,13 @@ main:
 			case ev.Key() == tcell.KeyPgDn:
 				e.movepage(false)
 			case ev.Key() == tcell.KeyTab:
-				e.insertrune('\t')
+				if config.TABSSPACES {
+					for i := 0; i < config.TABSZ; i++ {
+						e.insertrune(' ')
+					}
+				} else {
+					e.insertrune('\t')
+				}
 				e.setmodified(true)
 			case ev.Key() == tcell.KeyBacktab:
 				e.backtab()

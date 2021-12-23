@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+var TABSSPACES = false
 var WARNFILESZ = int64(10_485_760)
 var SAVEHOOKS = map[string][]string{}
 var TABSZ = 4
