@@ -52,19 +52,22 @@ func (h *Highlighting) Analyze() *Highlighting {
 		h.styles = append(h.styles, make([]tcell.Style, len(line)))
 		for _, mapping := range h.mappings {
 			l := string(line)
-			acc := 0
+			runeacc := 0
 			for len(l) > 0 {
 				ix := mapping.pattern.FindStringSubmatchIndex(l)
 				if ix == nil {
 					break
 				}
-				left := utf8.RuneCountInString(l[:ix[mapping.lefti]])
-				right := utf8.RuneCountInString(l[:ix[mapping.righti]])
-				for col := acc + left; col < acc+right; col++ {
+				lefti := ix[mapping.lefti]
+				righti := ix[mapping.righti]
+				left := utf8.RuneCountInString(l[:lefti])
+				right := utf8.RuneCountInString(l[:righti])
+				for col := runeacc + left; col < runeacc+right; col++ {
 					h.styles[lineno][col] = mapping.style
 				}
-				acc += right
-				l = l[right:]
+				// We skip over this many runes due to present match.
+				runeacc += right
+				l = l[righti:]
 			}
 		}
 	}

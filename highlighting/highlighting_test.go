@@ -2,6 +2,7 @@ package highlighting_test
 
 import (
 	"testing"
+	"unicode/utf8"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/susji/ked/highlighting"
@@ -10,7 +11,7 @@ import (
 
 func TestBasic(t *testing.T) {
 	msg := [][]rune{
-		[]rune("some of these words are highlighted // the end of öööö"),
+		[]rune("öäåöäåöäå some of these words are highlighted // the end of öööö"),
 	}
 	s1 := tcell.StyleDefault.Bold(true)
 	s2 := tcell.StyleDefault.Underline(true)
@@ -25,8 +26,8 @@ func TestBasic(t *testing.T) {
 		Analyze()
 
 	g0 := h.Get(0, 0)
-	g1 := h.Get(0, len("some o"))
-	g2 := h.Get(0, len("some of these word"))
+	g1 := h.Get(0, utf8.RuneCountInString("öäåöäåöäå some o"))
+	g2 := h.Get(0, utf8.RuneCountInString("öäåöäåöäå some of these wor"))
 	g3 := h.Get(0, len(msg[0])-1)
 
 	tu.Assert(t, tcell.StyleDefault == g0, "want styledefault, got %x", g0)
