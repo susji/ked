@@ -73,11 +73,26 @@ func (e *Editor) setactivebuf(bid buffers.BufferId) {
 func (e *Editor) sethighlighting() {
 	eb := e.buffers.Get(e.activebuf)
 	eb.SetHighlighting(highlighting.New(eb.Buffer.ToRunes()).
+		// XXX Almost same pattern for three different quotes.
+		Pattern(
+			`[^\\]?("(.*?)([^\\]?"))`,
+			2,
+			3,
+			tcell.StyleDefault.Foreground(tcell.ColorBlue)).
+		Pattern(
+			`[^\\]?('(.*?)([^\\]?'))`,
+			2,
+			3,
+			tcell.StyleDefault.Foreground(tcell.ColorBlue)).
+		Pattern(
+			`[^\\]?(`+"`"+`(.*?)([^\\]?`+"`"+`))`,
+			2,
+			3,
+			tcell.StyleDefault.Foreground(tcell.ColorBlue)).
+		Pattern(`//.*`, 0, 1, tcell.StyleDefault.Foreground(tcell.ColorGrey)).
+		Pattern(`#.*`, 0, 1, tcell.StyleDefault.Foreground(tcell.ColorGrey)).
 		Keyword("func", tcell.StyleDefault.Bold(true)).
 		Keyword("return", tcell.StyleDefault.Underline(true)).
-		Pattern(`//.*`, 0, 1, tcell.StyleDefault.Bold(true)).
-		Pattern(`#.*`, 0, 1, tcell.StyleDefault.Bold(true)).
-		Pattern(`[^\\]?("(.*?)([^\\]?"))`, 2, 3, tcell.StyleDefault.Reverse(true)).
 		Analyze())
 }
 
