@@ -78,22 +78,24 @@ func (e *Editor) sethighlighting() {
 			`[^\\]?("(.*?)([^\\]?"))`,
 			2,
 			3,
-			tcell.StyleDefault.Foreground(tcell.ColorBlue)).
+			tcell.StyleDefault.Foreground(tcell.ColorBlue),
+			1).
 		Pattern(
 			`[^\\]?('(.*?)([^\\]?'))`,
 			2,
 			3,
-			tcell.StyleDefault.Foreground(tcell.ColorBlue)).
+			tcell.StyleDefault.Foreground(tcell.ColorBlue),
+			1).
 		Pattern(
 			`[^\\]?(`+"`"+`(.*?)([^\\]?`+"`"+`))`,
 			2,
 			3,
-			tcell.StyleDefault.Foreground(tcell.ColorBlue)).
-		Pattern(`//.*`, 0, 1, tcell.StyleDefault.Foreground(tcell.ColorGrey)).
-		Pattern(`#.*`, 0, 1, tcell.StyleDefault.Foreground(tcell.ColorGrey)).
-		Pattern(`([-_\w]+)\(`, 2, 3, tcell.StyleDefault.Foreground(tcell.ColorPurple)).
-		Keyword("func|def|type|struct", tcell.StyleDefault.Bold(true)).
-		Keyword("return", tcell.StyleDefault.Underline(true)).
+			tcell.StyleDefault.Foreground(tcell.ColorBlue), 1).
+		Pattern(`//.*`, 0, 1, tcell.StyleDefault.Foreground(tcell.ColorGrey), 1).
+		Pattern(`#.*`, 0, 1, tcell.StyleDefault.Foreground(tcell.ColorGrey), 1).
+		Pattern(`([-_\w]+)\(`, 2, 3, tcell.StyleDefault.Foreground(tcell.ColorPurple), 2).
+		Keyword("func|def|type|struct", tcell.StyleDefault.Bold(true), 3).
+		Keyword("return", tcell.StyleDefault.Underline(true), 3).
 		Analyze())
 }
 
