@@ -91,7 +91,8 @@ func (e *Editor) sethighlighting() {
 			tcell.StyleDefault.Foreground(tcell.ColorBlue)).
 		Pattern(`//.*`, 0, 1, tcell.StyleDefault.Foreground(tcell.ColorGrey)).
 		Pattern(`#.*`, 0, 1, tcell.StyleDefault.Foreground(tcell.ColorGrey)).
-		Keyword("func", tcell.StyleDefault.Bold(true)).
+		Pattern(`([-_\w]+)\(`, 2, 3, tcell.StyleDefault.Foreground(tcell.ColorPurple)).
+		Keyword("func|def|type|struct", tcell.StyleDefault.Bold(true)).
 		Keyword("return", tcell.StyleDefault.Underline(true)).
 		Analyze())
 }
