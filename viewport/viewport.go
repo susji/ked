@@ -399,6 +399,11 @@ rescroll:
 		//	linesdrawninview, missinglines)
 		v.limitdown = v.y0 + linesbufinview + missinglines - 1
 		v.pagedown = v.y0 + linesbufinview - 1
+
+		// Really long lines can cause this to go negative.
+		if v.limitdown < 0 {
+			v.limitdown = 0
+		}
 	}
 	//log.Printf("[Render] inview=%t  viewed=%t  downscrollfound=%t\n",
 	//	inview, viewed, downscrollfound)
