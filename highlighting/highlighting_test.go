@@ -19,10 +19,10 @@ func TestBasic(t *testing.T) {
 	s3 := tcell.StyleDefault.StrikeThrough(true)
 
 	h := highlighting.New(msg).
+		Pattern("(//.+)", 0, 1, s3).
 		Keyword("of", s1).
 		Keyword("words", s2).
 		Keyword("notexist", sz).
-		Pattern("(//.+)", 0, 1, s3).
 		Analyze()
 
 	g0 := h.Get(0, 0)
@@ -76,4 +76,24 @@ func TestNoSeparation(t *testing.T) {
 	tu.Assert(t, s0 == g2, "got %x, want %x", g2, s0)
 	tu.Assert(t, s0 == g3, "got %x, want %x", g3, s0)
 	tu.Assert(t, s == g4, "got %x, want %x", g4, s)
+}
+
+func TestGreediness(t *testing.T) {
+	msg := [][]rune{
+		[]rune(`// first match should win`),
+	}
+	s1 := tcell.StyleDefault.Italic(true)
+	s2 := tcell.StyleDefault.Bold(true)
+	h := highlighting.New(msg).
+		Pattern(`//.*`, 0, 1, s1).
+		Keyword(`first`, s2).
+		Analyze()
+
+	g1 := h.Get(0, len("/")-1)
+	g2 := h.Get(0, len("// fir")-1)
+	g3 := h.Get(0, len("// first match should win")-1)
+
+	tu.Assert(t, s1 == g1, "got %x, want %x", g1, s1)
+	tu.Assert(t, s1 == g2, "got %x, want %x", g2, s1)
+	tu.Assert(t, s1 == g3, "got %x, want %x", g3, s1)
 }

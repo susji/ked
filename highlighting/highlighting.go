@@ -8,6 +8,8 @@ import (
 	"github.com/gdamore/tcell/v2"
 )
 
+var STYLE_DEFAULT = tcell.StyleDefault
+
 type Highlighting struct {
 	source   [][]rune
 	styles   [][]tcell.Style
@@ -63,7 +65,11 @@ func (h *Highlighting) Analyze() *Highlighting {
 				left := utf8.RuneCountInString(l[:lefti])
 				right := utf8.RuneCountInString(l[:righti])
 				for col := runeacc + left; col < runeacc+right; col++ {
-					h.styles[lineno][col] = mapping.style
+					if h.styles[lineno][col] == STYLE_DEFAULT {
+						h.styles[lineno][col] = mapping.style
+					} else {
+						break
+					}
 				}
 				// We skip over this many runes due to present match.
 				runeacc += right
@@ -76,7 +82,7 @@ func (h *Highlighting) Analyze() *Highlighting {
 
 func (h *Highlighting) Get(lineno, col int) tcell.Style {
 	if lineno >= len(h.styles) || col >= len(h.styles[lineno]) {
-		return tcell.StyleDefault
+		return STYLE_DEFAULT
 	}
 	return h.styles[lineno][col]
 }
