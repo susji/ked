@@ -10,9 +10,15 @@ import (
 
 var STYLE_DEFAULT = tcell.StyleDefault
 
+type highlight struct {
+	priority uint8
+	begincol uint16
+	style    tcell.Style
+}
+
 type Highlighting struct {
 	source   [][]rune
-	styles   [][]tcell.Style
+	styles   [][]highlight
 	mappings []Mapping
 }
 
@@ -20,38 +26,53 @@ type Mapping struct {
 	pattern       *regexp.Regexp
 	style         tcell.Style
 	lefti, righti int
+	priority      uint8
 }
 
 func New(source [][]rune) *Highlighting {
 	return &Highlighting{source: source}
 }
 
-func (h *Highlighting) Pattern(pattern string, lefti, righti int, style tcell.Style) *Highlighting {
+func (h *Highlighting) Pattern(
+	pattern string, lefti, righti int, style tcell.Style, priority uint8) *Highlighting {
+
+	if priority == 0 {
+		panic("priority cannot be zero")
+	}
+
 	pat := regexp.MustCompile(pattern)
 	h.mappings = append(h.mappings, Mapping{
-		pattern: pat,
-		style:   style,
-		lefti:   lefti,
-		righti:  righti,
+		pattern:  pat,
+		style:    style,
+		lefti:    lefti,
+		righti:   righti,
+		priority: priority,
 	})
 	return h
 }
 
-func (h *Highlighting) Keyword(keyword string, style tcell.Style) *Highlighting {
+func (h *Highlighting) Keyword(
+	keyword string, style tcell.Style, priority uint8) *Highlighting {
+
+	if priority == 0 {
+		panic("priority cannot be zero")
+	}
+
 	pat := regexp.MustCompile(fmt.Sprintf(`([^\w]|^)(%s)([^\w]|$)`, keyword))
 	h.mappings = append(h.mappings, Mapping{
-		pattern: pat,
-		style:   style,
-		lefti:   4,
-		righti:  5,
+		pattern:  pat,
+		style:    style,
+		lefti:    4,
+		righti:   5,
+		priority: priority,
 	})
 	return h
 }
 
 func (h *Highlighting) Analyze() *Highlighting {
-	h.styles = [][]tcell.Style{}
+	h.styles = [][]highlight{}
 	for lineno, line := range h.source {
-		h.styles = append(h.styles, make([]tcell.Style, len(line)))
+		h.styles = append(h.styles, make([]highlight, len(line)))
 		for _, mapping := range h.mappings {
 			l := string(line)
 			runeacc := 0
@@ -65,8 +86,20 @@ func (h *Highlighting) Analyze() *Highlighting {
 				left := utf8.RuneCountInString(l[:lefti])
 				right := utf8.RuneCountInString(l[:righti])
 				for col := runeacc + left; col < runeacc+right; col++ {
-					if h.styles[lineno][col] == STYLE_DEFAULT {
-						h.styles[lineno][col] = mapping.style
+					prevpri := h.styles[lineno][col].priority
+					prevcol := h.styles[lineno][col].begincol
+					// Previous priority of zero means there has
+					// been no styling yet applied. For this styling
+					// to apply, it has to be the first one or
+					// higher priority OR same priority beginning
+					// earlier on the line.
+					if prevpri == 0 || (mapping.priority >= prevpri &&
+						uint16(runeacc+left) < prevcol) {
+						h.styles[lineno][col] = highlight{
+							style:    mapping.style,
+							priority: mapping.priority,
+							begincol: uint16(runeacc + left),
+						}
 					} else {
 						break
 					}
@@ -84,5 +117,5 @@ func (h *Highlighting) Get(lineno, col int) tcell.Style {
 	if lineno >= len(h.styles) || col >= len(h.styles[lineno]) {
 		return STYLE_DEFAULT
 	}
-	return h.styles[lineno][col]
+	return h.styles[lineno][col].style
 }

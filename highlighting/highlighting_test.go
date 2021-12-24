@@ -5,7 +5,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/susji/ked/highlighting"
+	hl "github.com/susji/ked/highlighting"
 	tu "github.com/susji/ked/internal/testutil"
 )
 
@@ -18,11 +18,11 @@ func TestBasic(t *testing.T) {
 	sz := tcell.StyleDefault.Italic(true)
 	s3 := tcell.StyleDefault.StrikeThrough(true)
 
-	h := highlighting.New(msg).
-		Pattern("(//.+)", 0, 1, s3).
-		Keyword("of", s1).
-		Keyword("words", s2).
-		Keyword("notexist", sz).
+	h := hl.New(msg).
+		Pattern("(//.+)", 0, 1, s3, 255).
+		Keyword("of", s1, 1).
+		Keyword("words", s2, 1).
+		Keyword("notexist", sz, 1).
 		Analyze()
 
 	g0 := h.Get(0, 0)
@@ -42,8 +42,8 @@ func TestSequential(t *testing.T) {
 	}
 	s0 := tcell.StyleDefault
 	s := tcell.StyleDefault.Bold(true)
-	h := highlighting.New(msg).
-		Keyword(`func`, s).
+	h := hl.New(msg).
+		Keyword(`func`, s, 1).
 		Analyze()
 
 	g1 := h.Get(0, 0)
@@ -63,8 +63,8 @@ func TestNoSeparation(t *testing.T) {
 	}
 	s0 := tcell.StyleDefault
 	s := tcell.StyleDefault.Bold(true)
-	h := highlighting.New(msg).
-		Keyword(`func`, s).
+	h := hl.New(msg).
+		Keyword(`func`, s, 1).
 		Analyze()
 
 	g1 := h.Get(0, len("fu")-1)
@@ -78,22 +78,36 @@ func TestNoSeparation(t *testing.T) {
 	tu.Assert(t, s == g4, "got %x, want %x", g4, s)
 }
 
-func TestGreediness(t *testing.T) {
+func TestMixedPriorities(t *testing.T) {
 	msg := [][]rune{
-		[]rune(`// first match should win`),
+		[]rune(`"word // comment" outside`),
+		[]rune(`// "word"`),
 	}
-	s1 := tcell.StyleDefault.Italic(true)
-	s2 := tcell.StyleDefault.Bold(true)
-	h := highlighting.New(msg).
-		Pattern(`//.*`, 0, 1, s1).
-		Keyword(`first`, s2).
+	scomment := tcell.StyleDefault.Italic(true)
+	squoted := tcell.StyleDefault.Bold(true)
+
+	h := hl.New(msg).
+		Pattern(`[^\\]?("(.*?)([^\\]?"))`, 2, 3, squoted, 1).
+		Pattern(`//.*`, 0, 1, scomment, 1).
 		Analyze()
 
-	g1 := h.Get(0, len("/")-1)
-	g2 := h.Get(0, len("// fir")-1)
-	g3 := h.Get(0, len("// first match should win")-1)
+	// First line.
+	g1 := h.Get(0, len(`"word`)-1)
+	g2 := h.Get(0, len(`"word // com`)-1)
+	g3 := h.Get(0, len(`"word // comment"`)-1)
+	g4 := h.Get(0, len(`"word // comment" outsi`)-1)
 
-	tu.Assert(t, s1 == g1, "got %x, want %x", g1, s1)
-	tu.Assert(t, s1 == g2, "got %x, want %x", g2, s1)
-	tu.Assert(t, s1 == g3, "got %x, want %x", g3, s1)
+	tu.Assert(t, squoted == g1, "got %x, want %x", g1, squoted)
+	tu.Assert(t, squoted == g2, "got %x, want %x", g2, squoted)
+	tu.Assert(t, squoted == g3, "got %x, want %x", g3, squoted)
+	tu.Assert(t, hl.STYLE_DEFAULT == g4, "got %x, want %x", g4, hl.STYLE_DEFAULT)
+
+	// Second line
+	g5 := h.Get(1, len(`//`)-1)
+	g6 := h.Get(1, len(`// "wo`)-1)
+	g7 := h.Get(1, len(`// "word"`)-1)
+
+	tu.Assert(t, scomment == g5, "got %x, want %x", g5, scomment)
+	tu.Assert(t, scomment == g6, "got %x, want %x", g6, scomment)
+	tu.Assert(t, scomment == g7, "got %x, want %x", g7, scomment)
 }
