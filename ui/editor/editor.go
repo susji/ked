@@ -72,30 +72,21 @@ func (e *Editor) setactivebuf(bid buffers.BufferId) {
 
 func (e *Editor) sethighlighting() {
 	eb := e.buffers.Get(e.activebuf)
+	stquoted := tcell.StyleDefault.Dim(true)
+	stcommented := tcell.StyleDefault.Dim(true)
+	stfunc := tcell.StyleDefault.Bold(true)
+	stkeyword1 := tcell.StyleDefault.Bold(true)
+	stkeyword2 := tcell.StyleDefault.Underline(true)
 	eb.SetHighlighting(highlighting.New(eb.Buffer.ToRunes()).
 		// XXX Almost same pattern for three different quotes.
-		Pattern(
-			`[^\\]?("(.*?)([^\\]?"))`,
-			2,
-			3,
-			tcell.StyleDefault.Foreground(tcell.ColorBlue),
-			1).
-		Pattern(
-			`[^\\]?('(.*?)([^\\]?'))`,
-			2,
-			3,
-			tcell.StyleDefault.Foreground(tcell.ColorBlue),
-			1).
-		Pattern(
-			`[^\\]?(`+"`"+`(.*?)([^\\]?`+"`"+`))`,
-			2,
-			3,
-			tcell.StyleDefault.Foreground(tcell.ColorBlue), 1).
-		Pattern(`//.*`, 0, 1, tcell.StyleDefault.Foreground(tcell.ColorGrey), 1).
-		Pattern(`#.*`, 0, 1, tcell.StyleDefault.Foreground(tcell.ColorGrey), 1).
-		Pattern(`([-_\w]+)\(`, 2, 3, tcell.StyleDefault.Foreground(tcell.ColorPurple), 2).
-		Keyword("func|def|type|struct", tcell.StyleDefault.Bold(true), 3).
-		Keyword("return", tcell.StyleDefault.Underline(true), 3).
+		Pattern(`[^\\]?("(.*?)([^\\]?"))`, 2, 3, stquoted, 255).
+		Pattern(`[^\\]?('(.*?)([^\\]?'))`, 2, 3, stquoted, 255).
+		Pattern(`[^\\]?(`+"`"+`(.*?)([^\\]?`+"`"+`))`, 2, 3, stquoted, 255).
+		Pattern(`//.*`, 0, 1, stcommented, 255).
+		Pattern(`#.*`, 0, 1, stcommented, 255).
+		Pattern(`([-_\w]+)\(`, 2, 3, stfunc, 2).
+		Keyword("func|def|type|struct", stkeyword1, 1).
+		Keyword("return|true|false|True|False|not", stkeyword2, 1).
 		Analyze())
 }
 
