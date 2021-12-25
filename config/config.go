@@ -11,7 +11,7 @@ var WARNFILESZ = int64(10_485_760)
 var SAVEHOOKS = map[string][]string{}
 var TABSZ = 4
 var MAXFILES = 50_000
-var WORD_DELIMS = " \t&|,./(){}[]#+*%'-:?!'\""
+var WORD_DELIMS = " \t=&|,./(){}[]#+*%'-:?!'\""
 var IGNOREDIRS = map[string]bool{
 	".git":         true,
 	"node_modules": true,
