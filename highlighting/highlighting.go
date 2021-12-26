@@ -117,6 +117,28 @@ func (h *Highlighting) Analyze() *Highlighting {
 	return h
 }
 
+func (h *Highlighting) DeleteLine(lineno int) *Highlighting {
+	copy(h.styles[lineno:], h.styles[lineno+1:])
+	h.styles[len(h.styles)-1] = nil
+	h.styles = h.styles[:len(h.styles)-1]
+
+	return h
+}
+
+func (h *Highlighting) ModifyLine(lineno int, newline []rune) *Highlighting {
+	h.styles[lineno] = make([]highlight, len(newline))
+	h.analyzeline(lineno, newline)
+	return h
+}
+
+func (h *Highlighting) InsertLine(lineno int, newline []rune) *Highlighting {
+	h.styles = append(h.styles, []highlight{})
+	copy(h.styles[lineno+1:], h.styles[lineno:])
+	h.styles[lineno] = make([]highlight, len(newline))
+	h.analyzeline(lineno, newline)
+	return h
+}
+
 func (h *Highlighting) Get(lineno, col int) tcell.Style {
 	if lineno >= len(h.styles) || col >= len(h.styles[lineno]) {
 		return STYLE_DEFAULT
