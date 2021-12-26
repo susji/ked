@@ -111,3 +111,36 @@ func TestMixedPriorities(t *testing.T) {
 	tu.Assert(t, scomment == g6, "got %x, want %x", g6, scomment)
 	tu.Assert(t, scomment == g7, "got %x, want %x", g7, scomment)
 }
+
+func TestPartialRenalysis(t *testing.T) {
+	msg := [][]rune{
+		[]rune("first line"),
+	}
+
+	s0 := tcell.StyleDefault
+	s := tcell.StyleDefault.Bold(true)
+	h := hl.New(msg).
+		Keyword(`rare-keyword`, s, 1).
+		Analyze()
+
+	g1 := h.Get(0, len("fi")-1)
+	g2 := h.Get(0, len("first li")-1)
+
+	tu.Assert(t, s0 == g1, "got %x, want %x", g1, s0)
+	tu.Assert(t, s0 == g2, "got %x, want %x", g2, s0)
+
+	modline := []rune("first line with rare-keyword")
+	newline := []rune("rare-keyword first")
+	h.ModifyLine(0, modline)
+	h.InsertLine(1, newline)
+
+	g3 := h.Get(0, len("first line")-1)
+	g4 := h.Get(0, len("first line with rare")-1)
+	g5 := h.Get(1, len("ra")-1)
+	g6 := h.Get(1, len("rare-keyword firs")-1)
+
+	tu.Assert(t, s0 == g3, "got %x, want %x", g3, s0)
+	tu.Assert(t, s == g4, "got %x, want %x", g4, s)
+	tu.Assert(t, s == g5, "got %x, want %x", g5, s)
+	tu.Assert(t, s0 == g6, "got %x, want %x", g6, s0)
+}
