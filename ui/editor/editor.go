@@ -90,6 +90,11 @@ func (e *Editor) sethighlighting() {
 		Analyze())
 }
 
+func (e *Editor) highlightline(lineno int) {
+	eb := e.buffers.Get(e.activebuf)
+	eb.Hilite.ModifyLine(lineno, eb.Buffer.GetLine(lineno))
+}
+
 func (e *Editor) NewFromBuffer(filepath string, buf *buffer.Buffer) (buffers.BufferId, error) {
 	bid := e.buffers.New(filepath, buf)
 	e.setactivebuf(bid)
@@ -190,6 +195,7 @@ func (e *Editor) insertrune(r rune) {
 	eb.Update(
 		eb.Buffer.Perform(
 			buffer.NewInsert(eb.CursorLine(), eb.CursorCol(), []rune{r})))
+	e.highlightline(eb.CursorLine())
 }
 
 func (e *Editor) insertlinefeed() {
@@ -197,13 +203,26 @@ func (e *Editor) insertlinefeed() {
 	eb.Update(
 		eb.Buffer.Perform(
 			buffer.NewLinefeed(eb.Cursor())))
+	e.highlightline(eb.CursorLine() - 1)
+	eb.Hilite.InsertLine(eb.CursorLine(), eb.Buffer.GetLine(eb.CursorLine()))
 }
 
 func (e *Editor) backspace() {
 	eb := e.buffers.Get(e.activebuf)
+	linenobefore := eb.CursorLine()
 	eb.Update(
 		eb.Buffer.Perform(
 			buffer.NewBackspace(eb.Cursor())))
+	linenoafter := eb.CursorLine()
+	if linenobefore == linenoafter {
+		e.highlightline(eb.CursorLine())
+	} else {
+		eb.Hilite.DeleteLine(linenobefore)
+		e.highlightline(eb.CursorLine())
+		if eb.CursorLine() < eb.Buffer.Lines()-1 {
+			e.highlightline(eb.CursorLine() + 1)
+		}
+	}
 }
 
 func (e *Editor) movevertical(up bool) {
@@ -267,9 +286,6 @@ func (e *Editor) moveline(start bool) {
 
 func (e *Editor) setmodified(status bool) {
 	e.modified[e.activebuf] = status
-	if status {
-		e.sethighlighting()
-	}
 }
 
 func (e *Editor) ismodified() bool {
@@ -423,9 +439,12 @@ func (e *Editor) delline() {
 	eb := e.buffers.Get(e.activebuf)
 	if eb.Buffer.LineLength(eb.CursorLine()) == 0 {
 		eb.Update(eb.Buffer.Perform(buffer.NewDelLine(eb.CursorLine())))
+		eb.Hilite.DeleteLine(eb.CursorLine() + 1)
+		e.highlightline(eb.CursorLine())
 		return
 	}
 	eb.Update(eb.Buffer.Perform(buffer.NewDelLineContent(eb.CursorLine(), eb.CursorCol())))
+	e.highlightline(eb.CursorLine())
 }
 
 func (e *Editor) jumpword(left bool) {
@@ -463,6 +482,7 @@ func (e *Editor) replace() {
 		eb.SetCursor(lineno, col)
 		eb.Viewport.SetTeleported(eb.CursorLine())
 		e.setmodified(true)
+		e.highlightline(lineno)
 	}
 
 }
@@ -589,6 +609,8 @@ func (e *Editor) undo() {
 	eb := e.buffers.Get(e.activebuf)
 	if res := eb.Buffer.UndoModification(); res != nil {
 		eb.Update(*res)
+		// XXX We reanalyse the whole file after undo.
+		e.sethighlighting()
 	}
 	if !eb.Buffer.Modified() {
 		e.setmodified(false)
@@ -603,6 +625,7 @@ func (e *Editor) backtab() {
 			buffer.NewDetabulate(eb.Cursor())))
 	if len0 != eb.Buffer.LineLength(eb.CursorLine()) {
 		e.setmodified(true)
+		e.highlightline(eb.CursorLine())
 	}
 }
 
@@ -611,6 +634,7 @@ func (e *Editor) delword() {
 	eb.Update(
 		eb.Buffer.Perform(
 			buffer.NewDelWord(eb.Cursor())))
+	e.highlightline(eb.CursorLine())
 }
 
 func (e *Editor) openbuffer() {
