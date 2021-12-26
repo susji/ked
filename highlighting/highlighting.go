@@ -69,46 +69,50 @@ func (h *Highlighting) Keyword(
 	return h
 }
 
+func (h *Highlighting) analyzeline(lineno int, line []rune) {
+	for _, mapping := range h.mappings {
+		l := string(line)
+		runeacc := 0
+		for len(l) > 0 {
+			ix := mapping.pattern.FindStringSubmatchIndex(l)
+			if ix == nil {
+				break
+			}
+			lefti := ix[mapping.lefti]
+			righti := ix[mapping.righti]
+			left := utf8.RuneCountInString(l[:lefti])
+			right := utf8.RuneCountInString(l[:righti])
+			for col := runeacc + left; col < runeacc+right; col++ {
+				prevpri := h.styles[lineno][col].priority
+				prevcol := h.styles[lineno][col].begincol
+				// Previous priority of zero means there has
+				// been no styling yet applied. For this styling
+				// to apply, it has to be the first one or
+				// higher priority OR same priority beginning
+				// earlier on the line.
+				if prevpri == 0 || (mapping.priority >= prevpri &&
+					uint16(runeacc+left) < prevcol) {
+					h.styles[lineno][col] = highlight{
+						style:    mapping.style,
+						priority: mapping.priority,
+						begincol: uint16(runeacc + left),
+					}
+				} else {
+					break
+				}
+			}
+			// We skip over this many runes due to present match.
+			runeacc += right
+			l = l[righti:]
+		}
+	}
+}
+
 func (h *Highlighting) Analyze() *Highlighting {
 	h.styles = [][]highlight{}
 	for lineno, line := range h.source {
 		h.styles = append(h.styles, make([]highlight, len(line)))
-		for _, mapping := range h.mappings {
-			l := string(line)
-			runeacc := 0
-			for len(l) > 0 {
-				ix := mapping.pattern.FindStringSubmatchIndex(l)
-				if ix == nil {
-					break
-				}
-				lefti := ix[mapping.lefti]
-				righti := ix[mapping.righti]
-				left := utf8.RuneCountInString(l[:lefti])
-				right := utf8.RuneCountInString(l[:righti])
-				for col := runeacc + left; col < runeacc+right; col++ {
-					prevpri := h.styles[lineno][col].priority
-					prevcol := h.styles[lineno][col].begincol
-					// Previous priority of zero means there has
-					// been no styling yet applied. For this styling
-					// to apply, it has to be the first one or
-					// higher priority OR same priority beginning
-					// earlier on the line.
-					if prevpri == 0 || (mapping.priority >= prevpri &&
-						uint16(runeacc+left) < prevcol) {
-						h.styles[lineno][col] = highlight{
-							style:    mapping.style,
-							priority: mapping.priority,
-							begincol: uint16(runeacc + left),
-						}
-					} else {
-						break
-					}
-				}
-				// We skip over this many runes due to present match.
-				runeacc += right
-				l = l[righti:]
-			}
-		}
+		h.analyzeline(lineno, line)
 	}
 	return h
 }
