@@ -52,10 +52,11 @@ func (b *Buffer) UndoModification() *ActionResult {
 	if len(b.mods) == 0 {
 		return nil
 	}
+	var mod *modification
 restart:
 	n := len(b.mods) - 1
-	mod := b.mods[n]
-	b.mods = b.mods[:n]
+	mod, b.mods = b.mods[n], b.mods[:n]
+
 	log.Printf("[UndoModification]: %+v\n", mod)
 	switch mod.kind {
 	case MOD_INSERTRUNES:
@@ -70,9 +71,11 @@ restart:
 		newline.Insert(b.lines[lineno].Get())
 		newline.SetCursor(newline.Length())
 		newline.Insert(b.lines[lineno+1].Get())
-		left := b.lines[:lineno]
-		right := b.lines[lineno+1:]
-		b.lines = append(left, right...)
+
+		copy(b.lines[lineno:], b.lines[lineno+1:])
+		b.lines[len(b.lines)-1] = nil
+		b.lines = b.lines[:len(b.lines)-1]
+
 		b.lines[lineno] = newline
 	case MOD_DELETERUNES:
 		lineno := mod.lineno
@@ -160,9 +163,11 @@ func (b *Buffer) deleteline(act *Action) ActionResult {
 	if lineno < 0 || len(b.lines) < lineno {
 		panic(fmt.Sprintf("deleteline: invalid lineno=%d", lineno))
 	}
-	left := b.lines[:lineno]
-	right := b.lines[lineno+1:]
-	b.lines = append(left, right...)
+
+	copy(b.lines[lineno:], b.lines[lineno+1:])
+	b.lines[len(b.lines)-1] = nil
+	b.lines = b.lines[:len(b.lines)-1]
+
 	b.modify(&modification{
 		kind:   MOD_DELETELINE,
 		lineno: lineno,
