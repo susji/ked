@@ -27,3 +27,9 @@
 -   [x] Savehooks should be specified with glob patterns
 -   [x] Implement an UI dialog for asking single-key answers
 -   [x] Confirmation dialogs for quitting & closing nonsaved buffers
+-   [ ] Delay buffer opens for command-line arguments until we have a
+    full editor with a printable screen & functioning status messages
+-   [ ] When doing buffer opens, warn about files which seem less than
+    printable
+-   [ ] When doing buffer opens, handle files with extremely long lines
+    more robustly
