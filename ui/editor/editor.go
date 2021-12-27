@@ -219,9 +219,6 @@ func (e *Editor) backspace() {
 	} else {
 		eb.Hilite.DeleteLine(linenobefore)
 		e.highlightline(eb.CursorLine())
-		if eb.CursorLine() < eb.Buffer.Lines()-1 {
-			e.highlightline(eb.CursorLine() + 1)
-		}
 	}
 }
 
