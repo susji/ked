@@ -55,6 +55,8 @@ func NewWithScreen(s tcell.Screen) *Editor {
 func (e *Editor) NewBuffer(filepath string, r io.Reader) (buffers.BufferId, error) {
 	buf, err := buffer.NewFromReader(r)
 	if err != nil {
+		log.Printf("[NewBuffer] %v\n", err)
+		e.statusmsg(fmt.Sprintf("Buffer open failed: %v", err))
 		return 0, err
 	}
 	return e.NewFromBuffer(filepath, buf)
