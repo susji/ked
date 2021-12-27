@@ -334,6 +334,7 @@ func (v *Viewport) Render(
 			viewed = true
 			v.limitdown = n - 1
 			v.pagedown = n
+			break
 		} else if !inview && !viewed {
 			// We keep a memo of how many preceding buffer
 			// lines we need to scroll half a page
