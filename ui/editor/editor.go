@@ -542,6 +542,10 @@ func (e *Editor) search() {
 
 func (e *Editor) statusmsg(msg string) {
 	log.Println("[drawstatusmsg] ", msg)
+	if e.s == nil {
+		log.Println("[drawstatusmsg] screen not yet initialized")
+		return
+	}
 	w, h := e.s.Size()
 	m := []rune(fmt.Sprintf("<> %s [*]", msg))
 	for _, msgpart := range util.SplitRunesOnWidth(m, w) {
