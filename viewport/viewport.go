@@ -223,7 +223,6 @@ func (v *Viewport) checktranslation(cursorlineno int) {
 func (v *Viewport) Render(
 	w, h, cursorlineno, cursorcol int,
 	hilite *highlighting.Highlighting) *Rendering {
-rescroll:
 	if v.paged {
 		v.paged = false
 	} else {
@@ -409,10 +408,6 @@ rescroll:
 	//	inview, viewed, downscrollfound)
 	//log.Printf("[......] scrollup=%d  scrolldown=%d  limitdown=%d  pageup=%d  pagedown=%d\n",
 	//	v.scrollup, v.scrolldown, v.limitdown, v.pageup, v.pagedown)
-
-	if cursorlineno < v.y0 || cursorlineno > v.limitdown {
-		goto rescroll
-	}
 
 	return &Rendering{
 		buf:     renderlines,
