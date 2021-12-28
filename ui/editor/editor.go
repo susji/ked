@@ -432,6 +432,7 @@ func (e *Editor) jumpline() {
 		lineno = eb.Buffer.Lines()
 	}
 	eb.SetCursor(lineno-1, 0)
+	eb.Viewport.SetTeleported(eb.CursorLine())
 }
 
 func (e *Editor) delline() {
@@ -594,6 +595,9 @@ func (e *Editor) drawstatusline() {
 
 func (e *Editor) jumpempty(up bool) {
 	eb := e.buffers.Get(e.activebuf)
+	defer func() {
+		eb.Viewport.SetTeleported(eb.CursorLine())
+	}()
 moveagain:
 	e.movevertical(up)
 	if strings.TrimSpace(string(eb.Buffer.GetLine(eb.CursorLine()))) == "" {
