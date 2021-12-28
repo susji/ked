@@ -300,49 +300,49 @@ func (v *Viewport) Render(
 	// not accounted for. I'm guessing really long lines may cause
 	// wild viewport and scrolling behavior.
 	//
-	inview := false
+	const (
+		VIEWPORT_BEFORE = iota
+		VIEWPORT_FIRST_HALF
+		VIEWPORT_SECOND_HALF
+		VIEWPORT_AFTER
+	)
+	state := VIEWPORT_BEFORE
+
 	linesdrawnpreview := 0
 	linesdrawninview := 0
 	linesbufinview := 0
-	viewed := false
 	hss := &historySumStack{}
-	downscrollfound := false
-	for ; n < lastbufline; n++ {
+	for ; n < lastbufline && state != VIEWPORT_AFTER; n++ {
 		line := v.buffer.GetLine(n)
 		//log.Printf("[Render=%d] line=%q\n", linenobuf, string(line))
 		renderedlines, _cx, _cy := v.doRenderWrapped(
 			w, cursorlineno, cursorcol, n, linenodrawn, line, hilite)
 
-		if n >= v.y0 && !inview && !viewed {
-			// Arrived into visible viewport.
-			// log.Printf("[Render] into view, linenobuf=%d\n", linenobuf)
-			inview = true
-			if backlines, err := hss.CountBackwards(h / 2); err == nil {
-				v.scrollup = v.y0 - backlines
+		switch state {
+		case VIEWPORT_BEFORE:
+			if n >= v.y0 {
+				// Arrived into visible viewport.
+				// log.Printf("[Render] into view, linenobuf=%d\n", linenobuf)
+				state = VIEWPORT_FIRST_HALF
+				if backlines, err := hss.CountBackwards(h / 2); err == nil {
+					v.scrollup = v.y0 - backlines
+				} else {
+					v.scrollup = 0
+				}
+				if backlines, err := hss.CountBackwards(h); err == nil {
+					v.pageup = v.y0 - backlines
+				} else {
+					v.pageup = v.scrollup
+				}
 			} else {
-				v.scrollup = 0
+				// We keep a memo of how many preceding buffer
+				// lines we need to scroll half a page
+				// upwards. This matches when we are still
+				// upwards from our viewport.
+				hss.Push(len(renderedlines))
+				linesdrawnpreview += len(renderedlines)
 			}
-			if backlines, err := hss.CountBackwards(h); err == nil {
-				v.pageup = v.y0 - backlines
-			} else {
-				v.pageup = v.scrollup
-			}
-		} else if linesdrawninview >= h && inview && !viewed {
-			// Crossed below visible viewport.
-			// log.Printf("[Render] out of view, linenobuf=%d\n", linenobuf)
-			inview = false
-			viewed = true
-			v.limitdown = n - 1
-			v.pagedown = n
-			break
-		} else if !inview && !viewed {
-			// We keep a memo of how many preceding buffer
-			// lines we need to scroll half a page
-			// upwards. This matches when we are still
-			// upwards from our viewport.
-			hss.Push(len(renderedlines))
-			linesdrawnpreview += len(renderedlines)
-		} else if inview && !viewed && !downscrollfound {
+		case VIEWPORT_FIRST_HALF:
 			// Similar to the case of counting
 			// logical/wrapped lines before entering the
 			// viewport, we have to handle the
@@ -350,17 +350,25 @@ func (v *Viewport) Render(
 			// many buffer lines we need to jump to get a
 			// decent line to scroll the viewport down.
 			v.scrolldown = v.y0 + linesbufinview
-			if linesdrawninview >= h/2 && !downscrollfound {
-				downscrollfound = true
+			if linesdrawninview >= h/2 {
+				state = VIEWPORT_SECOND_HALF
+			}
+		case VIEWPORT_SECOND_HALF:
+			if linesdrawninview >= h {
+				// Crossed below visible viewport.
+				// log.Printf("[Render] out of view, linenobuf=%d\n", linenobuf)
+				state = VIEWPORT_AFTER
+				v.limitdown = n - 1
+				v.pagedown = n
 			}
 		}
 		//
 		// Only lines drawn within the current viewport are
 		// sent back. We also have to do bookkeeping here to
-		// figure out what is the actual buffer that's drawn
-		// last.
+		// figure out what is the actual buffer line that's
+		// drawn last.
 		//
-		if inview {
+		if state == VIEWPORT_FIRST_HALF || state == VIEWPORT_SECOND_HALF {
 			// The scanning window thing we have here
 			// hopefully gets a peek at the stuff after
 			// our viewport. However, if we are operating
@@ -393,7 +401,7 @@ func (v *Viewport) Render(
 	// that case, we do not have scanned values for down-limits
 	// yet. This means that we assume that the rest of the buffer
 	// is filled with empty lines and deduce the correct limits.
-	if !viewed {
+	if state != VIEWPORT_AFTER {
 		missinglines := h - linesdrawninview
 		//log.Printf("[------] linesdrawinview=%d  missinglines=%d\n",
 		//	linesdrawninview, missinglines)
