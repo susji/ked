@@ -349,7 +349,7 @@ func (v *Viewport) Render(
 			// within-viewport thing, too. So we count how
 			// many buffer lines we need to jump to get a
 			// decent line to scroll the viewport down.
-			v.scrolldown = v.y0 + linesdrawninview - 1
+			v.scrolldown = v.y0 + linesbufinview
 			if linesdrawninview >= h/2 && !downscrollfound {
 				downscrollfound = true
 			}
