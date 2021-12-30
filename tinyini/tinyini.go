@@ -12,7 +12,7 @@ type Section map[string]string
 
 type IniError struct {
 	wrapped error
-	line    int
+	Line    int
 }
 
 var matchersection = regexp.MustCompile(`^\s*\[(.+?)\]\s*$`)
@@ -21,13 +21,17 @@ var matcherkeyvalq = regexp.MustCompile(`^\s*(.+?)\s*=\s*"((\\.|[^"\\])*)"`)
 var matcherempty = regexp.MustCompile(`^\s*$`)
 
 func (i *IniError) Error() string {
-	return fmt.Sprintf("%d: %v", i.line, i.wrapped)
+	return fmt.Sprintf("%d: %v", i.Line, i.wrapped)
+}
+
+func (i *IniError) Unwrap() error {
+	return i.wrapped
 }
 
 func newError(line int, msg string) *IniError {
 	return &IniError{
 		wrapped: errors.New(msg),
-		line:    line,
+		Line:    line,
 	}
 }
 
