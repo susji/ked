@@ -81,9 +81,9 @@ func (e *Editor) sethighlighting() {
 	stkeyword2 := tcell.StyleDefault.Underline(true)
 	eb.SetHighlighting(highlighting.New(eb.Buffer.ToRunes()).
 		// XXX Almost same pattern for three different quotes.
-		Pattern(`[^\\]?("(.*?)([^\\]?"))`, 2, 3, stquoted, 255).
-		Pattern(`[^\\]?('(.*?)([^\\]?'))`, 2, 3, stquoted, 255).
-		Pattern(`[^\\]?(`+"`"+`(.*?)([^\\]?`+"`"+`))`, 2, 3, stquoted, 255).
+		Pattern(`("(\\.|[^"\\])*")`, 0, 1, stquoted, 255).
+		Pattern(`('(\\.|[^'\\])*')`, 0, 1, stquoted, 255).
+		Pattern("(`(\\\\.|[^`\\\\])*`)", 0, 1, stquoted, 255).
 		Pattern(`//.*`, 0, 1, stcommented, 255).
 		Pattern(`#.*`, 0, 1, stcommented, 255).
 		Pattern(`([-_\w]+)\(`, 2, 3, stfunc, 2).
