@@ -13,6 +13,7 @@ func TestBasic(t *testing.T) {
 globalkey = globalvalue
 [section]
 key = value
+anotherkey = "  has whitespace   "
 `
 	res, errs := tinyini.Parse(strings.NewReader(c))
 	tu.Assert(t, len(errs) == 0, "should have no error, got %v", errs)
@@ -20,4 +21,8 @@ key = value
 	tu.Assert(t, res["section"] != nil, "missing section")
 	tu.Assert(t, res[""]["globalkey"] == "globalvalue", "missing global value")
 	tu.Assert(t, res["section"]["key"] == "value", "missing sectioned value")
+	tu.Assert(
+		t,
+		res["section"]["anotherkey"] == "  has whitespace   ",
+		"missing quoted value")
 }

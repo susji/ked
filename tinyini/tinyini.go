@@ -17,6 +17,7 @@ type IniError struct {
 
 var matchersection = regexp.MustCompile(`^\s*\[(.+?)\]\s*$`)
 var matcherkeyval = regexp.MustCompile(`^\s*(.+?)\s*=\s*(.+?)\s*$`)
+var matcherkeyvalq = regexp.MustCompile(`^\s*(.+?)\s*=\s*"((\\.|[^"\\])*)"`)
 var matcherempty = regexp.MustCompile(`^\s*$`)
 
 func (i *IniError) Error() string {
@@ -43,14 +44,19 @@ func Parse(r io.Reader) (map[string]Section, []error) {
 	res := map[string]Section{}
 	cursection := ""
 	reterr := []error{}
+
+	akv := func(key, val string) {
+		if _, ok := res[cursection]; !ok {
+			res[cursection] = Section{}
+		}
+		res[cursection][key] = val
+	}
+
 	for i, line := range lines {
-		if m := matcherkeyval.FindStringSubmatch(line); m != nil {
-			key := m[1]
-			val := m[2]
-			if _, ok := res[cursection]; !ok {
-				res[cursection] = Section{}
-			}
-			res[cursection][key] = val
+		if m := matcherkeyvalq.FindStringSubmatch(line); m != nil {
+			akv(m[1], m[2])
+		} else if m := matcherkeyval.FindStringSubmatch(line); m != nil {
+			akv(m[1], m[2])
 		} else if m := matchersection.FindStringSubmatch(line); m != nil {
 			cursection = m[1]
 		} else if m := matcherempty.FindStringIndex(line); m != nil {
