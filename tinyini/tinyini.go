@@ -2,20 +2,62 @@ package tinyini
 
 import (
 	"bufio"
+	"errors"
+	"fmt"
 	"io"
+	"regexp"
 )
 
 type Section map[string]string
 
-func Parse(r io.Reader) (map[string]Section, error) {
+type IniError struct {
+	wrapped error
+	line    int
+}
+
+var matchersection = regexp.MustCompile(`^\s*\[(.+?)\]\s*$`)
+var matcherkeyval = regexp.MustCompile(`^\s*(.+?)\s*=\s*(.+?)\s*$`)
+var matcherempty = regexp.MustCompile(`^\s*$`)
+
+func (i *IniError) Error() string {
+	return fmt.Sprintf("%d: %v", i.line, i.wrapped)
+}
+
+func newError(line int, msg string) *IniError {
+	return &IniError{
+		wrapped: errors.New(msg),
+		line:    line,
+	}
+}
+
+func Parse(r io.Reader) (map[string]Section, []error) {
 	s := bufio.NewScanner(r)
 	lines := []string{}
 	for s.Scan() {
 		lines = append(lines, s.Text())
 	}
 	if err := s.Err(); err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
 
-	return nil, nil
+	res := map[string]Section{}
+	cursection := ""
+	reterr := []error{}
+	for i, line := range lines {
+		if m := matcherkeyval.FindStringSubmatch(line); m != nil {
+			key := m[1]
+			val := m[2]
+			if _, ok := res[cursection]; !ok {
+				res[cursection] = Section{}
+			}
+			res[cursection][key] = val
+		} else if m := matchersection.FindStringSubmatch(line); m != nil {
+			cursection = m[1]
+		} else if m := matcherempty.FindStringIndex(line); m != nil {
+			continue
+		} else {
+			reterr = append(reterr, newError(i+1, "not section nor key-value"))
+		}
+	}
+	return res, reterr
 }

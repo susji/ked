@@ -14,9 +14,10 @@ globalkey = globalvalue
 [section]
 key = value
 `
-
-	res, err := tinyini.Parse(strings.NewReader(c))
-	tu.Assert(t, err == nil, "should have no error, got %v", err)
+	res, errs := tinyini.Parse(strings.NewReader(c))
+	tu.Assert(t, len(errs) == 0, "should have no error, got %v", errs)
+	tu.Assert(t, res[""] != nil, "missing global section")
+	tu.Assert(t, res["section"] != nil, "missing section")
 	tu.Assert(t, res[""]["globalkey"] == "globalvalue", "missing global value")
 	tu.Assert(t, res["section"]["key"] == "value", "missing sectioned value")
 }
