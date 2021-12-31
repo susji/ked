@@ -16,6 +16,7 @@ globalkey = globalvalue
 [section]
 key = first-value
 key = second-value
+empty=
 anotherkey = "  has whitespace   "
 `
 	res, errs := tinyini.Parse(strings.NewReader(c))
@@ -30,6 +31,10 @@ anotherkey = "  has whitespace   "
 		t,
 		reflect.DeepEqual(res["section"]["key"], []string{"first-value", "second-value"}),
 		"missing sectioned values")
+	tu.Assert(
+		t,
+		reflect.DeepEqual(res["section"]["empty"], []string{""}),
+		"missing empty value")
 	tu.Assert(
 		t,
 		reflect.DeepEqual(res["section"]["anotherkey"], []string{"  has whitespace   "}),
