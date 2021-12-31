@@ -15,7 +15,7 @@ type IniError struct {
 	Line    int
 }
 
-var matchersection = regexp.MustCompile(`^\s*\[(.+?)\]\s*$`)
+var matchersection = regexp.MustCompile(`^\s*\[(.+?)\]`)
 var matcherkeyval = regexp.MustCompile(`^\s*(.+?)\s*=\s*(.+?)\s*$`)
 var matcherkeyvalq = regexp.MustCompile(`^\s*(.+?)\s*=\s*"((\\.|[^"\\])*)"`)
 var matcherempty = regexp.MustCompile(`^\s*$`)
