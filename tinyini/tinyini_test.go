@@ -2,6 +2,7 @@ package tinyini_test
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -13,18 +14,25 @@ func TestBasic(t *testing.T) {
 	c := `
 globalkey = globalvalue
 [section]
-key = value
+key = first-value
+key = second-value
 anotherkey = "  has whitespace   "
 `
 	res, errs := tinyini.Parse(strings.NewReader(c))
 	tu.Assert(t, len(errs) == 0, "should have no error, got %v", errs)
 	tu.Assert(t, res[""] != nil, "missing global section")
 	tu.Assert(t, res["section"] != nil, "missing section")
-	tu.Assert(t, res[""]["globalkey"] == "globalvalue", "missing global value")
-	tu.Assert(t, res["section"]["key"] == "value", "missing sectioned value")
 	tu.Assert(
 		t,
-		res["section"]["anotherkey"] == "  has whitespace   ",
+		reflect.DeepEqual(res[""]["globalkey"], []string{"globalvalue"}),
+		"unexpected global value: %#v", res[""]["globalkey"])
+	tu.Assert(
+		t,
+		reflect.DeepEqual(res["section"]["key"], []string{"first-value", "second-value"}),
+		"missing sectioned values")
+	tu.Assert(
+		t,
+		reflect.DeepEqual(res["section"]["anotherkey"], []string{"  has whitespace   "}),
 		"missing quoted value")
 }
 
