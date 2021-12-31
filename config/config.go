@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/susji/ked/tinyini"
@@ -62,7 +63,17 @@ func SetConfigFile(fn string) {
 	CONFFILES = []string{fn}
 }
 
+func confbool(val string) bool {
+	switch strings.ToLower(val) {
+	case "yes", "true", "1":
+		return true
+	default:
+		return false
+	}
+}
+
 func HandleConfigFile() {
+	var c map[string]tinyini.Section
 	for _, candidate := range CONFFILES {
 		f, err := os.Open(candidate)
 		if err != nil {
@@ -71,7 +82,8 @@ func HandleConfigFile() {
 		}
 		defer f.Close()
 
-		confs, errs := tinyini.Parse(f)
+		var errs []error
+		c, errs = tinyini.Parse(f)
 		if len(errs) > 0 {
 			log.Println("Configuration file parse errors: ", len(errs))
 			for _, err := range errs {
@@ -79,8 +91,25 @@ func HandleConfigFile() {
 			}
 			continue
 		}
-		log.Println("Got config:", confs)
+		log.Println("Got config:", c)
 		break
+	}
+
+	// Global section
+	if g, ok := c[""]; ok {
+		if tabszraw, ok := g["tabsize"]; ok {
+			if tabsz, err := strconv.Atoi(tabszraw[0]); err != nil {
+				log.Println("Invalid tabsize: ", err)
+			} else {
+				TABSZ = tabsz
+				log.Println("TABSZ", TABSZ)
+			}
+		}
+
+		if tabspaces, ok := g["tabspaces"]; ok {
+			TABSSPACES = confbool(tabspaces[0])
+			log.Println("TABSSPACES", TABSSPACES)
+		}
 	}
 }
 
