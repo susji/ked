@@ -8,7 +8,7 @@ import (
 	"regexp"
 )
 
-type Section map[string]string
+type Section map[string][]string
 
 type IniError struct {
 	wrapped error
@@ -53,7 +53,10 @@ func Parse(r io.Reader) (map[string]Section, []error) {
 		if _, ok := res[cursection]; !ok {
 			res[cursection] = Section{}
 		}
-		res[cursection][key] = val
+		if _, ok := res[cursection][key]; !ok {
+			res[cursection][key] = []string{}
+		}
+		res[cursection][key] = append(res[cursection][key], val)
 	}
 
 	for i, line := range lines {
