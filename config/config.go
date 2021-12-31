@@ -114,6 +114,15 @@ func HandleConfigFile() {
 			TABSSPACES = confbool(tabspaces[0])
 			log.Println("TABSSPACES", TABSSPACES)
 		}
+
+		// Clear ignoredirs if they are explicitly configured.
+		if _, ok := g["ignoredir"]; ok {
+			IGNOREDIRS = map[string]bool{}
+		}
+		for _, ignoredir := range g["ignoredir"] {
+			log.Println("IGNOREDIR", ignoredir)
+			IGNOREDIRS[ignoredir] = true
+		}
 	}
 
 	// Handle filetype-related sections.
