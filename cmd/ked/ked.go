@@ -76,6 +76,8 @@ func main() {
 	}
 	log.Printf("ked %s (%s)\n", version, buildtime)
 
+	config.HandleConfigFile()
+
 	// Initial editor context consists of a canvas and an optional
 	// list file-backed buffers.
 	e := editor.New()

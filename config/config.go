@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/susji/ked/tinyini"
 )
 
 var CONFFILES = getConfigFiles()
@@ -58,6 +60,28 @@ func SetConfigFile(fn string) {
 		return
 	}
 	CONFFILES = []string{fn}
+}
+
+func HandleConfigFile() {
+	for _, candidate := range CONFFILES {
+		f, err := os.Open(candidate)
+		if err != nil {
+			log.Println("Configuring error: ", err)
+			continue
+		}
+		defer f.Close()
+
+		confs, errs := tinyini.Parse(f)
+		if len(errs) > 0 {
+			log.Println("Configuration file parse errors: ", len(errs))
+			for _, err := range errs {
+				log.Println(err)
+			}
+			continue
+		}
+		log.Println("Got config:", confs)
+		break
+	}
 }
 
 func getConfigFiles() (files []string) {
