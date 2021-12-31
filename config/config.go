@@ -41,6 +41,10 @@ func GetIgnoreDirsFlat() string {
 	return strings.Join(ret, ",")
 }
 
+func dosavehook(raw string) []string {
+	return regexp.MustCompile(" +").Split(raw, -1)
+}
+
 func SetSaveHooks(rawsavehooks string) error {
 	SAVEHOOKS = map[string][]string{}
 	if len(rawsavehooks) == 0 {
@@ -51,7 +55,7 @@ func SetSaveHooks(rawsavehooks string) error {
 		if len(parts) != 2 {
 			return fmt.Errorf("unexpected savehook given: %q", rawhook)
 		}
-		SAVEHOOKS[parts[0]] = regexp.MustCompile(" +").Split(parts[1], -1)
+		SAVEHOOKS[parts[0]] = dosavehook(parts[1])
 	}
 	return nil
 }
@@ -109,6 +113,22 @@ func HandleConfigFile() {
 		if tabspaces, ok := g["tabspaces"]; ok {
 			TABSSPACES = confbool(tabspaces[0])
 			log.Println("TABSSPACES", TABSSPACES)
+		}
+	}
+
+	// Handle filetype-related sections.
+	for section, keyvals := range c {
+		if !strings.HasPrefix(section, "filetype:") {
+			continue
+		}
+
+		pattern := section[len("filetype:"):]
+		log.Println("pattern", pattern)
+		log.Println("keyvals", keyvals)
+
+		if savehooks, ok := keyvals["savehook"]; ok {
+			SAVEHOOKS[pattern] = dosavehook(savehooks[0])
+			log.Println(pattern, "savehook:", savehooks[0])
 		}
 	}
 }
