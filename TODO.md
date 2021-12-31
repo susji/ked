@@ -20,6 +20,7 @@
 -   [x] Editor should indicate whether a buffer was changed since last
     saving
 -   [x] Implement simple syntax highlighting
+-   [x] Use configuration file for basic configuration
 -   [ ] Make highlighting configurable
 -   [ ] Savehook execution should have a timeout
 -   [ ] File browsing should maybe follow symlinks
