@@ -2,10 +2,14 @@ package config
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
 
+var CONFFILES = getConfigFiles()
 var TABSSPACES = false
 var WARNFILESZ = int64(10_485_760)
 var SAVEHOOKS = map[string][]string{}
@@ -47,4 +51,24 @@ func SetSaveHooks(rawsavehooks string) error {
 		SAVEHOOKS[parts[0]] = regexp.MustCompile(" +").Split(parts[1], -1)
 	}
 	return nil
+}
+
+func SetConfigFile(fn string) {
+	if len(fn) == 0 {
+		return
+	}
+	CONFFILES = []string{fn}
+}
+
+func getConfigFiles() (files []string) {
+	if homedir, err := os.UserHomeDir(); err == nil {
+		files = append(files, filepath.Join(homedir, ".ked.conf"))
+	}
+	if confdir, err := os.UserConfigDir(); err == nil {
+		files = append(files, filepath.Join(confdir, "ked", "config"))
+	}
+	if len(files) == 0 {
+		log.Println("Cannot determine any config file locations")
+	}
+	return
 }
