@@ -20,8 +20,13 @@ var (
 )
 
 func main() {
-	var debugfile, savehooks, ignoredirs string
+	var conffile, debugfile, savehooks, ignoredirs string
 
+	flag.StringVar(
+		&conffile,
+		"config",
+		"",
+		"Override default configuration file location")
 	flag.BoolVar(
 		&config.TABSSPACES,
 		"tabspaces",
@@ -41,10 +46,17 @@ func main() {
 		config.GetIgnoreDirsFlat(),
 		"Directories to ignore when doing buffer opens")
 	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "ked %s (%s)\n", version, buildtime)
+		o := flag.CommandLine.Output()
+		fmt.Fprintf(o, "ked %s (%s)\n", version, buildtime)
+		fmt.Fprintln(o, "Configuration file locations:")
+		for _, fn := range config.CONFFILES {
+			fmt.Fprintf(o, "  * %s\n", fn)
+		}
+		fmt.Fprintln(o, "")
 		flag.PrintDefaults()
 	}
 	flag.Parse()
+	config.SetConfigFile(conffile)
 	config.SetIgnoreDirs(ignoredirs)
 	if err := config.SetSaveHooks(savehooks); err != nil {
 		fmt.Fprintf(os.Stderr, "%v", err)
@@ -63,6 +75,8 @@ func main() {
 		log.SetOutput(io.Discard)
 	}
 	log.Printf("ked %s (%s)\n", version, buildtime)
+
+	config.HandleConfigFile()
 
 	// Initial editor context consists of a canvas and an optional
 	// list file-backed buffers.
