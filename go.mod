@@ -2,7 +2,10 @@ module github.com/susji/ked
 
 go 1.17
 
-require github.com/gdamore/tcell/v2 v2.4.0
+require (
+	github.com/gdamore/tcell/v2 v2.4.0
+	github.com/susji/tinyini v0.1.0
+)
 
 require (
 	github.com/gdamore/encoding v1.0.0 // indirect
