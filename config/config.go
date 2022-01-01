@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/susji/ked/tinyini"
+	"github.com/susji/tinyini"
 )
 
 var CONFFILES = getConfigFiles()
