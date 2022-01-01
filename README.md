@@ -56,13 +56,14 @@ Opening files into new buffers is based on the idea of first selecting a
 root directory and then fuzzily finding filenames matching your filter.
 By default, we ignore certain directories like `.git` and
 `node_modules`. You may specify these exactly with the `-ignoredirs`
-argument.
+argument or `ignoredir` option in the configuration file.
 
 ## save hooks
 
-The command-line argument `-savehooks` may be used to specify
-command-lines, which are automatically run after a buffer is saved to a
-file. Each hook consists of a match pattern and the command itself.
+Save hooks are command-lines, which are automatically executed after a
+glob-matching buffer is saved to a file. Each hook consists of a match
+pattern and the command itself. Save hooks may be specified with a
+command-line argument and configuration file.
 
 To make the mechanism more useful, all references to `__ABSPATH__` in
 the command-line will be replaced with the current buffer's absolute
@@ -83,3 +84,28 @@ Note that the mechanism is fairly limited: We generate the savehook
 command by splitting the command-line with spaces. The result is also
 not shell-expanded. For more complex invocations, use a wrapper script
 like `*.filetype=$HOME/bin/wrapper.sh __ABSPATH__`.
+
+## configuring with a file
+
+`ked` may also be partially configured with a configuration file. See
+`ked -h` for the filepaths it looks from. Command-line argument
+`-config` may also be used to override the default filepaths. Currently
+the glob-matching sections are only meaningful for specifying savehooks.
+Thus, for example, `tabsize` can only be defined globally.
+
+This is an example of a valid configuration file:
+
+``` ini
+tabsize=4
+tabspaces=true
+ignoredir=.git
+ignoredir=node_modules
+ignoredir=__pycache__
+ignoredir=site-packages
+
+[filetype:*.go]
+savehook=gofmt -w __ABSPATH__
+
+[filetype:*.md]
+savehook=pandoc -f markdown -t markdown -o __ABSPATH__ __ABSPATH__
+```
