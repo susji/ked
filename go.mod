@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/gdamore/tcell/v2 v2.4.0
-	github.com/susji/tinyini v0.2.4
+	github.com/susji/tinyini v0.3.0
 )
 
 require (
