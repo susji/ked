@@ -105,4 +105,8 @@ savehook=pandoc -f markdown -t markdown -o __ABSPATH__ __ABSPATH__
 
 [filetype:*.py]
 savehook=black __ABSPATH__
+
+[filetype:Makefile*]
+tabsize=8
+tabspaces=false
 ```
