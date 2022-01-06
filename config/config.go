@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -15,12 +14,14 @@ import (
 type EditorConfig struct {
 	TabSize   int
 	TabSpaces bool
+	SaveHook  []string
 }
 
 // "" is the global EditorConfig for non-specific filetypes
 var defaultconfig = EditorConfig{
 	TabSize:   4,
 	TabSpaces: true,
+	SaveHook:  nil,
 }
 var editorconfigs = map[string]*EditorConfig{
 	"": &defaultconfig,
@@ -33,7 +34,6 @@ const (
 
 var CONFFILES = getConfigFiles()
 var WARNFILESZ = int64(10_485_760)
-var SAVEHOOKS = map[string][]string{}
 var MAXFILES = 50_000
 var WORD_DELIMS = " \t=&|,./(){}[]#+*%'-:?!'\""
 var IGNOREDIRS = map[string]bool{
@@ -58,23 +58,8 @@ func GetIgnoreDirsFlat() string {
 	return strings.Join(ret, ",")
 }
 
-func dosavehook(raw string) []string {
+func splitsavehook(raw string) []string {
 	return regexp.MustCompile(" +").Split(raw, -1)
-}
-
-func SetSaveHooks(rawsavehooks string) error {
-	SAVEHOOKS = map[string][]string{}
-	if len(rawsavehooks) == 0 {
-		return nil
-	}
-	for _, rawhook := range regexp.MustCompile(" *,+ *").Split(rawsavehooks, -1) {
-		parts := strings.SplitN(rawhook, "=", 2)
-		if len(parts) != 2 {
-			return fmt.Errorf("unexpected savehook given: %q", rawhook)
-		}
-		SAVEHOOKS[parts[0]] = dosavehook(parts[1])
-	}
-	return nil
 }
 
 func SetConfigFile(fn string) {
@@ -150,12 +135,19 @@ func HandleConfigFile() {
 		}
 
 		pattern := section[len("filetype:"):]
+
+		if _, ok := editorconfigs[pattern]; !ok {
+			nc := defaultconfig
+			editorconfigs[pattern] = &nc
+		}
+
 		log.Println("pattern", pattern)
 		log.Println("keyvals", keyvals)
 
 		if savehooks, ok := keyvals["savehook"]; ok {
-			SAVEHOOKS[pattern] = dosavehook(savehooks[0])
-			log.Println(pattern, "savehook:", savehooks[0])
+			sh := splitsavehook(savehooks[0])
+			editorconfigs[pattern].SaveHook = sh
+			log.Println(pattern, "savehook:", sh)
 		}
 	}
 }
@@ -173,6 +165,21 @@ func getConfigFiles() (files []string) {
 	return
 }
 
-func GetEditorConfig(filepath string) *EditorConfig {
-	return &defaultconfig
+func GetEditorConfig(fpath string) (*EditorConfig, error) {
+	pb := filepath.Base(fpath)
+	log.Println("[GetEditorConfig] ", fpath, " -> ", pb)
+	for pattern, ec := range editorconfigs {
+		log.Printf("[] %q %q\n", pattern, ec)
+		matched, err := filepath.Match(pattern, pb)
+		if err != nil {
+			log.Printf("[GetEditorConfig, hook match] %v\n", err)
+			return nil, err
+		}
+		if !matched {
+			log.Println("[savebuffer, pattern-no-match]")
+			continue
+		}
+		return ec, nil
+	}
+	return &defaultconfig, nil
 }
