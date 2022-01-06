@@ -89,6 +89,7 @@ ignoredir=__pycache__
 ignoredir=site-packages
 maxfiles=50000
 worddelims = " \t=&|,./(){}[]#+*%'-:?!'\""
+warnfilesize=1048576
 
 [filetype:*.c]
 savehook=clang-format -i __ABSPATH__

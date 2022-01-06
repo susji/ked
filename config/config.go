@@ -127,19 +127,28 @@ func HandleConfigFile() {
 			IGNOREDIRS[ignoredir] = true
 		}
 
-        if maxfilesraw, ok := g["maxfiles"]; ok {
-            if maxfiles, err := strconv.Atoi(maxfilesraw[0]); err != nil {
-                   log.Println("Invalid maxfiles: ", err)
-            } else {
-                MAXFILES = maxfiles
-                log.Println("MAXFILES", MAXFILES)
-            }
-        }
+		if maxfilesraw, ok := g["maxfiles"]; ok {
+			if maxfiles, err := strconv.Atoi(maxfilesraw[0]); err != nil {
+				log.Println("Invalid maxfiles: ", err)
+			} else {
+				MAXFILES = maxfiles
+				log.Println("MAXFILES", MAXFILES)
+			}
+		}
 
-        if worddelims, ok := g["worddelims"]; ok {
-            WORD_DELIMS = worddelims[0]
-            log.Println("WORDDELIMS", WORD_DELIMS)
-        }
+		if worddelims, ok := g["worddelims"]; ok {
+			WORD_DELIMS = worddelims[0]
+			log.Println("WORDDELIMS", WORD_DELIMS)
+		}
+
+		if warnfilesizes, ok := g["warnfilesize"]; ok {
+			if warnfilesize, err := strconv.ParseInt(warnfilesizes[0], 10, 64); err != nil {
+				log.Println("invalid warnfilesize: ", err)
+			} else {
+				WARNFILESZ = warnfilesize
+				log.Println("WARNFILESZ", WARNFILESZ)
+			}
+		}
 	}
 
 	// Handle filetype-related sections.
