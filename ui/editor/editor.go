@@ -209,12 +209,17 @@ func (e *Editor) insertlinefeed() {
 	eb.Hilite.InsertLine(eb.CursorLine(), eb.Buffer.GetLine(eb.CursorLine()))
 }
 
-func (e *Editor) backspace() {
+func (e *Editor) backspaceordelword(backspace bool) {
+	var act func(int, int) *buffer.Action
+	switch backspace {
+	case true:
+		act = buffer.NewBackspace
+	case false:
+		act = buffer.NewDelWord
+	}
 	eb := e.buffers.Get(e.activebuf)
 	linenobefore := eb.CursorLine()
-	eb.Update(
-		eb.Buffer.Perform(
-			buffer.NewBackspace(eb.Cursor())))
+	eb.Update(eb.Buffer.Perform(act(eb.Cursor())))
 	linenoafter := eb.CursorLine()
 	if linenobefore == linenoafter {
 		e.highlightline(eb.CursorLine())
@@ -620,14 +625,6 @@ func (e *Editor) backtab() {
 	}
 }
 
-func (e *Editor) delword() {
-	eb := e.buffers.Get(e.activebuf)
-	eb.Update(
-		eb.Buffer.Perform(
-			buffer.NewDelWord(eb.Cursor())))
-	e.highlightline(eb.CursorLine())
-}
-
 func (e *Editor) openbuffer() {
 	var rootdir string
 
@@ -832,9 +829,9 @@ main:
 				e.setmodified(true)
 			case ev.Key() == tcell.KeyBackspace, ev.Key() == tcell.KeyBackspace2:
 				if ev.Modifiers()&tcell.ModAlt > 0 {
-					e.delword()
+					e.backspaceordelword(false)
 				} else {
-					e.backspace()
+					e.backspaceordelword(true)
 				}
 				e.setmodified(true)
 			case ev.Key() == tcell.KeyUp:
