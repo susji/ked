@@ -97,15 +97,35 @@ savehook=clang-format -i __ABSPATH__
 tabsize=8
 
 [filetype:*.go]
-savehook=gofmt -w __ABSPATH__
-tabspaces=true
+savehook=goimports -w __ABSPATH__
 tabsize=4
+tabspaces=true
+highlight-keyword=bold:type
+highlight-keyword=bold:func
+highlight-keyword=bold:struct
+highlight-keyword=bold:bold
+highlight-keyword=underline:return
+; highlight string literals
+highlight-pattern=255:0:1:dim:"(\\.|[^"\\])*"
+highlight-pattern=255:0:1:dim:'(\\.|[^'\\])*'
+highlight-pattern=255:0:1:dim:`(\\.|[^`\\])*`
+; highlight single-line comments
+highlight-pattern=255:0:1:dim://.*
+; highlight function calls
+highlight-pattern=254:2:3:bold:([-_\w]+)\(
 
 [filetype:*.md]
-savehook=pandoc -f markdown -t markdown -o __ABSPATH__ __ABSPATH__
+savehook=pandoc --atx-headers -f markdown -t gfm -o __ABSPATH__ __ABSPATH__
+highlight-pattern=255:0:1:bold:#.+
 
 [filetype:*.py]
 savehook=black __ABSPATH__
+highlight-keyword=bold:def
+highlight-keyword=bold:class
+highlight-pattern=255:0:1:dim:#.+
+highlight-pattern=254:2:3:bold:([-_\w]+)\(
+highlight-pattern=255:0:1:dim:"(\\.|[^"\\])*"
+highlight-pattern=255:0:1:dim:'(\\.|[^'\\])*'
 
 [filetype:Makefile*]
 tabsize=8
