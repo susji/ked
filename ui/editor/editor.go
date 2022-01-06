@@ -874,8 +874,10 @@ main:
 			case ev.Key() == tcell.KeyPgDn:
 				e.movepage(false)
 			case ev.Key() == tcell.KeyTab:
-				if config.TABSSPACES {
-					for i := 0; i < config.TABSZ; i++ {
+				eb := e.buffers.Get(e.activebuf)
+				c := config.GetEditorConfig(eb.Filepath)
+				if c.TabSpaces {
+					for i := 0; i < c.TabSize; i++ {
 						e.insertrune(' ')
 					}
 				} else {

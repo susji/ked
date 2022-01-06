@@ -27,11 +27,6 @@ func main() {
 		"config",
 		"",
 		"Override default configuration file location")
-	flag.BoolVar(
-		&config.TABSSPACES,
-		"tabspaces",
-		config.TABSSPACES,
-		"Emit spaces with tab")
 	flag.StringVar(&debugfile, "debugfile", "", "File for appending debug log")
 	flag.StringVar(
 		&savehooks,
@@ -39,7 +34,6 @@ func main() {
 		"",
 		"Command to run when a file is saved. __ABSPATH__ is expanded to filepath. "+
 			"Use comma-separated specifiers like '<filename-glob>=<command-to-run>'.")
-	flag.IntVar(&config.TABSZ, "tabsize", config.TABSZ, "Tab size")
 	flag.StringVar(
 		&ignoredirs,
 		"ignoredirs",

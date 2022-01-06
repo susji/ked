@@ -12,11 +12,28 @@ import (
 	"github.com/susji/tinyini"
 )
 
+type EditorConfig struct {
+	TabSize   int
+	TabSpaces bool
+}
+
+// "" is the global EditorConfig for non-specific filetypes
+var defaultconfig = EditorConfig{
+	TabSize:   4,
+	TabSpaces: true,
+}
+var editorconfigs = map[string]*EditorConfig{
+	"": &defaultconfig,
+}
+
+const (
+	DEFAULT_TABSIZE   = 4
+	DEFAULT_TABSPACES = true
+)
+
 var CONFFILES = getConfigFiles()
-var TABSSPACES = false
 var WARNFILESZ = int64(10_485_760)
 var SAVEHOOKS = map[string][]string{}
-var TABSZ = 4
 var MAXFILES = 50_000
 var WORD_DELIMS = " \t=&|,./(){}[]#+*%'-:?!'\""
 var IGNOREDIRS = map[string]bool{
@@ -105,14 +122,15 @@ func HandleConfigFile() {
 			if tabsz, err := strconv.Atoi(tabszraw[0]); err != nil {
 				log.Println("Invalid tabsize: ", err)
 			} else {
-				TABSZ = tabsz
-				log.Println("TABSZ", TABSZ)
+				editorconfigs[""].TabSize = tabsz
+				log.Println("Global TABSZ", tabsz)
 			}
 		}
 
 		if tabspaces, ok := g["tabspaces"]; ok {
-			TABSSPACES = confbool(tabspaces[0])
-			log.Println("TABSSPACES", TABSSPACES)
+			ts := confbool(tabspaces[0])
+			editorconfigs[""].TabSpaces = ts
+			log.Println("TABSSPACES", ts)
 		}
 
 		// Clear ignoredirs if they are explicitly configured.
@@ -153,4 +171,8 @@ func getConfigFiles() (files []string) {
 		log.Println("Cannot determine any config file locations")
 	}
 	return
+}
+
+func GetEditorConfig(filepath string) *EditorConfig {
+	return &defaultconfig
 }

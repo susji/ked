@@ -370,7 +370,7 @@ func TestUndo(t *testing.T) {
 }
 
 func TestDetabulate(t *testing.T) {
-	prefix := make([]rune, config.TABSZ)
+	prefix := make([]rune, config.DEFAULT_TABSIZE)
 	for i := range prefix {
 		prefix[i] = ' '
 	}
@@ -385,7 +385,7 @@ func TestDetabulate(t *testing.T) {
 	b.Perform(buffer.NewDetabulate(0, 10))
 	ta.Assert(
 		t,
-		reflect.DeepEqual(b.GetLine(0), msg[0][config.TABSZ:]),
+		reflect.DeepEqual(b.GetLine(0), msg[0][config.DEFAULT_TABSIZE:]),
 		"unexpected regular space removal result :%q",
 		b.GetLine(0),
 	)
