@@ -61,47 +61,36 @@ argument or `ignoredir` option in the configuration file.
 ## save hooks
 
 Save hooks are command-lines, which are automatically executed after a
-glob-matching buffer is saved to a file. Each hook consists of a match
-pattern and the command itself. Save hooks may be specified with a
-command-line argument and configuration file.
-
-To make the mechanism more useful, all references to `__ABSPATH__` in
-the command-line will be replaced with the current buffer's absolute
-path. If the command returns successfully, `ked` will reload the
-buffer's contents from the file.
-
-For example, `gofmt`, `clang-format`, and `pandoc` may be used to
-autoformat buffers upon saving:
-
-    $ ked -savehooks '*.go=gofmt -w __ABSPATH__,*.c=clang-format -i __ABSPATH__'
-    $ ked -savehooks '*.md=pandoc -f markdown -t markdown -o __ABSPATH__ __ABSPATH__'
-
-Above we assume that `gofmt`, `clang-format`, and `pandoc` will be found
-in the path. Note the `-w`, `-i`, and `-o` parameters, respectively, are
-used to enable formatting the files on disk instead of standard I/O.
+glob-matching buffer is saved to a file. To make the mechanism more
+useful, all references to `__ABSPATH__` in the command-line will be
+replaced with the current buffer's absolute path. If the command returns
+successfully, `ked` will reload the buffer's contents from the file.
 
 Note that the mechanism is fairly limited: We generate the savehook
 command by splitting the command-line with spaces. The result is also
 not shell-expanded. For more complex invocations, use a wrapper script
-like `*.filetype=$HOME/bin/wrapper.sh __ABSPATH__`.
+such as `$HOME/bin/wrapper.sh __ABSPATH__`.
 
 ## configuring with a file
 
-`ked` may also be partially configured with a configuration file. See
-`ked -h` for the filepaths it looks from. Command-line argument
-`-config` may also be used to override the default filepaths. Currently
-the glob-matching sections are only meaningful for specifying savehooks.
-Thus, for example, `tabsize` can only be defined globally.
+`ked` is mostly configured with a configuration file. See `ked -h` for
+the filepaths it looks from. Command-line argument `-config` may also be
+used to override the default filepaths.
 
-This is an example of a valid configuration file:
+An example configuration file is below. Note that we assume the relevant
+programs used in save hooks are found via `$PATH`.
 
-``` ini
+``` {.ini}
 tabsize=4
 tabspaces=true
 ignoredir=.git
 ignoredir=node_modules
 ignoredir=__pycache__
 ignoredir=site-packages
+
+[filetype:*.c]
+savehook=clang-format -i __ABSPATH__
+tabsize=8
 
 [filetype:*.go]
 savehook=gofmt -w __ABSPATH__

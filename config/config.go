@@ -169,7 +169,7 @@ func GetEditorConfig(fpath string) (*EditorConfig, error) {
 	pb := filepath.Base(fpath)
 	log.Println("[GetEditorConfig] ", fpath, " -> ", pb)
 	for pattern, ec := range editorconfigs {
-		log.Printf("[] %q %q\n", pattern, ec)
+		log.Printf("[] %q %#v\n", pattern, ec)
 		matched, err := filepath.Match(pattern, pb)
 		if err != nil {
 			log.Printf("[GetEditorConfig, hook match] %v\n", err)
