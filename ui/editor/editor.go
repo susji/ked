@@ -544,13 +544,6 @@ func (e *Editor) statusmsg(msg string) {
 	}
 }
 
-func (e *Editor) listbuffers() {
-	log.Println("[listbuffers]")
-	for bufnum, buf := range e.buffers.All() {
-		log.Printf("[%03d] %#v\n", bufnum, buf)
-	}
-}
-
 func (e *Editor) drawstatusline() {
 	w, h := e.s.Size()
 	fn := "{no file}"
@@ -805,8 +798,6 @@ main:
 				e.NewFromBuffer("", buffer.New(nil))
 			case ev.Key() == tcell.KeyCtrlP:
 				e.changebuffer()
-			case ev.Key() == tcell.KeyCtrlL:
-				e.listbuffers()
 			case ev.Key() == tcell.KeyCtrlUnderscore:
 				e.undo()
 			case ev.Key() == tcell.KeyCtrlR:
@@ -828,7 +819,7 @@ main:
 				e.jumpword(true)
 			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Key() == tcell.KeyRight:
 				e.jumpword(false)
-			case ev.Key() == tcell.KeyCtrlC:
+			case ev.Key() == tcell.KeyCtrlX:
 				if e.quit() {
 					e.s.Fini()
 					break main
