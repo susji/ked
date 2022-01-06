@@ -22,25 +22,25 @@ trivial.
 
 The hardcoded keyboard shortcuts are the following:
 
--   `Ctrl+C` exits the editor and also cancels dialogs
--   `Ctrl+W` saves the buffer
--   `Ctrl+S` searches the buffer (use `Ctrl+S` to jump through results)
--   `Alt+Left` and `Alt+Right` jump over wordish things
--   `Ctrl+A` and `Ctrl+E` move cursor to beginning and end of present
+  - `Ctrl+C` exits the editor and also cancels dialogs
+  - `Ctrl+W` saves the buffer
+  - `Ctrl+S` searches the buffer (use `Ctrl+S` to jump through results)
+  - `Alt+Left` and `Alt+Right` jump over wordish things
+  - `Ctrl+A` and `Ctrl+E` move cursor to beginning and end of present
     line
--   `Ctrl+G` jumps to a specific line
--   `PageUp` and `PageDown` move, well, a single page up or down
--   `Ctrl+K` deletes from cursor to the end of line; also deletes empty
+  - `Ctrl+G` jumps to a specific line
+  - `PageUp` and `PageDown` move, well, a single page up or down
+  - `Ctrl+K` deletes from cursor to the end of line; also deletes empty
     lines
--   `Alt+Backspace` deletes current word
--   `Ctrl+_` undos recent actions
--   `Tab` inserts one tab character to cursor position
--   `Shift+Tab` (`Backtab`) removes one level of tabulation from line
+  - `Alt+Backspace` deletes current word
+  - `Ctrl+_` undos recent actions
+  - `Tab` inserts one tab character to cursor position
+  - `Shift+Tab` (`Backtab`) removes one level of tabulation from line
     beginning
--   `Alt+Up` and `Alt+Down` jump to the previous or next empty line
--   `Ctrl+P` displays the buffer selection dialog
--   `Ctrl+F` displays the file-open dialog
--   `Alt+F` closes the current buffer
+  - `Alt+Up` and `Alt+Down` jump to the previous or next empty line
+  - `Ctrl+P` displays the buffer selection dialog
+  - `Ctrl+F` displays the file-open dialog
+  - `Alt+F` closes the current buffer
 
 Depending your terminal settings, `Alt` may be mapped to `Esc`.
 
@@ -63,8 +63,8 @@ argument or `ignoredir` option in the configuration file.
 Save hooks are command-lines, which are automatically executed after a
 glob-matching buffer is saved to a file. To make the mechanism more
 useful, all references to `__ABSPATH__` in the command-line will be
-replaced with the current buffer's absolute path. If the command returns
-successfully, `ked` will reload the buffer's contents from the file.
+replaced with the current buffer’s absolute path. If the command returns
+successfully, `ked` will reload the buffer’s contents from the file.
 
 Note that the mechanism is fairly limited: We generate the savehook
 command by splitting the command-line with spaces. The result is also
@@ -80,7 +80,7 @@ used to override the default filepaths.
 An example configuration file is below. Note that we assume the relevant
 programs used in save hooks are found via `$PATH`.
 
-``` {.ini}
+``` ini
 tabsize=4
 tabspaces=false
 ignoredir=.git
