@@ -606,6 +606,7 @@ func (e *Editor) undo() {
 	eb := e.buffers.Get(e.activebuf)
 	if res := eb.Buffer.UndoModification(); res != nil {
 		eb.Update(*res)
+		eb.Viewport.SetTeleported(eb.CursorLine())
 		// XXX We reanalyse the whole file after undo.
 		e.sethighlighting()
 	}
