@@ -15,12 +15,15 @@ import (
 )
 
 type Buffer struct {
-	lines []*gapbuffer.GapBuffer
-	mods  []*modification
+	lines   []*gapbuffer.GapBuffer
+	mods    []*modification
+	TabSize int
 }
 
 func New(rawlines [][]rune) *Buffer {
-	ret := &Buffer{}
+	ret := &Buffer{
+		TabSize: config.DEFAULT_TABSIZE,
+	}
 	ret.lines = []*gapbuffer.GapBuffer{}
 	if len(rawlines) == 0 {
 		rawlines = [][]rune{[]rune("")}
@@ -44,7 +47,8 @@ func NewFromReader(r io.Reader) (*Buffer, error) {
 		lines = append(lines, gapbuffer.New(gapbuffer.DEFAULTSZ))
 	}
 	return &Buffer{
-		lines: lines,
+		lines:   lines,
+		TabSize: config.DEFAULT_TABSIZE,
 	}, nil
 }
 
@@ -472,15 +476,15 @@ func (b *Buffer) detabulate(act *Action) ActionResult {
 			col--
 		}
 		return ActionResult{Lineno: lineno, Col: col}
-	} else if len(runes) >= config.TABSZ &&
-		reflect.DeepEqual(runes[:config.TABSZ], spaceprefix[:config.TABSZ]) {
+	} else if len(runes) >= b.TabSize &&
+		reflect.DeepEqual(runes[:b.TabSize], spaceprefix[:b.TabSize]) {
 		b.modify(&modification{
 			kind:   MOD_DELETERUNES,
 			lineno: lineno,
 			col:    0,
 			data:   []rune("    "),
 		})
-		for i := 0; i < config.TABSZ; i++ {
+		for i := 0; i < b.TabSize; i++ {
 			line.SetCursor(1).Delete()
 			if col > 0 {
 				col--

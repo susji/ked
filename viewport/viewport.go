@@ -6,7 +6,6 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/susji/ked/buffer"
-	"github.com/susji/ked/config"
 	"github.com/susji/ked/highlighting"
 )
 
@@ -141,7 +140,7 @@ func (v *Viewport) doRenderWrapped(
 	[]renderedLine, int, int) {
 
 	ret := []renderedLine{}
-	line, tabbedlen, styles := tabexpand(linenobuf, line, config.TABSZ, hilite)
+	line, tabbedlen, styles := tabexpand(linenobuf, line, v.buffer.TabSize, hilite)
 	nlinefrag := int(math.Ceil(float64(len(line)) / float64(w)))
 
 	// As we're wrapping the display, long lines need to split

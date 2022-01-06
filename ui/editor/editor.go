@@ -330,30 +330,19 @@ func (e *Editor) savebuffer() {
 	eb.Filepath = abspath
 	e.setmodified(false)
 
-	for pattern, command := range config.SAVEHOOKS {
-		log.Printf("[savebuffer, pattern] %q %q\n", pattern, command)
-		matched, err := filepath.Match(pattern, filepath.Base(abspath))
-		if err != nil {
-			log.Printf("[savebuffer, hook match] %v\n", err)
-			e.statusmsg(fmt.Sprintf("Hook match error: %v", err))
-			return
-		}
-		if !matched {
-			log.Println("[savebuffer, pattern-no-match]")
-			continue
-		}
-
-		rcommand := []string{}
-		for _, part := range command {
-			rcommand = append(
-				rcommand, strings.ReplaceAll(part, "__ABSPATH__", abspath))
-		}
-		log.Printf("[savebuffer, hook] %#v -> %#v\n", command, rcommand)
-		e.execandreload(abspath, rcommand)
-
-		// We will not break here. This means a file may be
-		// processed by multiple savehooks!
+	ec := config.GetEditorConfig(eb.Filepath)
+	eb.Buffer.TabSize = ec.TabSize
+	if len(ec.SaveHook) == 0 {
+		return
 	}
+
+	rcommand := []string{}
+	for _, part := range ec.SaveHook {
+		rcommand = append(
+			rcommand, strings.ReplaceAll(part, "__ABSPATH__", abspath))
+	}
+	log.Printf("[savebuffer, hook] %#v -> %#v\n", ec.SaveHook, rcommand)
+	e.execandreload(abspath, rcommand)
 }
 
 func (e *Editor) execandreload(abspath string, cmd []string) {
@@ -418,6 +407,7 @@ func (e *Editor) jumpline() {
 	if err != nil {
 		log.Println("[jumpline, error-ask] ", err)
 		return
+
 	}
 	lineno, err := strconv.Atoi(string(linenoraw))
 	if err != nil {
@@ -874,8 +864,10 @@ main:
 			case ev.Key() == tcell.KeyPgDn:
 				e.movepage(false)
 			case ev.Key() == tcell.KeyTab:
-				if config.TABSSPACES {
-					for i := 0; i < config.TABSZ; i++ {
+				eb := e.buffers.Get(e.activebuf)
+				c := config.GetEditorConfig(eb.Filepath)
+				if c.TabSpaces {
+					for i := 0; i < c.TabSize; i++ {
 						e.insertrune(' ')
 					}
 				} else {

@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -12,11 +11,29 @@ import (
 	"github.com/susji/tinyini"
 )
 
+type EditorConfig struct {
+	TabSize   int
+	TabSpaces bool
+	SaveHook  []string
+}
+
+// "" is the global EditorConfig for non-specific filetypes
+var defaultconfig = EditorConfig{
+	TabSize:   4,
+	TabSpaces: true,
+	SaveHook:  nil,
+}
+var editorconfigs = map[string]*EditorConfig{
+	"": &defaultconfig,
+}
+
+const (
+	DEFAULT_TABSIZE   = 4
+	DEFAULT_TABSPACES = true
+)
+
 var CONFFILES = getConfigFiles()
-var TABSSPACES = false
 var WARNFILESZ = int64(10_485_760)
-var SAVEHOOKS = map[string][]string{}
-var TABSZ = 4
 var MAXFILES = 50_000
 var WORD_DELIMS = " \t=&|,./(){}[]#+*%'-:?!'\""
 var IGNOREDIRS = map[string]bool{
@@ -41,23 +58,8 @@ func GetIgnoreDirsFlat() string {
 	return strings.Join(ret, ",")
 }
 
-func dosavehook(raw string) []string {
+func splitsavehook(raw string) []string {
 	return regexp.MustCompile(" +").Split(raw, -1)
-}
-
-func SetSaveHooks(rawsavehooks string) error {
-	SAVEHOOKS = map[string][]string{}
-	if len(rawsavehooks) == 0 {
-		return nil
-	}
-	for _, rawhook := range regexp.MustCompile(" *,+ *").Split(rawsavehooks, -1) {
-		parts := strings.SplitN(rawhook, "=", 2)
-		if len(parts) != 2 {
-			return fmt.Errorf("unexpected savehook given: %q", rawhook)
-		}
-		SAVEHOOKS[parts[0]] = dosavehook(parts[1])
-	}
-	return nil
 }
 
 func SetConfigFile(fn string) {
@@ -105,14 +107,15 @@ func HandleConfigFile() {
 			if tabsz, err := strconv.Atoi(tabszraw[0]); err != nil {
 				log.Println("Invalid tabsize: ", err)
 			} else {
-				TABSZ = tabsz
-				log.Println("TABSZ", TABSZ)
+				editorconfigs[""].TabSize = tabsz
+				log.Println("Global TABSZ", tabsz)
 			}
 		}
 
 		if tabspaces, ok := g["tabspaces"]; ok {
-			TABSSPACES = confbool(tabspaces[0])
-			log.Println("TABSSPACES", TABSSPACES)
+			ts := confbool(tabspaces[0])
+			editorconfigs[""].TabSpaces = ts
+			log.Println("TABSSPACES", ts)
 		}
 
 		// Clear ignoredirs if they are explicitly configured.
@@ -123,6 +126,29 @@ func HandleConfigFile() {
 			log.Println("IGNOREDIR", ignoredir)
 			IGNOREDIRS[ignoredir] = true
 		}
+
+		if maxfilesraw, ok := g["maxfiles"]; ok {
+			if maxfiles, err := strconv.Atoi(maxfilesraw[0]); err != nil {
+				log.Println("Invalid maxfiles: ", err)
+			} else {
+				MAXFILES = maxfiles
+				log.Println("MAXFILES", MAXFILES)
+			}
+		}
+
+		if worddelims, ok := g["worddelims"]; ok {
+			WORD_DELIMS = worddelims[0]
+			log.Println("WORDDELIMS", WORD_DELIMS)
+		}
+
+		if warnfilesizes, ok := g["warnfilesize"]; ok {
+			if warnfilesize, err := strconv.ParseInt(warnfilesizes[0], 10, 64); err != nil {
+				log.Println("invalid warnfilesize: ", err)
+			} else {
+				WARNFILESZ = warnfilesize
+				log.Println("WARNFILESZ", WARNFILESZ)
+			}
+		}
 	}
 
 	// Handle filetype-related sections.
@@ -132,12 +158,34 @@ func HandleConfigFile() {
 		}
 
 		pattern := section[len("filetype:"):]
+
+		if _, ok := editorconfigs[pattern]; !ok {
+			nc := defaultconfig
+			editorconfigs[pattern] = &nc
+		}
+
 		log.Println("pattern", pattern)
 		log.Println("keyvals", keyvals)
 
 		if savehooks, ok := keyvals["savehook"]; ok {
-			SAVEHOOKS[pattern] = dosavehook(savehooks[0])
-			log.Println(pattern, "savehook:", savehooks[0])
+			sh := splitsavehook(savehooks[0])
+			editorconfigs[pattern].SaveHook = sh
+			log.Println(pattern, "savehook:", sh)
+		}
+
+		if tabsizes, ok := keyvals["tabsize"]; ok {
+			if ts, err := strconv.Atoi(tabsizes[0]); err != nil {
+				log.Printf("invalid tabsize for %q: %v\n", pattern, tabsizes[0])
+			} else {
+				editorconfigs[pattern].TabSize = ts
+				log.Println(pattern, "tabsize:", ts)
+			}
+		}
+
+		if tabspaces, ok := keyvals["tabspaces"]; ok {
+			ts := confbool(tabspaces[0])
+			editorconfigs[pattern].TabSpaces = ts
+			log.Println(pattern, "tabspaces:", ts)
 		}
 	}
 }
@@ -153,4 +201,22 @@ func getConfigFiles() (files []string) {
 		log.Println("Cannot determine any config file locations")
 	}
 	return
+}
+
+func GetEditorConfig(fpath string) *EditorConfig {
+	pb := filepath.Base(fpath)
+	log.Println("[GetEditorConfig] ", fpath, " -> ", pb)
+	for pattern, ec := range editorconfigs {
+		log.Printf("[] %q %#v\n", pattern, ec)
+		matched, err := filepath.Match(pattern, pb)
+		if err != nil {
+			log.Printf("[GetEditorConfig, hook match] %v\n", err)
+			continue
+		}
+		if !matched {
+			continue
+		}
+		return ec
+	}
+	return &defaultconfig
 }
