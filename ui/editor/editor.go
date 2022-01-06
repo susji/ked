@@ -330,11 +330,7 @@ func (e *Editor) savebuffer() {
 	eb.Filepath = abspath
 	e.setmodified(false)
 
-	ec, err := config.GetEditorConfig(eb.Filepath)
-	if err != nil {
-		e.statusmsg(fmt.Sprintf("GetEditorConfig failed when saving buffer: %v", err))
-		return
-	}
+	ec := config.GetEditorConfig(eb.Filepath)
 	if len(ec.SaveHook) == 0 {
 		return
 	}
@@ -868,19 +864,15 @@ main:
 				e.movepage(false)
 			case ev.Key() == tcell.KeyTab:
 				eb := e.buffers.Get(e.activebuf)
-				c, err := config.GetEditorConfig(eb.Filepath)
-				if err != nil {
-					e.statusmsg(fmt.Sprintf("GetEditorConfig failed: %v", err))
-				} else {
-					if c.TabSpaces {
-						for i := 0; i < c.TabSize; i++ {
-							e.insertrune(' ')
-						}
-					} else {
-						e.insertrune('\t')
+				c := config.GetEditorConfig(eb.Filepath)
+				if c.TabSpaces {
+					for i := 0; i < c.TabSize; i++ {
+						e.insertrune(' ')
 					}
-					e.setmodified(true)
+				} else {
+					e.insertrune('\t')
 				}
+				e.setmodified(true)
 			case ev.Key() == tcell.KeyBacktab:
 				e.backtab()
 			}

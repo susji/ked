@@ -188,7 +188,7 @@ func getConfigFiles() (files []string) {
 	return
 }
 
-func GetEditorConfig(fpath string) (*EditorConfig, error) {
+func GetEditorConfig(fpath string) *EditorConfig {
 	pb := filepath.Base(fpath)
 	log.Println("[GetEditorConfig] ", fpath, " -> ", pb)
 	for pattern, ec := range editorconfigs {
@@ -196,13 +196,12 @@ func GetEditorConfig(fpath string) (*EditorConfig, error) {
 		matched, err := filepath.Match(pattern, pb)
 		if err != nil {
 			log.Printf("[GetEditorConfig, hook match] %v\n", err)
-			return nil, err
-		}
-		if !matched {
-			log.Println("[savebuffer, pattern-no-match]")
 			continue
 		}
-		return ec, nil
+		if !matched {
+			continue
+		}
+		return ec
 	}
-	return &defaultconfig, nil
+	return &defaultconfig
 }
