@@ -828,7 +828,7 @@ main:
 				e.jumpword(true)
 			case (ev.Modifiers()&tcell.ModAlt > 0) && ev.Key() == tcell.KeyRight:
 				e.jumpword(false)
-			case ev.Key() == tcell.KeyCtrlC:
+			case ev.Key() == tcell.KeyCtrlX:
 				if e.quit() {
 					e.s.Fini()
 					break main

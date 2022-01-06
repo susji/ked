@@ -22,7 +22,8 @@ trivial.
 
 The hardcoded keyboard shortcuts are the following:
 
-  - `Ctrl+C` exits the editor and also cancels dialogs
+  - `Ctrl+X` exits the editor
+  - `Ctrl+C` cancel dialogs
   - `Ctrl+W` saves the buffer
   - `Ctrl+S` searches the buffer (use `Ctrl+S` to jump through results)
   - `Alt+Left` and `Alt+Right` jump over wordish things
