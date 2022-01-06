@@ -87,6 +87,7 @@ ignoredir=.git
 ignoredir=node_modules
 ignoredir=__pycache__
 ignoredir=site-packages
+maxfiles=50000
 
 [filetype:*.c]
 savehook=clang-format -i __ABSPATH__

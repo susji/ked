@@ -126,6 +126,15 @@ func HandleConfigFile() {
 			log.Println("IGNOREDIR", ignoredir)
 			IGNOREDIRS[ignoredir] = true
 		}
+
+        if maxfilesraw, ok := g["maxfiles"]; ok {
+            if maxfiles, err := strconv.Atoi(maxfilesraw[0]); err != nil {
+                   log.Println("Invalid maxfiles: ", err)
+            } else {
+                MAXFILES = maxfiles
+                log.Println("MAXFILES", MAXFILES)
+            }
+        }
 	}
 
 	// Handle filetype-related sections.
