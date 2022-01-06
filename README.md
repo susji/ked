@@ -82,7 +82,7 @@ programs used in save hooks are found via `$PATH`.
 
 ``` {.ini}
 tabsize=4
-tabspaces=true
+tabspaces=false
 ignoredir=.git
 ignoredir=node_modules
 ignoredir=__pycache__
@@ -97,6 +97,8 @@ tabsize=8
 
 [filetype:*.go]
 savehook=gofmt -w __ABSPATH__
+tabspaces=true
+tabsize=4
 
 [filetype:*.md]
 savehook=pandoc -f markdown -t markdown -o __ABSPATH__ __ABSPATH__

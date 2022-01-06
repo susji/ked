@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 
 	"github.com/susji/ked/buffer"
+	"github.com/susji/ked/config"
 	"github.com/susji/ked/highlighting"
 	"github.com/susji/ked/viewport"
 )
@@ -49,6 +50,8 @@ func (e *EditorBuffers) New(filepath string, b *buffer.Buffer) BufferId {
 		bid:        bid,
 	}
 	e.buffers[BufferId(bid)] = neb
+	ec := config.GetEditorConfig(filepath)
+	b.TabSize = ec.TabSize
 	return BufferId(bid)
 }
 

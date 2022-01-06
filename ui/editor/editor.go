@@ -331,6 +331,7 @@ func (e *Editor) savebuffer() {
 	e.setmodified(false)
 
 	ec := config.GetEditorConfig(eb.Filepath)
+	eb.Buffer.TabSize = ec.TabSize
 	if len(ec.SaveHook) == 0 {
 		return
 	}

@@ -172,6 +172,21 @@ func HandleConfigFile() {
 			editorconfigs[pattern].SaveHook = sh
 			log.Println(pattern, "savehook:", sh)
 		}
+
+		if tabsizes, ok := keyvals["tabsize"]; ok {
+			if ts, err := strconv.Atoi(tabsizes[0]); err != nil {
+				log.Printf("invalid tabsize for %q: %v\n", pattern, tabsizes[0])
+			} else {
+				editorconfigs[pattern].TabSize = ts
+				log.Println(pattern, "tabsize:", ts)
+			}
+		}
+
+		if tabspaces, ok := keyvals["tabspaces"]; ok {
+			ts := confbool(tabspaces[0])
+			editorconfigs[pattern].TabSpaces = ts
+			log.Println(pattern, "tabspaces:", ts)
+		}
 	}
 }
 
