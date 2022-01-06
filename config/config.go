@@ -135,6 +135,11 @@ func HandleConfigFile() {
                 log.Println("MAXFILES", MAXFILES)
             }
         }
+
+        if worddelims, ok := g["worddelims"]; ok {
+            WORD_DELIMS = worddelims[0]
+            log.Println("WORDDELIMS", WORD_DELIMS)
+        }
 	}
 
 	// Handle filetype-related sections.

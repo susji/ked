@@ -88,6 +88,7 @@ ignoredir=node_modules
 ignoredir=__pycache__
 ignoredir=site-packages
 maxfiles=50000
+worddelims = " \t=&|,./(){}[]#+*%'-:?!'\""
 
 [filetype:*.c]
 savehook=clang-format -i __ABSPATH__
