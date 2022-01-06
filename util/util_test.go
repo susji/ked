@@ -58,3 +58,24 @@ func TestSplitRunes(t *testing.T) {
 		})
 	}
 }
+
+func TestUnescape(t *testing.T) {
+	table := []struct {
+		give, want string
+	}{
+		{`prefix\a\bsuffix`, "prefix\a\bsuffix"},
+		{`multi
+line\n
+stuff\n
+here
+`, "multi\nline\n\nstuff\n\nhere\n"},
+	}
+
+	for _, entry := range table {
+		t.Run(fmt.Sprintf("%s---%s", entry.give, entry.want), func(t *testing.T) {
+			got := util.Unescape(entry.give)
+			tu.Assert(t, got == entry.want, "got %q, want %q", got, entry.want)
+			tu.Assert(t, got != entry.give, "got == want")
+		})
+	}
+}

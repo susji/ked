@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/susji/ked/util"
 	"github.com/susji/tinyini"
 )
 
@@ -137,8 +138,8 @@ func HandleConfigFile() {
 		}
 
 		if worddelims, ok := g["worddelims"]; ok {
-			WORD_DELIMS = worddelims[0]
-			log.Println("WORDDELIMS", WORD_DELIMS)
+			WORD_DELIMS = util.Unescape(worddelims[0])
+			log.Printf("WORDDELIMS %q\n", WORD_DELIMS)
 		}
 
 		if warnfilesizes, ok := g["warnfilesize"]; ok {
