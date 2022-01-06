@@ -100,4 +100,7 @@ savehook=gofmt -w __ABSPATH__
 
 [filetype:*.md]
 savehook=pandoc -f markdown -t markdown -o __ABSPATH__ __ABSPATH__
+
+[filetype:*.py]
+savehook=black __ABSPATH__
 ```
