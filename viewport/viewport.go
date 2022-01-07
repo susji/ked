@@ -440,7 +440,9 @@ func (v *Viewport) PageDown() int {
 	return v.y0
 }
 
-func (v *Viewport) SetTeleported(y0 int) {
-	v.paged = true
-	v.y0 = y0
+func (v *Viewport) SetTeleported(y int) {
+	v.paged = y < v.y0 || y > v.limitdown
+	if v.paged {
+		v.y0 = y
+	}
 }
