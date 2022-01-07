@@ -369,16 +369,6 @@ func (v *Viewport) Render(
 		// drawn last.
 		//
 		if state == VIEWPORT_FIRST_HALF || state == VIEWPORT_SECOND_HALF {
-			// The scanning window thing we have here
-			// hopefully gets a peek at the stuff after
-			// our viewport. However, if we are operating
-			// on a short buffer, or more generally at the
-			// end of *any* buffer, we have to propose some
-			// known-good values, because scanning
-			// something after the viewport is
-			// impossible. Thus we calculate some decent
-			// values for `v.scrolldown` and `v.limitdown`.
-			v.limitdown = n
 			for ri, renderedline := range renderedlines {
 				rl := &RenderLine{
 					Content:     renderedline.content,
