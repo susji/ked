@@ -43,7 +43,7 @@ The hardcoded keyboard shortcuts are the following:
   - `Ctrl+F` displays the file-open dialog
   - `Alt+F` closes the current buffer
 
-Depending your terminal settings, `Alt` may be mapped to `Esc`.
+Depending on your terminal settings, `Alt` may be mapped to `Esc`.
 
 ## buffer management
 
