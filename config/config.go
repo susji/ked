@@ -47,6 +47,7 @@ const (
 	DEFAULT_TABSPACES = true
 )
 
+var STYLE_DEFAULT = tcell.StyleDefault
 var CONFFILES = getConfigFiles()
 var WARNFILESZ = int64(10_485_760)
 var MAXFILES = 50_000
@@ -95,7 +96,7 @@ func confbool(val string) bool {
 
 func parsestyle(styles string) tcell.Style {
 	log.Printf("[parsestyle] %q\n", styles)
-	st := tcell.StyleDefault
+	st := STYLE_DEFAULT
 	for _, style := range strings.Split(styles, ",") {
 		switch style {
 		case "dim":

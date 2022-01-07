@@ -27,7 +27,7 @@ type EditorBuffer struct {
 	Buffer                *buffer.Buffer
 	Viewport              *viewport.Viewport
 	Filepath              string
-	Hilite                *highlighting.Highlighting
+	Hilite                highlighting.Highlighting
 	bid                   uint32
 	cursorline, cursorcol int
 	prevsearch            string
@@ -104,6 +104,6 @@ func (eb *EditorBuffer) Id() BufferId {
 	return BufferId(eb.bid)
 }
 
-func (eb *EditorBuffer) SetHighlighting(hi *highlighting.Highlighting) {
+func (eb *EditorBuffer) SetHighlighting(hi highlighting.Highlighting) {
 	eb.Hilite = hi
 }

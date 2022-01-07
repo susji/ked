@@ -22,7 +22,8 @@
   - [x] Implement simple syntax highlighting
   - [x] Use configuration file for basic configuration
   - [x] Make highlighting configurable
-  - [ ] Create a highlighting fastpath when there are no rules
+  - [x] Create a highlighting fastpath when there are no rules
+  - [ ] Permit specifying colors with highlighting styles
   - [ ] Savehook execution should have a timeout
   - [ ] File browsing should maybe follow symlinks
   - [ ] Extend undo to work with savehooks
