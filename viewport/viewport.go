@@ -6,6 +6,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/susji/ked/buffer"
+	"github.com/susji/ked/config"
 	"github.com/susji/ked/highlighting"
 )
 
@@ -85,7 +86,7 @@ func (r *Rendering) Line() *RenderLine {
 
 func (rl *RenderLine) GetStyle(col int) tcell.Style {
 	if len(rl.styles) <= col {
-		return tcell.StyleDefault
+		return config.STYLE_DEFAULT
 	}
 	return rl.styles[col]
 }

@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/susji/ked/config"
 	"github.com/susji/ked/util"
 )
 
@@ -34,10 +35,10 @@ func (te *TextEntry) draw(s tcell.Screen, prompt, answer []rune, col, lineno int
 	answer = util.TruncateLine(answer, w-col-len(prompt), ':')
 	all := append(prompt, answer...)
 	for i := col; i < w; i++ {
-		s.SetContent(i, lineno, ' ', nil, tcell.StyleDefault)
+		s.SetContent(i, lineno, ' ', nil, config.STYLE_DEFAULT)
 	}
 	for i, r := range all {
-		s.SetContent(col+i, lineno, r, nil, tcell.StyleDefault)
+		s.SetContent(col+i, lineno, r, nil, config.STYLE_DEFAULT)
 	}
 	s.ShowCursor(col+len(all), lineno)
 	s.Show()

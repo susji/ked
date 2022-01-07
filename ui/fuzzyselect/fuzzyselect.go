@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/susji/ked/config"
 	"github.com/susji/ked/util"
 )
 
@@ -52,12 +53,12 @@ func (f *FuzzySelect) filter(with string) []Entry {
 
 func (f *FuzzySelect) drawfilter(s tcell.Screen, filter string, lineno, col, w, h int) {
 	rs := []rune(filter)
-	s.SetContent(col, lineno, '/', nil, tcell.StyleDefault.Bold(true))
+	s.SetContent(col, lineno, '/', nil, config.STYLE_DEFAULT.Bold(true))
 	rs = util.TruncateLine(rs, w-1, '|')
 	for curcol, r := range rs {
 		x := col + curcol + 1
 		y := lineno
-		s.SetContent(x, y, r, nil, tcell.StyleDefault.Bold(true))
+		s.SetContent(x, y, r, nil, config.STYLE_DEFAULT.Bold(true))
 	}
 	s.ShowCursor(len(filter)+1, lineno)
 }
@@ -68,7 +69,7 @@ func (f *FuzzySelect) drawdata(s tcell.Screen, data []Entry, choice, lineno, col
 			break
 		}
 
-		st := tcell.StyleDefault
+		st := config.STYLE_DEFAULT
 		if nentry == choice {
 			st = st.Bold(true)
 		}

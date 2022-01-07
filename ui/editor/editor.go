@@ -571,7 +571,7 @@ func (e *Editor) drawstatusline() {
 		fmt.Sprintf(
 			"[%03d] %3d, %2d: %c %s", e.activebuf, lineno, col, modified, fn))
 	for i, r := range line {
-		e.s.SetContent(i, h-1, r, nil, tcell.StyleDefault)
+		e.s.SetContent(i, h-1, r, nil, config.STYLE_DEFAULT)
 		if i > w {
 			break
 		}

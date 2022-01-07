@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/susji/ked/config"
 )
 
 type Dialog struct {
@@ -17,10 +18,10 @@ func New(prompt string) *Dialog {
 func (d *Dialog) draw(s tcell.Screen, prompt []rune, col, lineno int) {
 	w, _ := s.Size()
 	for i := col; i < w; i++ {
-		s.SetContent(i, lineno, ' ', nil, tcell.StyleDefault)
+		s.SetContent(i, lineno, ' ', nil, config.STYLE_DEFAULT)
 	}
 	for i, r := range prompt {
-		s.SetContent(col+i, lineno, r, nil, tcell.StyleDefault)
+		s.SetContent(col+i, lineno, r, nil, config.STYLE_DEFAULT)
 	}
 	s.ShowCursor(len(prompt), lineno)
 	s.Show()

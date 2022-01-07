@@ -6,9 +6,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/susji/ked/config"
 )
-
-var STYLE_DEFAULT = tcell.StyleDefault
 
 type highlight struct {
 	priority uint8
@@ -141,7 +140,7 @@ func (h *Highlighting) InsertLine(lineno int, newline []rune) *Highlighting {
 
 func (h *Highlighting) Get(lineno, col int) tcell.Style {
 	if lineno >= len(h.styles) || col >= len(h.styles[lineno]) {
-		return STYLE_DEFAULT
+		return config.STYLE_DEFAULT
 	}
 	return h.styles[lineno][col].style
 }
