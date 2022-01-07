@@ -77,7 +77,7 @@ func (e *Editor) sethighlighting() {
 	ec := config.GetEditorConfig(eb.Filepath)
 
 	// If we have no highlights, use a fast dummy highlighter.
-	if len(ec.HighlightPatterns) == 0 || len(ec.HighlightKeywords) == 0 {
+	if len(ec.HighlightPatterns) == 0 && len(ec.HighlightKeywords) == 0 {
 		eb.SetHighlighting(highlighting.NewDummy())
 		return
 	}
