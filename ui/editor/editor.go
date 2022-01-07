@@ -479,7 +479,6 @@ func (e *Editor) replace() {
 		e.setmodified(true)
 		e.highlightline(lineno)
 	}
-
 }
 
 func (e *Editor) search() {
