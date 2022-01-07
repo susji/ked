@@ -33,14 +33,17 @@ func SplitRunesOnWidth(rs []rune, width int) [][]rune {
 	return ret
 }
 
+var unescaper = strings.NewReplacer(
+	`\a`, "\a",
+	`\b`, "\b",
+	`\t`, "\t",
+	`\n`, "\n",
+	`\v`, "\v",
+	`\f`, "\f",
+	`\r`, "\r",
+	`\\`, "\\",
+)
+
 func Unescape(raw string) string {
-	ret := strings.ReplaceAll(raw, `\a`, "\a")
-	ret = strings.ReplaceAll(ret, `\b`, "\b")
-	ret = strings.ReplaceAll(ret, `\t`, "\t")
-	ret = strings.ReplaceAll(ret, `\n`, "\n")
-	ret = strings.ReplaceAll(ret, `\v`, "\v")
-	ret = strings.ReplaceAll(ret, `\r`, "\r")
-	ret = strings.ReplaceAll(ret, `\f`, "\f")
-	ret = strings.ReplaceAll(ret, `\r`, "\r")
-	return ret
+	return unescaper.Replace(raw)
 }

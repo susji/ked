@@ -63,7 +63,7 @@ func TestUnescape(t *testing.T) {
 	table := []struct {
 		give, want string
 	}{
-		{`prefix\a\bsuffix`, "prefix\a\bsuffix"},
+		{`prefix\a\bsuffix\t\n\v\f\r\\`, "prefix\a\bsuffix\t\n\v\f\r\\"},
 		{`multi
 line\n
 stuff\n
