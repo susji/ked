@@ -318,6 +318,31 @@ func (v *Viewport) Render(
 		renderedlines, _cx, _cy := v.doRenderWrapped(
 			w, cursorlineno, cursorcol, n, linenodrawn, line, hilite)
 
+		//
+		// Only lines drawn within the current viewport are
+		// sent back. We also have to do bookkeeping here to
+		// figure out what is the actual buffer line that's
+		// drawn last.
+		//
+	redraw:
+		if state == VIEWPORT_FIRST_HALF || state == VIEWPORT_SECOND_HALF {
+			for ri, renderedline := range renderedlines {
+				rl := &RenderLine{
+					Content:     renderedline.content,
+					styles:      renderedline.styles,
+					LineLogical: linenodrawn + ri,
+					LineBuffer:  n,
+				}
+				renderlines = append(renderlines, rl)
+			}
+			linesbufinview++
+			linesdrawninview += len(renderedlines)
+			if _cx != -1 && _cy != -1 {
+				cx = _cx
+				cy = _cy - linesdrawnpreview
+			}
+		}
+
 		switch state {
 		case VIEWPORT_BEFORE:
 			if n >= v.y0 {
@@ -334,6 +359,9 @@ func (v *Viewport) Render(
 				} else {
 					v.pageup = v.scrollup
 				}
+				// We just entered the viewport so this the first line we have
+				// have to actually render.
+				goto redraw
 			} else {
 				// We keep a memo of how many preceding buffer
 				// lines we need to scroll half a page
@@ -354,35 +382,12 @@ func (v *Viewport) Render(
 				state = VIEWPORT_SECOND_HALF
 			}
 		case VIEWPORT_SECOND_HALF:
-			if linesdrawninview >= h {
+			if linesdrawninview > h {
 				// Crossed below visible viewport.
 				// log.Printf("[Render] out of view, linenobuf=%d\n", linenobuf)
 				state = VIEWPORT_AFTER
 				v.limitdown = n - 1
 				v.pagedown = n
-			}
-		}
-		//
-		// Only lines drawn within the current viewport are
-		// sent back. We also have to do bookkeeping here to
-		// figure out what is the actual buffer line that's
-		// drawn last.
-		//
-		if state == VIEWPORT_FIRST_HALF || state == VIEWPORT_SECOND_HALF {
-			for ri, renderedline := range renderedlines {
-				rl := &RenderLine{
-					Content:     renderedline.content,
-					styles:      renderedline.styles,
-					LineLogical: linenodrawn + ri,
-					LineBuffer:  n,
-				}
-				renderlines = append(renderlines, rl)
-			}
-			linesbufinview++
-			linesdrawninview += len(renderedlines)
-			if _cx != -1 && _cy != -1 {
-				cx = _cx
-				cy = _cy - linesdrawnpreview
 			}
 		}
 		linenodrawn += len(renderedlines)
