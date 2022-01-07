@@ -74,22 +74,16 @@ func (e *Editor) setactivebuf(bid buffers.BufferId) {
 
 func (e *Editor) sethighlighting() {
 	eb := e.buffers.Get(e.activebuf)
-	stquoted := tcell.StyleDefault.Dim(true)
-	stcommented := tcell.StyleDefault.Dim(true)
-	stfunc := tcell.StyleDefault.Bold(true)
-	stkeyword1 := tcell.StyleDefault.Bold(true)
-	stkeyword2 := tcell.StyleDefault.Underline(true)
-	eb.SetHighlighting(highlighting.New(eb.Buffer.ToRunes()).
-		// XXX Almost same pattern for three different quotes.
-		Pattern(`("(\\.|[^"\\])*")`, 0, 1, stquoted, 255).
-		Pattern(`('(\\.|[^'\\])*')`, 0, 1, stquoted, 255).
-		Pattern("(`(\\\\.|[^`\\\\])*`)", 0, 1, stquoted, 255).
-		Pattern(`//.*`, 0, 1, stcommented, 255).
-		Pattern(`#.*`, 0, 1, stcommented, 255).
-		Pattern(`([-_\w]+)\(`, 2, 3, stfunc, 2).
-		Keyword("func|def|type|struct", stkeyword1, 1).
-		Keyword("return|true|false|True|False|not", stkeyword2, 1).
-		Analyze())
+	ec := config.GetEditorConfig(eb.Filepath)
+	hl := highlighting.New(eb.Buffer.ToRunes())
+	for _, pat := range ec.HighlightPatterns {
+		hl.Pattern(pat.Pattern, pat.Left, pat.Right, pat.Style, uint8(pat.Priority))
+	}
+	for _, kw := range ec.HighlightKeywords {
+		hl.Keyword(kw.Keyword, kw.Style, 1)
+	}
+	hl.Analyze()
+	eb.SetHighlighting(hl)
 }
 
 func (e *Editor) highlightline(lineno int) {
