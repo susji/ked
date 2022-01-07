@@ -432,6 +432,10 @@ func (e *Editor) jumpline() {
 
 func (e *Editor) delline() {
 	eb := e.buffers.Get(e.activebuf)
+	if eb.Buffer.Lines() == 1 && eb.Buffer.LineLength(eb.CursorLine()) == 0 {
+		return
+	}
+
 	if eb.Buffer.LineLength(eb.CursorLine()) == 0 {
 		eb.Update(eb.Buffer.Perform(buffer.NewDelLine(eb.CursorLine())))
 		eb.Hilite.DeleteLine(eb.CursorLine() + 1)
