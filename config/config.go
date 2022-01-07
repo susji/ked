@@ -8,14 +8,28 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/susji/ked/util"
 	"github.com/susji/tinyini"
 )
 
 type EditorConfig struct {
-	TabSize   int
-	TabSpaces bool
-	SaveHook  []string
+	TabSize           int
+	TabSpaces         bool
+	SaveHook          []string
+	HighlightPatterns []HighlightPattern
+	HighlightKeywords []HighlightKeyword
+}
+
+type HighlightPattern struct {
+	Priority, Left, Right int
+	Pattern               string
+	Style                 tcell.Style
+}
+
+type HighlightKeyword struct {
+	Keyword string
+	Style   tcell.Style
 }
 
 // "" is the global EditorConfig for non-specific filetypes
@@ -77,6 +91,26 @@ func confbool(val string) bool {
 	default:
 		return false
 	}
+}
+
+func parsestyle(styles string) tcell.Style {
+	log.Printf("[parsestyle] %q\n", styles)
+	st := tcell.StyleDefault
+	for _, style := range strings.Split(styles, ",") {
+		switch style {
+		case "dim":
+			st = st.Dim(true)
+		case "underline":
+			st = st.Underline(true)
+		case "bold":
+			st = st.Bold(true)
+		case "reverse":
+			st = st.Reverse(true)
+		default:
+			log.Println("unrecognized style fragment: ", style)
+		}
+	}
+	return st
 }
 
 func HandleConfigFile() {
@@ -187,6 +221,66 @@ func HandleConfigFile() {
 			ts := confbool(tabspaces[0])
 			editorconfigs[pattern].TabSpaces = ts
 			log.Println(pattern, "tabspaces:", ts)
+		}
+
+		for _, raw := range keyvals["highlight-keyword"] {
+			vals := strings.SplitN(raw, ":", 2)
+			if len(vals) < 2 {
+				log.Printf(
+					"%s, %q: need two values for keyword highlight",
+					section, raw)
+				continue
+			}
+			style := parsestyle(vals[0])
+			keyword := vals[1]
+			newkw := HighlightKeyword{
+				Keyword: keyword,
+				Style:   style,
+			}
+			log.Printf("[highlight-keyword] %#v\n", newkw)
+			editorconfigs[pattern].HighlightKeywords = append(
+				editorconfigs[pattern].HighlightKeywords, newkw)
+		}
+
+		for _, raw := range keyvals["highlight-pattern"] {
+			vals := strings.SplitN(raw, ":", 5)
+			if len(vals) < 5 {
+				log.Printf(
+					"%s, %q: need five values for pattern highlight",
+					section, raw)
+				continue
+			}
+			prio, err1 := strconv.Atoi(vals[0])
+			left, err2 := strconv.Atoi(vals[1])
+			right, err3 := strconv.Atoi(vals[2])
+			style := parsestyle(vals[3])
+			pat := vals[4]
+
+			if err1 != nil {
+				log.Println("invalid priority: ", err1)
+			}
+			if err2 != nil {
+				log.Println("invalid left index: ", left)
+			}
+			if err3 != nil {
+				log.Println("invalid right index: ", right)
+			}
+			if err1 != nil || err2 != nil || err3 != nil {
+				continue
+			}
+
+			newpat := HighlightPattern{
+				Priority: prio,
+				Left:     left,
+				Right:    right,
+				Pattern:  pat,
+				Style:    style,
+			}
+
+			log.Printf("[highlight-pattern] %#v\n", newpat)
+			editorconfigs[pattern].HighlightPatterns = append(
+				editorconfigs[pattern].HighlightPatterns, newpat)
+
 		}
 	}
 }
