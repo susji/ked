@@ -75,6 +75,13 @@ func (e *Editor) setactivebuf(bid buffers.BufferId) {
 func (e *Editor) sethighlighting() {
 	eb := e.buffers.Get(e.activebuf)
 	ec := config.GetEditorConfig(eb.Filepath)
+
+	// If we have no highlights, use a fast dummy highlighter.
+	if len(ec.HighlightPatterns) == 0 || len(ec.HighlightKeywords) == 0 {
+		eb.SetHighlighting(highlighting.NewDummy())
+		return
+	}
+
 	hl := highlighting.New(eb.Buffer.ToRunes())
 	for _, pat := range ec.HighlightPatterns {
 		hl.Pattern(pat.Pattern, pat.Left, pat.Right, pat.Style, uint8(pat.Priority))

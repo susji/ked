@@ -29,6 +29,7 @@ type Viewport struct {
 	// pageup and pagedown define the buffer lines to jump into if
 	// viewport is scrolled one page up or down. As above, these
 	// are also in BUFFER lines, not viewport (drawn) lines.
+
 	pageup, pagedown int
 	// paged maintains state so we don't trigger viewport
 	// translation due to page up & down
@@ -109,7 +110,7 @@ func getpadding(howmuch int) []rune {
 }
 
 func tabexpand(
-	lineno int, what []rune, tabsz int, hilite *highlighting.Highlighting) (
+	lineno int, what []rune, tabsz int, hilite highlighting.Highlighting) (
 	[]rune, []int, []tcell.Style) {
 
 	exp := []rune("                                        ")
@@ -137,7 +138,7 @@ func tabexpand(
 
 func (v *Viewport) doRenderWrapped(
 	w, cursorlineno, cursorcol, linenobuf, linenodrawn int, line []rune,
-	hilite *highlighting.Highlighting) (
+	hilite highlighting.Highlighting) (
 	[]renderedLine, int, int) {
 
 	ret := []renderedLine{}
@@ -221,8 +222,7 @@ func (v *Viewport) checktranslation(cursorlineno int) {
 }
 
 func (v *Viewport) Render(
-	w, h, cursorlineno, cursorcol int,
-	hilite *highlighting.Highlighting) *Rendering {
+	w, h, cursorlineno, cursorcol int, hilite highlighting.Highlighting) *Rendering {
 	if v.paged {
 		v.paged = false
 	} else {
