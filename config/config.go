@@ -188,6 +188,13 @@ func ParseConfig(c map[string]tinyini.Section) {
 				log.Println("WARNFILESZ", WARNFILESZ)
 			}
 		}
+
+		if savehooks, ok := g["savehook"]; ok {
+			sh := splitsavehook(savehooks[0])
+			editorconfigs[""].SaveHook = sh
+			log.Println("global savehook:", sh)
+		}
+
 	}
 
 	// Handle filetype-related sections.
