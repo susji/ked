@@ -1,5 +1,5 @@
 GODEPS := $(shell find . -name '*.go')
-VERSION := $(shell git rev-parse --short HEAD)
+VERSION := $(shell git describe --tags || git rev-parse --short HEAD)
 BUILDTIME := $(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
 GOVARS += -X main.version=$(VERSION)
 GOVARS += -X main.buildtime=$(BUILDTIME)
