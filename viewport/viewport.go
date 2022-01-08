@@ -286,10 +286,10 @@ func (v *Viewport) Render(
 	//  h |  | r                                   |-v.scrolldown
 	//    |  | r                                   |
 	//    |  +-r-----------------------------------+-v.limitdown
-	//       | r                                   |
+	//       | r                                   |-v.pagedown
 	//       | r                                   |
 	//       | r      <runes after viewport>       |
-	//       | r                                   |-v.pagedown
+	//       | r                                   |
 	//       |                                     |
 	//       '-------------------------------------'
 	//
