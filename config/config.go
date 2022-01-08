@@ -127,16 +127,19 @@ func HandleConfigFile() {
 		var errs []error
 		c, errs = tinyini.Parse(f)
 		if len(errs) > 0 {
+			// Our relaxed config parsing permits errors.
 			log.Println("Configuration file parse errors: ", len(errs))
 			for _, err := range errs {
 				log.Println(err)
 			}
-			continue
 		}
 		log.Println("Got config:", c)
-		break
+		ParseConfig(c)
+		return
 	}
+}
 
+func ParseConfig(c map[string]tinyini.Section) {
 	// Global section
 	if g, ok := c[""]; ok {
 		if tabszraw, ok := g["tabsize"]; ok {
