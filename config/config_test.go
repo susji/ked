@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/susji/ked/config"
 	tu "github.com/susji/ked/internal/testutil"
 	"github.com/susji/tinyini"
@@ -40,4 +41,57 @@ func TestConfigBasic(t *testing.T) {
 		"unexpected ignoredirS: %#v",
 		config.IGNOREDIRS)
 	tu.Assert(t, config.WORD_DELIMS == "ab\t\rc", "unexpect word delims: %q", config.WORD_DELIMS)
+}
+
+func TestConfigSection(t *testing.T) {
+	c := map[string]tinyini.Section{
+		"": tinyini.Section{
+			"tabsize":   []string{"123"},
+			"tabspaces": []string{"true"},
+		},
+		"filetype:*.abc": tinyini.Section{
+			"tabsize":           []string{"404"},
+			"tabspaces":         []string{"false"},
+			"savehook":          []string{"three __ABSPATH__ four     five"},
+			"highlight-keyword": []string{"dim:keyword"},
+			"highlight-pattern": []string{"1:2:3:dim:pattern"},
+		},
+	}
+
+	config.ParseConfig(c)
+	ec := config.GetEditorConfig("file.abc")
+	tu.Assert(t, ec.TabSize == 404, "unexpected tabsize, got %d", ec.TabSize)
+	tu.Assert(t, !ec.TabSpaces, "unexpected tabspaces, got %t", ec.TabSpaces)
+	tu.Assert(
+		t,
+		reflect.DeepEqual(ec.SaveHook, []string{"three", "__ABSPATH__", "four", "five"}),
+		"unexpected savehook, got %#v",
+		ec.SaveHook)
+	tu.Assert(
+		t,
+		reflect.DeepEqual(
+			ec.HighlightKeywords,
+			[]config.HighlightKeyword{
+				config.HighlightKeyword{
+					Keyword: "keyword",
+					Style:   tcell.StyleDefault.Dim(true),
+				},
+			}),
+		"unexpected highlight keywords: %#v",
+		ec.HighlightKeywords)
+	tu.Assert(
+		t,
+		reflect.DeepEqual(
+			ec.HighlightPatterns,
+			[]config.HighlightPattern{
+				config.HighlightPattern{
+					Priority: 1,
+					Left:     2,
+					Right:    3,
+					Pattern:  "pattern",
+					Style:    tcell.StyleDefault.Dim(true),
+				},
+			}),
+		"unexpected highlight patterns: %#v",
+		ec.HighlightPatterns)
 }
