@@ -7,22 +7,23 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/susji/ked/config"
 	tu "github.com/susji/ked/internal/testutil"
-	"github.com/susji/tinyini"
+	ti "github.com/susji/tinyini"
 )
 
 func TestConfigBasic(t *testing.T) {
-	c := map[string]tinyini.Section{
-		"": tinyini.Section{
-			"maxfiles":   []string{"1234"},
-			"tabsize":    []string{"123"},
-			"tabspaces":  []string{"yes"},
-			"savehook":   []string{"one __ABSPATH__ two"},
-			"ignoredir":  []string{".git", ".got"},
-			"worddelims": []string{`ab\t\rc`},
+	c := map[string]ti.Section{
+		"": ti.Section{
+			"maxfiles":  []ti.Pair{ti.Pair{Value: "1234", Lineno: 1}},
+			"tabsize":   []ti.Pair{ti.Pair{Value: "123", Lineno: 2}},
+			"tabspaces": []ti.Pair{ti.Pair{Value: "yes", Lineno: 3}},
+			"savehook":  []ti.Pair{ti.Pair{Value: "one __ABSPATH__ two", Lineno: 4}},
+			"ignoredir": []ti.Pair{
+				ti.Pair{Value: ".git", Lineno: 5}, ti.Pair{Value: ".got", Lineno: 6}},
+			"worddelims": []ti.Pair{ti.Pair{Value: `ab\t\rc`, Lineno: 7}},
 		},
 	}
 
-	config.ParseConfig(c)
+	config.ParseConfig("test.ini", c)
 
 	tu.Assert(t, config.MAXFILES == 1234, "unexpected maxfiles, got %d", config.MAXFILES)
 
@@ -44,21 +45,21 @@ func TestConfigBasic(t *testing.T) {
 }
 
 func TestConfigSection(t *testing.T) {
-	c := map[string]tinyini.Section{
-		"": tinyini.Section{
-			"tabsize":   []string{"123"},
-			"tabspaces": []string{"true"},
+	c := map[string]ti.Section{
+		"": ti.Section{
+			"tabsize":   []ti.Pair{ti.Pair{Value: "123", Lineno: 1}},
+			"tabspaces": []ti.Pair{ti.Pair{Value: "true", Lineno: 2}},
 		},
-		"filetype:*.abc": tinyini.Section{
-			"tabsize":           []string{"404"},
-			"tabspaces":         []string{"false"},
-			"savehook":          []string{"three __ABSPATH__ four     five"},
-			"highlight-keyword": []string{"dim:keyword"},
-			"highlight-pattern": []string{"1:2:3:dim:pattern"},
+		"filetype:*.abc": ti.Section{
+			"tabsize":           []ti.Pair{ti.Pair{Value: "404", Lineno: 3}},
+			"tabspaces":         []ti.Pair{ti.Pair{Value: "false", Lineno: 4}},
+			"savehook":          []ti.Pair{ti.Pair{Value: "three __ABSPATH__ four     five", Lineno: 5}},
+			"highlight-keyword": []ti.Pair{ti.Pair{Value: "dim:keyword", Lineno: 6}},
+			"highlight-pattern": []ti.Pair{ti.Pair{Value: "1:2:3:dim:pattern", Lineno: 7}},
 		},
 	}
 
-	config.ParseConfig(c)
+	config.ParseConfig("test.ini", c)
 	ec := config.GetEditorConfig("file.abc")
 	tu.Assert(t, ec.TabSize == 404, "unexpected tabsize, got %d", ec.TabSize)
 	tu.Assert(t, !ec.TabSpaces, "unexpected tabspaces, got %t", ec.TabSpaces)

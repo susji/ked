@@ -134,17 +134,18 @@ func HandleConfigFile() {
 			}
 		}
 		log.Println("Got config:", c)
-		ParseConfig(c)
+		ParseConfig(f.Name(), c)
 		return
 	}
 }
 
-func ParseConfig(c map[string]tinyini.Section) {
+func ParseConfig(fn string, c map[string]tinyini.Section) {
 	// Global section
 	if g, ok := c[""]; ok {
 		if tabszraw, ok := g["tabsize"]; ok {
-			if tabsz, err := strconv.Atoi(tabszraw[0]); err != nil {
-				log.Println("Invalid tabsize: ", err)
+			kv := tabszraw[0]
+			if tabsz, err := strconv.Atoi(kv.Value); err != nil {
+				log.Printf("%s:%d: Invalid tabsize: %v\n", fn, kv.Lineno, err)
 			} else {
 				editorconfigs[""].TabSize = tabsz
 				log.Println("Global TABSZ", tabsz)
@@ -152,7 +153,7 @@ func ParseConfig(c map[string]tinyini.Section) {
 		}
 
 		if tabspaces, ok := g["tabspaces"]; ok {
-			ts := confbool(tabspaces[0])
+			ts := confbool(tabspaces[0].Value)
 			editorconfigs[""].TabSpaces = ts
 			log.Println("TABSSPACES", ts)
 		}
@@ -162,13 +163,14 @@ func ParseConfig(c map[string]tinyini.Section) {
 			IGNOREDIRS = map[string]bool{}
 		}
 		for _, ignoredir := range g["ignoredir"] {
-			log.Println("IGNOREDIR", ignoredir)
-			IGNOREDIRS[ignoredir] = true
+			log.Println("IGNOREDIR", ignoredir.Value)
+			IGNOREDIRS[ignoredir.Value] = true
 		}
 
 		if maxfilesraw, ok := g["maxfiles"]; ok {
-			if maxfiles, err := strconv.Atoi(maxfilesraw[0]); err != nil {
-				log.Println("Invalid maxfiles: ", err)
+			kv := maxfilesraw[0]
+			if maxfiles, err := strconv.Atoi(kv.Value); err != nil {
+				log.Printf("%s:%d: Invalid maxfiles: %v\n", fn, kv.Lineno, err)
 			} else {
 				MAXFILES = maxfiles
 				log.Println("MAXFILES", MAXFILES)
@@ -176,13 +178,14 @@ func ParseConfig(c map[string]tinyini.Section) {
 		}
 
 		if worddelims, ok := g["worddelims"]; ok {
-			WORD_DELIMS = util.Unescape(worddelims[0])
+			WORD_DELIMS = util.Unescape(worddelims[0].Value)
 			log.Printf("WORDDELIMS %q\n", WORD_DELIMS)
 		}
 
 		if warnfilesizes, ok := g["warnfilesize"]; ok {
-			if warnfilesize, err := strconv.ParseInt(warnfilesizes[0], 10, 64); err != nil {
-				log.Println("invalid warnfilesize: ", err)
+			kv := warnfilesizes[0]
+			if warnfilesize, err := strconv.ParseInt(kv.Value, 10, 64); err != nil {
+				log.Printf("%s:%d: invalid warnfilesize: %v\n", fn, kv.Lineno, err)
 			} else {
 				WARNFILESZ = warnfilesize
 				log.Println("WARNFILESZ", WARNFILESZ)
@@ -190,7 +193,7 @@ func ParseConfig(c map[string]tinyini.Section) {
 		}
 
 		if savehooks, ok := g["savehook"]; ok {
-			sh := splitsavehook(savehooks[0])
+			sh := splitsavehook(savehooks[0].Value)
 			editorconfigs[""].SaveHook = sh
 			log.Println("global savehook:", sh)
 		}
@@ -214,14 +217,17 @@ func ParseConfig(c map[string]tinyini.Section) {
 		log.Println("keyvals", keyvals)
 
 		if savehooks, ok := keyvals["savehook"]; ok {
-			sh := splitsavehook(savehooks[0])
+			sh := splitsavehook(savehooks[0].Value)
 			editorconfigs[pattern].SaveHook = sh
 			log.Println(pattern, "savehook:", sh)
 		}
 
 		if tabsizes, ok := keyvals["tabsize"]; ok {
-			if ts, err := strconv.Atoi(tabsizes[0]); err != nil {
-				log.Printf("invalid tabsize for %q: %v\n", pattern, tabsizes[0])
+			kv := tabsizes[0]
+			if ts, err := strconv.Atoi(kv.Value); err != nil {
+				log.Printf(
+					"%s:%d: invalid tabsize for %q: %v\n",
+					fn, kv.Lineno, pattern, kv)
 			} else {
 				editorconfigs[pattern].TabSize = ts
 				log.Println(pattern, "tabsize:", ts)
@@ -229,17 +235,17 @@ func ParseConfig(c map[string]tinyini.Section) {
 		}
 
 		if tabspaces, ok := keyvals["tabspaces"]; ok {
-			ts := confbool(tabspaces[0])
+			ts := confbool(tabspaces[0].Value)
 			editorconfigs[pattern].TabSpaces = ts
 			log.Println(pattern, "tabspaces:", ts)
 		}
 
 		for _, raw := range keyvals["highlight-keyword"] {
-			vals := strings.SplitN(raw, ":", 2)
+			vals := strings.SplitN(raw.Value, ":", 2)
 			if len(vals) < 2 {
 				log.Printf(
-					"%s, %q: need two values for keyword highlight",
-					section, raw)
+					"%s:%d: %s, %q: need two values for keyword highlight\n",
+					fn, raw.Lineno, section, raw)
 				continue
 			}
 			style := parsestyle(vals[0])
@@ -254,11 +260,11 @@ func ParseConfig(c map[string]tinyini.Section) {
 		}
 
 		for _, raw := range keyvals["highlight-pattern"] {
-			vals := strings.SplitN(raw, ":", 5)
+			vals := strings.SplitN(raw.Value, ":", 5)
 			if len(vals) < 5 {
 				log.Printf(
-					"%s, %q: need five values for pattern highlight",
-					section, raw)
+					"%s:%d: %s, %q: need five values for pattern highlight\n",
+					fn, raw.Lineno, section, raw)
 				continue
 			}
 			prio, err1 := strconv.Atoi(vals[0])
@@ -268,13 +274,13 @@ func ParseConfig(c map[string]tinyini.Section) {
 			pat := vals[4]
 
 			if err1 != nil {
-				log.Println("invalid priority: ", err1)
+				log.Printf("%s:%d: invalid priority: %v\n", fn, raw.Lineno, err1)
 			}
 			if err2 != nil {
-				log.Println("invalid left index: ", left)
+				log.Printf("%s:%d: invalid left index: %v\n", fn, raw.Lineno, err2)
 			}
 			if err3 != nil {
-				log.Println("invalid right index: ", right)
+				log.Printf("%s:%d: invalid right index: %v\n", fn, raw.Lineno, err3)
 			}
 			if err1 != nil || err2 != nil || err3 != nil {
 				continue
