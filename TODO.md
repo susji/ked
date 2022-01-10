@@ -23,6 +23,7 @@
   - [x] Use configuration file for basic configuration
   - [x] Make highlighting configurable
   - [x] Create a highlighting fastpath when there are no rules
+  - [ ] Report configuration file errors properly during startup
   - [ ] Permit specifying colors with highlighting styles
   - [ ] Savehook execution should have a timeout
   - [ ] File browsing should maybe follow symlinks
