@@ -114,7 +114,7 @@ programs used in save hooks are found via `$PATH`.
     highlight-pattern=254:2:3:bold:([-_\w]+)\(
 
     [filetype:*.md]
-    savehook=pandoc --atx-headers -f markdown -t markdown -o __ABSPATH__ __ABSPATH__
+    savehook=pandoc --sandbox --atx-headers -f markdown -t markdown -o __ABSPATH__ __ABSPATH__
     highlight-pattern=255:0:1:bold:#.+
     highlight-pattern=255:0:1:dim:`(\\.|[^`\\])*`
 
