@@ -1,23 +1,33 @@
 package library_test
 
 import (
-	"os"
+	"io/fs"
 	"path"
 	"reflect"
 	"testing"
+	"testing/fstest"
 
 	"github.com/susji/ked/internal/testutil"
 	"github.com/susji/ked/library"
 )
 
 func TestBasic(t *testing.T) {
-	l := library.New()
-	if err := l.Add("testdata"); err != nil {
+	tfs := fstest.MapFS{
+		"a":           &fstest.MapFile{Mode: fs.ModeDir},
+		"a/aa":        &fstest.MapFile{Mode: fs.ModeDir},
+		"b":           &fstest.MapFile{Mode: fs.ModeDir},
+		"c":           &fstest.MapFile{Mode: fs.ModeDir},
+		"a/a.txt":     &fstest.MapFile{Data: nil},
+		"a/aa/aa.txt": &fstest.MapFile{Data: nil},
+		"b/b.txt":     &fstest.MapFile{Data: nil},
+		"c/c.txt":     &fstest.MapFile{Data: nil},
+	}
+	l := library.NewWithFS(func(_ string) fs.FS { return tfs })
+	if err := l.Add("/"); err != nil {
 		t.Fatal("add error: ", err)
 	}
 
-	wd, _ := os.Getwd()
-	d := path.Join(wd, "testdata")
+	d := "/"
 	want := map[string]bool{
 		path.Join(d, "a", "a.txt"):        true,
 		path.Join(d, "a", "aa", "aa.txt"): true,

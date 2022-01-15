@@ -27,6 +27,12 @@ func New() *Library {
 	}
 }
 
+func NewWithFS(libfs func(string) fs.FS) *Library {
+	l := New()
+	l.libfs = libfs
+	return l
+}
+
 type Library struct {
 	libfs     func(string) fs.FS
 	maxfiles  int
@@ -49,6 +55,9 @@ func (l *Library) update(absdir string) error {
 			return err
 		}
 		if d.IsDir() {
+			if _, ok := config.IGNOREDIRS[filepath.Base(path)]; ok {
+				return fs.SkipDir
+			}
 			return nil
 		}
 		if len(l.filepaths) >= config.MAXFILES {
