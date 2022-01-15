@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"log"
 	"os"
 	"os/exec"
@@ -20,6 +19,7 @@ import (
 	"github.com/susji/ked/buffer"
 	"github.com/susji/ked/config"
 	"github.com/susji/ked/highlighting"
+	"github.com/susji/ked/library"
 	"github.com/susji/ked/ui/dialog"
 	"github.com/susji/ked/ui/editor/buffers"
 	"github.com/susji/ked/ui/fuzzyselect"
@@ -669,26 +669,13 @@ func (e *Editor) openbuffer() {
 	}
 
 	e.prevopendir = absrootdir
-
+	lib := library.New()
+	lib.Add(absrootdir)
 	choices := []fuzzyselect.Entry{}
-	paths := []string{}
-	filepath.WalkDir(absrootdir, func(path string, d fs.DirEntry, err error) error {
-		if d == nil {
-			return fs.SkipDir
-		}
-		if d.IsDir() {
-			if _, ok := config.IGNOREDIRS[filepath.Base(path)]; ok {
-				return fs.SkipDir
-			}
-			return nil
-		}
-		if len(paths) >= config.MAXFILES {
-			return fs.SkipDir
-		}
-
-		id := len(paths)
-		choices = append(choices, fuzzyselect.Entry{Display: []rune(path), Id: uint32(id)})
-		paths = append(paths, path)
+	paths := 0
+	lib.Walk(func(abspath string) error {
+		choices = append(choices, fuzzyselect.Entry{Display: []rune(abspath), Id: uint32(paths)})
+		paths++
 		return nil
 	})
 
