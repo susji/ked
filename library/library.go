@@ -52,9 +52,8 @@ func (l *Library) update(absdir string) error {
 	return fs.WalkDir(l.libfs(absdir), ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			log.Printf("library update failed: %v\n", err)
-			return err
 		}
-		if d.IsDir() {
+		if d != nil && d.IsDir() {
 			if _, ok := config.IGNOREDIRS[filepath.Base(path)]; ok {
 				return fs.SkipDir
 			}
