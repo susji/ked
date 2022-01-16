@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -51,9 +50,12 @@ func (l *Library) update(absdir string) error {
 	defer l.m.Unlock()
 	return fs.WalkDir(l.libfs(absdir), ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			log.Printf("library update failed: %v\n", err)
+			// WalkDir will give us an error if it fails to read the
+			// root directory or subsequent subdirectories. We return
+			// nil to instruct WalkDir to keep going on, if possible.
+			return nil
 		}
-		if d != nil && d.IsDir() {
+		if d.IsDir() {
 			if _, ok := config.IGNOREDIRS[filepath.Base(path)]; ok {
 				return fs.SkipDir
 			}
